@@ -311,7 +311,7 @@ Política por defecto: **denegar todo el tráfico entre VLAN y registrarlo**. To
 | Q-03 | ¿Se unirá un cliente Windows al dominio? | Si es así, habilitar F-06 |
 | Q-04 | ¿El SSID clínico usará 802.1X (RADIUS contra AD)? | Mejora opcional (FreeRADIUS o NPS) |
 | Q-05 | ¿TLS para invitados? `registro` maneja datos personales | Opciones: HTTPS con CA interna (con advertencia en el navegador) o HTTP solo para la biblioteca. Decidir en el hito de Wi-Fi y seguridad |
-| Q-06 | ¿Acceso del docente a los repositorios? | Los repos serán privados; hay que invitar al docente como colaborador de la organización |
+| Q-06 | ¿Acceso del docente a los repositorios? | Los repositorios son públicos, así que el docente puede leerlos sin invitación. Invitarlo a la organización solo si debe comentar o revisar PRs. Por ser públicos, se refuerza la regla de cero secretos (D-17) |
 
 ## 14. Organización del trabajo
 
