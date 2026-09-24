@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2100" height="1590" viewBox="0 0 2100 1590" font-family="Liberation Sans, Arial, sans-serif">
+<rect width="2100" height="1590" fill="#FFFFFF"/>
+<rect x="20" y="330" width="2060" height="1240" rx="18" fill="#FAFAFA" stroke="#2E7D32" stroke-width="3"/>
+<rect x="20" y="292" width="765.1999999999999" height="30" rx="4" fill="#2E7D32"/>
+<text x="30" y="313" font-size="17" fill="#FFFFFF">KIT MÓVIL - MinisForum Venus (kvm01) + switch SG350X + AP multi-SSID (UPS lógica)</text>
+<rect x="60" y="700" width="360" height="840" rx="6" fill="#FDECEA" stroke="#C62828" stroke-width="2"/>
+<rect x="60" y="662" width="176.39999999999998" height="30" rx="4" fill="#C62828"/>
+<text x="70" y="683" font-size="17" fill="#FFFFFF">VLAN 10 - Gestión</text>
+<rect x="100" y="740" width="280" height="110" rx="6" fill="#FFFFFF" stroke="#C62828" stroke-width="2" stroke-dasharray="10,6"/>
+<text x="240.0" y="774.9000000000001" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Gestión</tspan></text>
+<text x="240.0" y="791.1000000000001" font-size="12" text-anchor="middle" fill="#111111">10.20.10.0/24</text>
+<text x="240.0" y="807.3000000000001" font-size="12" text-anchor="middle" fill="#111111">fd5a:fc7e:d716:10::/64</text>
+<text x="240.0" y="823.5000000000001" font-size="12" text-anchor="middle" fill="#111111">Estático + reservas DHCP</text>
+<rect x="100" y="890" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#C62828" stroke-width="2"/>
+<text x="240.0" y="923.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">sw01</tspan> - Cisco SG350X-24</text>
+<text x="240.0" y="939.2" font-size="12" text-anchor="middle" fill="#111111">10.20.10.2 | fd5a:fc7e:d716:10::2</text>
+<text x="240.0" y="955.4" font-size="12" text-anchor="middle" fill="#111111">trunk 802.1Q hacia kvm01 / ap01</text>
+<rect x="100" y="1020" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#C62828" stroke-width="2"/>
+<text x="240.0" y="1053.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">ap01</tspan> - AP multi-SSID</text>
+<text x="240.0" y="1069.2" font-size="12" text-anchor="middle" fill="#111111">10.20.10.3 | fd5a:fc7e:d716:10::3</text>
+<text x="240.0" y="1085.4" font-size="12" text-anchor="middle" fill="#111111">SSID Gestión/Clínica/Comunidad</text>
+<rect x="100" y="1150" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#C62828" stroke-width="2"/>
+<text x="240.0" y="1183.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">kvm01</tspan> - Ubuntu 24.04 + KVM</text>
+<text x="240.0" y="1199.2" font-size="12" text-anchor="middle" fill="#111111">10.20.10.5 | fd5a:fc7e:d716:10::5</text>
+<text x="240.0" y="1215.4" font-size="12" text-anchor="middle" fill="#111111">hipervisor, restic, NUT (UPS simulada)</text>
+<rect x="100" y="1280" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#C62828" stroke-width="2"/>
+<text x="240.0" y="1313.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Equipos del personal técnico</tspan></text>
+<text x="240.0" y="1329.2" font-size="12" text-anchor="middle" fill="#111111">reservas 10.20.10.100-119</text>
+<text x="240.0" y="1345.4" font-size="12" text-anchor="middle" fill="#111111">SSH/HTTPS de gestión solo desde aquí</text>
+<rect x="460" y="700" width="360" height="840" rx="6" fill="#E8F0FE" stroke="#1565C0" stroke-width="2"/>
+<rect x="460" y="662" width="204.0" height="30" rx="4" fill="#1565C0"/>
+<text x="470" y="683" font-size="17" fill="#FFFFFF">VLAN 20 - Servidores</text>
+<rect x="500" y="740" width="280" height="110" rx="6" fill="#FFFFFF" stroke="#1565C0" stroke-width="2" stroke-dasharray="10,6"/>
+<text x="640.0" y="774.9000000000001" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Servidores</tspan></text>
+<text x="640.0" y="791.1000000000001" font-size="12" text-anchor="middle" fill="#111111">10.20.20.0/24</text>
+<text x="640.0" y="807.3000000000001" font-size="12" text-anchor="middle" fill="#111111">fd5a:fc7e:d716:20::/64</text>
+<text x="640.0" y="823.5000000000001" font-size="12" text-anchor="middle" fill="#111111">Estático (IPv6 espejo de IPv4)</text>
+<rect x="500" y="890" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#1565C0" stroke-width="2"/>
+<text x="640.0" y="923.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">infra01</tspan> - BIND9 + Chrony</text>
+<text x="640.0" y="939.2" font-size="12" text-anchor="middle" fill="#111111">10.20.20.10 | fd5a:fc7e:d716:20::10</text>
+<text x="640.0" y="955.4" font-size="12" text-anchor="middle" fill="#111111">ns1 / ntp.salud.movil</text>
+<rect x="500" y="1020" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#1565C0" stroke-width="2"/>
+<text x="640.0" y="1053.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">dc01</tspan> - Samba AD DC</text>
+<text x="640.0" y="1069.2" font-size="12" text-anchor="middle" fill="#111111">10.20.20.11 | fd5a:fc7e:d716:20::11</text>
+<text x="640.0" y="1085.4" font-size="12" text-anchor="middle" fill="#111111">dominio ad.salud.movil</text>
+<rect x="500" y="1150" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#1565C0" stroke-width="2"/>
+<text x="640.0" y="1183.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">files01</tspan> - Samba SMB + NFS</text>
+<text x="640.0" y="1199.2" font-size="12" text-anchor="middle" fill="#111111">10.20.20.12 | fd5a:fc7e:d716:20::12</text>
+<text x="640.0" y="1215.4" font-size="12" text-anchor="middle" fill="#111111">archivos.salud.movil</text>
+<rect x="500" y="1280" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#1565C0" stroke-width="2"/>
+<text x="640.0" y="1313.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">apps01</tspan> - DHIS2 + PostgreSQL</text>
+<text x="640.0" y="1329.2" font-size="12" text-anchor="middle" fill="#111111">10.20.20.13 | fd5a:fc7e:d716:20::13</text>
+<text x="640.0" y="1345.4" font-size="12" text-anchor="middle" fill="#111111">pacientes.salud.movil</text>
+<rect x="500" y="1410" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#1565C0" stroke-width="2"/>
+<text x="640.0" y="1443.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">mon01</tspan> - Prometheus/Grafana/Loki</text>
+<text x="640.0" y="1459.2" font-size="12" text-anchor="middle" fill="#111111">10.20.20.14 | fd5a:fc7e:d716:20::14</text>
+<text x="640.0" y="1475.4" font-size="12" text-anchor="middle" fill="#111111">monitoreo.salud.movil</text>
+<rect x="860" y="700" width="360" height="840" rx="6" fill="#E6F4EA" stroke="#2E7D32" stroke-width="2"/>
+<rect x="860" y="662" width="231.6" height="30" rx="4" fill="#2E7D32"/>
+<text x="870" y="683" font-size="17" fill="#FFFFFF">VLAN 30 - Clínica/Admin</text>
+<rect x="900" y="740" width="280" height="110" rx="6" fill="#FFFFFF" stroke="#2E7D32" stroke-width="2" stroke-dasharray="10,6"/>
+<text x="1040.0" y="774.9000000000001" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Clínica/Admin</tspan></text>
+<text x="1040.0" y="791.1000000000001" font-size="12" text-anchor="middle" fill="#111111">10.20.30.0/24</text>
+<text x="1040.0" y="807.3000000000001" font-size="12" text-anchor="middle" fill="#111111">fd5a:fc7e:d716:30::/64</text>
+<text x="1040.0" y="823.5000000000001" font-size="12" text-anchor="middle" fill="#111111">DHCPv4 + SLAAC + DHCPv6 stateless</text>
+<rect x="900" y="890" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#2E7D32" stroke-width="2"/>
+<text x="1040.0" y="923.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Estaciones personal de salud</tspan></text>
+<text x="1040.0" y="939.2" font-size="12" text-anchor="middle" fill="#111111">DHCP 10.20.30.100-199</text>
+<text x="1040.0" y="955.4" font-size="12" text-anchor="middle" fill="#111111">cable + SSID SaludMovil-Clinica</text>
+<rect x="900" y="1020" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#2E7D32" stroke-width="2"/>
+<text x="1040.0" y="1053.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Acceso permitido</tspan></text>
+<text x="1040.0" y="1069.2" font-size="12" text-anchor="middle" fill="#111111">pacientes, archivos, registro (admin)</text>
+<text x="1040.0" y="1085.4" font-size="12" text-anchor="middle" fill="#111111">DNS/NTP en infra01, login AD</text>
+<rect x="1260" y="700" width="360" height="840" rx="6" fill="#FEF7E0" stroke="#EF6C00" stroke-width="2"/>
+<rect x="1260" y="662" width="286.79999999999995" height="30" rx="4" fill="#EF6C00"/>
+<text x="1270" y="683" font-size="17" fill="#FFFFFF">VLAN 40 - Comunidad/Invitados</text>
+<rect x="1300" y="740" width="280" height="110" rx="6" fill="#FFFFFF" stroke="#EF6C00" stroke-width="2" stroke-dasharray="10,6"/>
+<text x="1440.0" y="774.9000000000001" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Comunidad/Invitados</tspan></text>
+<text x="1440.0" y="791.1000000000001" font-size="12" text-anchor="middle" fill="#111111">10.20.40.0/24</text>
+<text x="1440.0" y="807.3000000000001" font-size="12" text-anchor="middle" fill="#111111">fd5a:fc7e:d716:40::/64</text>
+<text x="1440.0" y="823.5000000000001" font-size="12" text-anchor="middle" fill="#111111">DHCPv4 + SLAAC con RDNSS</text>
+<rect x="1300" y="890" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#EF6C00" stroke-width="2"/>
+<text x="1440.0" y="923.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Visitantes y sala de espera</tspan></text>
+<text x="1440.0" y="939.2" font-size="12" text-anchor="middle" fill="#111111">DHCP 10.20.40.100-250</text>
+<text x="1440.0" y="955.4" font-size="12" text-anchor="middle" fill="#111111">SSID SaludMovil-Comunidad (abierta)</text>
+<rect x="1300" y="1020" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#EF6C00" stroke-width="2"/>
+<text x="1440.0" y="1053.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Portal cautivo (fw01)</tspan></text>
+<text x="1440.0" y="1069.2" font-size="12" text-anchor="middle" fill="#111111">portal.salud.movil - 10.20.40.1</text>
+<text x="1440.0" y="1085.4" font-size="12" text-anchor="middle" fill="#111111">aceptar condiciones antes de salir</text>
+<rect x="1300" y="1150" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#EF6C00" stroke-width="2"/>
+<text x="1440.0" y="1183.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Política</tspan></text>
+<text x="1440.0" y="1199.2" font-size="12" text-anchor="middle" fill="#111111">solo DMZ + DNS/NTP; Internet solo v4</text>
+<text x="1440.0" y="1215.4" font-size="12" text-anchor="middle" fill="#111111">sin acceso a VLAN 10/20/30</text>
+<rect x="1660" y="700" width="360" height="840" rx="6" fill="#F3E8FD" stroke="#6A1B9A" stroke-width="2"/>
+<rect x="1660" y="662" width="213.2" height="30" rx="4" fill="#6A1B9A"/>
+<text x="1670" y="683" font-size="17" fill="#FFFFFF">VLAN 50 - DMZ pública</text>
+<rect x="1700" y="740" width="280" height="110" rx="6" fill="#FFFFFF" stroke="#6A1B9A" stroke-width="2" stroke-dasharray="10,6"/>
+<text x="1840.0" y="774.9000000000001" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">DMZ pública</tspan></text>
+<text x="1840.0" y="791.1000000000001" font-size="12" text-anchor="middle" fill="#111111">10.20.50.0/24</text>
+<text x="1840.0" y="807.3000000000001" font-size="12" text-anchor="middle" fill="#111111">fd5a:fc7e:d716:50::/64</text>
+<text x="1840.0" y="823.5000000000001" font-size="12" text-anchor="middle" fill="#111111">Estático</text>
+<rect x="1700" y="890" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#6A1B9A" stroke-width="2"/>
+<text x="1840.0" y="923.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">dmz01</tspan> - Caddy (reverse proxy)</text>
+<text x="1840.0" y="939.2" font-size="12" text-anchor="middle" fill="#111111">10.20.50.10 | fd5a:fc7e:d716:50::10</text>
+<text x="1840.0" y="955.4" font-size="12" text-anchor="middle" fill="#111111">Docker Compose</text>
+<rect x="1700" y="1020" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#6A1B9A" stroke-width="2"/>
+<text x="1840.0" y="1053.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Kiwix-serve</tspan> (en dmz01)</text>
+<text x="1840.0" y="1069.2" font-size="12" text-anchor="middle" fill="#111111">biblioteca.salud.movil</text>
+<text x="1840.0" y="1085.4" font-size="12" text-anchor="middle" fill="#111111">ZIM de salud via NFS (ro)</text>
+<rect x="1700" y="1150" width="280" height="90" rx="6" fill="#FFFFFF" stroke="#6A1B9A" stroke-width="2"/>
+<text x="1840.0" y="1183.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">App de formularios</tspan> (en dmz01)</text>
+<text x="1840.0" y="1199.2" font-size="12" text-anchor="middle" fill="#111111">registro.salud.movil</text>
+<text x="1840.0" y="1215.4" font-size="12" text-anchor="middle" fill="#111111">datos en PostgreSQL de apps01</text>
+<ellipse cx="1040.0" cy="75.0" rx="130.0" ry="55.0" fill="#ECEFF1" stroke="#607D8B" stroke-width="2"/>
+<text x="1040.0" y="70.77499999999999" font-size="13" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Internet</tspan></text>
+<text x="1040.0" y="88.32499999999999" font-size="13" text-anchor="middle" fill="#111111">red de la universidad</text>
+<rect x="915" y="190" width="250" height="90" rx="6" fill="#ECEFF1" stroke="#607D8B" stroke-width="2"/>
+<text x="1040.0" y="223.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">MikroTik RB3011</tspan></text>
+<text x="1040.0" y="239.2" font-size="12" text-anchor="middle" fill="#111111">uplink del sitio (fuera del kit)</text>
+<text x="1040.0" y="255.4" font-size="12" text-anchor="middle" fill="#111111">192.168.88.0/24</text>
+<rect x="850" y="390" width="380" height="140" rx="6" fill="#FFF3E0" stroke="#E65100" stroke-width="2"/>
+<text x="1040.0" y="431.8" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">fw01 - OPNsense (VM en kvm01)</tspan></text>
+<text x="1040.0" y="448.0" font-size="12" text-anchor="middle" fill="#111111">WAN: VLAN 900, DHCP del RB3011</text>
+<text x="1040.0" y="464.20000000000005" font-size="12" text-anchor="middle" fill="#111111">gateway .1 / ::1 en cada VLAN</text>
+<text x="1040.0" y="480.40000000000003" font-size="12" text-anchor="middle" fill="#111111">Kea DHCPv4, RA/DHCPv6, portal cautivo</text>
+<text x="1040.0" y="496.6" font-size="12" text-anchor="middle" fill="#111111">NAT44 + filtro IPv4/IPv6 (default deny)</text>
+<rect x="80" y="390" width="560" height="140" rx="6" fill="#FFFFFF" stroke="#9E9E9E" stroke-width="2" stroke-dasharray="10,6"/>
+<text x="360.0" y="439.9" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Router-on-a-stick</tspan></text>
+<text x="360.0" y="456.09999999999997" font-size="12" text-anchor="middle" fill="#111111">kvm01 -- trunk 802.1Q --&gt; sw01</text>
+<text x="360.0" y="472.29999999999995" font-size="12" text-anchor="middle" fill="#111111">VLANs 10,20,30,40,50 + 900 (WAN); nativa 999 (parking)</text>
+<text x="360.0" y="488.5" font-size="12" text-anchor="middle" fill="#111111">las VMs se conectan a bridges por VLAN en kvm01</text>
+<rect x="1440" y="390" width="560" height="140" rx="6" fill="#FFFFFF" stroke="#9E9E9E" stroke-width="2" stroke-dasharray="10,6"/>
+<text x="1720.0" y="439.9" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">IPv6</tspan>: ULA fd5a:fc7e:d716::/48 (RFC 4193)</text>
+<text x="1720.0" y="456.09999999999997" font-size="12" text-anchor="middle" fill="#111111">un /64 por VLAN (subred = ID de VLAN)</text>
+<text x="1720.0" y="472.29999999999995" font-size="12" text-anchor="middle" fill="#111111">GUA opcional por DHCPv6-PD si el uplink la entrega</text>
+<text x="1720.0" y="488.5" font-size="12" text-anchor="middle" fill="#111111">reglas de firewall equivalentes en v4 y v6</text>
+<rect x="60" y="580" width="1960" height="40" rx="6" fill="#EEEEEE" stroke="#424242" stroke-width="2"/>
+<text x="1040.0" y="604.2" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">sw01 - trunk 802.1Q</tspan> (VLAN 10, 20, 30, 40, 50 etiquetadas; 900 WAN; nativa 999)</text>
+<line x1="1040.0" y1="130" x2="1040.0" y2="190" stroke="#333333" stroke-width="2"/>
+<line x1="1040.0" y1="280" x2="1040.0" y2="390" stroke="#333333" stroke-width="3"/>
+<rect x="983.0" y="313.0" width="114" height="22" fill="#FFFFFF"/>
+<text x="1040.0" y="328.0" font-size="12" text-anchor="middle">WAN - VLAN 900</text>
+<line x1="1040.0" y1="530" x2="1040.0" y2="580" stroke="#333333" stroke-width="3"/>
+<line x1="366.0" y1="620" x2="366.0" y2="700" stroke="#424242" stroke-width="3"/>
+<line x1="766.0" y1="620" x2="766.0" y2="700" stroke="#424242" stroke-width="3"/>
+<line x1="1166.0" y1="620" x2="1166.0" y2="700" stroke="#424242" stroke-width="3"/>
+<line x1="1566.0" y1="620" x2="1566.0" y2="700" stroke="#424242" stroke-width="3"/>
+<line x1="1966.0" y1="620" x2="1966.0" y2="700" stroke="#424242" stroke-width="3"/>
+</svg>

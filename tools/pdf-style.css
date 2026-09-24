@@ -1,0 +1,89 @@
+/* Estilo que replica proyecto_final.pdf (Plataformas I 2026-2).
+   Arimo es métricamente idéntica a Liberation Sans, la fuente del enunciado. */
+@import url("https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400;0,700;1,400&display=swap");
+
+@page { size: A4; margin: 18mm 17mm 18mm 17mm; }
+
+:root {
+  --titulo: #5454e9;
+  --verde: #4cb979;
+  --borde: #cecfd4;
+  --texto: #000000;
+}
+
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body {
+  font-family: "Liberation Sans", "Arimo", Arial, "Noto Sans", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.65;
+  color: var(--texto);
+  background: #ffffff;
+  max-width: none;
+  margin: 0;
+}
+
+img.logo { width: 34mm; display: block; margin: 4mm 0 10mm 0; }
+
+h1 {
+  color: var(--titulo);
+  font-size: 20pt;
+  font-weight: 700;
+  margin: 0 0 4mm 0;
+  padding-bottom: 3mm;
+  border-bottom: 2px solid var(--verde);
+}
+h2 {
+  font-size: 15pt;
+  font-weight: 700;
+  margin: 8mm 0 4mm 0;
+  padding-bottom: 2.5mm;
+  border-bottom: 1px solid var(--borde);
+  page-break-after: avoid;
+}
+h3 { font-size: 11.5pt; font-weight: 700; margin: 6mm 0 3mm 0; page-break-after: avoid; }
+
+p { margin: 0 0 3.5mm 0; }
+ul, ol { margin: 0 0 3.5mm 0; padding-left: 9mm; }
+li { margin-bottom: 1mm; }
+li::marker { font-size: 0.8em; }
+
+code {
+  font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;
+  font-size: 0.88em;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 3mm 0 5mm 0;
+  font-size: 9pt;
+  line-height: 1.5;
+  page-break-inside: auto;
+}
+tr { page-break-inside: avoid; }
+thead th {
+  background: var(--verde);
+  color: #ffffff;
+  font-weight: 700;
+  text-align: left;
+  padding: 2.2mm 2.5mm;
+  border: 1px solid var(--verde);
+}
+td {
+  border: 1px solid var(--borde);
+  padding: 2mm 2.5mm;
+  vertical-align: middle;
+}
+td:first-child { font-weight: 700; }
+
+figure { margin: 4mm 0; text-align: center; }
+figure img, p > img:not(.logo) { max-width: 100%; }
+figcaption { display: none; }
+
+a { color: var(--titulo); text-decoration: none; word-break: break-all; }
+strong { font-weight: 700; }
+
+/* El diagrama lógico ocupa una página A4 horizontal propia. */
+@page horizontal { size: A4 landscape; margin: 10mm; }
+div.diagrama { page: horizontal; text-align: center; }
+div.diagrama img { width: 100%; max-height: 185mm; object-fit: contain; }
