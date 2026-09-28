@@ -12,8 +12,8 @@ Documentación del **Kit móvil de atención primaria en salud** (Plataformas I,
 
 Diagramas editables en Lucidchart:
 
-- Lógico: <https://lucid.app/lucidchart/bec89bac-3c62-48ee-b8ad-b4654760d2db/edit>
-- Físico: <https://lucid.app/lucidchart/25a5f530-03be-44bc-a850-373c63256cc5/edit>
+- Lógico: <https://lucid.app/lucidchart/588a47ec-e999-4e1e-8f25-3931e7f353d8/edit>
+- Físico: <https://lucid.app/lucidchart/6f4fcfbd-f4c1-4b09-b94e-0514d72603b5/edit>
 
 ## Generar el PDF
 

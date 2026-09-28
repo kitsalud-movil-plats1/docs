@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="2100" height="1660" viewBox="0 0 2100 1660" font-family="Liberation Sans, Arial, sans-serif">
 <rect width="2100" height="1660" fill="#FFFFFF"/>
 <rect x="20" y="330" width="2060" height="1310" rx="18" fill="#FAFAFA" stroke="#2E7D32" stroke-width="3"/>
-<rect x="20" y="292" width="765.1999999999999" height="30" rx="4" fill="#2E7D32"/>
-<text x="30" y="313" font-size="17" fill="#FFFFFF">KIT MÓVIL - MinisForum Venus (kvm01) + switch SG350X + AP multi-SSID (UPS lógica)</text>
+<rect x="20" y="292" width="930.8" height="30" rx="4" fill="#2E7D32"/>
+<text x="30" y="313" font-size="17" fill="#FFFFFF">KIT MÓVIL - nodos KVM (kvm01 + kvm02/kvm03 opcionales) + switch SG350X + AP multi-SSID (UPS lógica)</text>
 <rect x="60" y="700" width="460" height="910" rx="6" fill="#FDECEA" stroke="#C62828" stroke-width="2"/>
 <rect x="60" y="662" width="176.39999999999998" height="30" rx="4" fill="#C62828"/>
 <text x="70" y="683" font-size="17" fill="#FFFFFF">VLAN 10 - Gestión</text>
@@ -20,13 +20,17 @@
 <text x="290.0" y="1049.2" font-size="12" text-anchor="middle" fill="#111111">10.20.10.3 | fd5a:fc7e:d716:10::3</text>
 <text x="290.0" y="1065.4" font-size="12" text-anchor="middle" fill="#111111">SSID Clínica (30) y Comunidad (40)</text>
 <rect x="100" y="1120" width="380" height="90" rx="6" fill="#FFFFFF" stroke="#C62828" stroke-width="2"/>
-<text x="290.0" y="1153.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">kvm01</tspan> - Ubuntu 24.04 + KVM</text>
+<text x="290.0" y="1153.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">kvm01</tspan> - nodo principal (KVM)</text>
 <text x="290.0" y="1169.2" font-size="12" text-anchor="middle" fill="#111111">10.20.10.5 | fd5a:fc7e:d716:10::5</text>
-<text x="290.0" y="1185.4" font-size="12" text-anchor="middle" fill="#111111">hipervisor, restic, NUT (UPS simulada)</text>
+<text x="290.0" y="1185.4" font-size="12" text-anchor="middle" fill="#111111">aloja fw01 e infra01; NUT (UPS simulada)</text>
 <rect x="100" y="1240" width="380" height="90" rx="6" fill="#FFFFFF" stroke="#C62828" stroke-width="2"/>
-<text x="290.0" y="1273.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Equipos del personal técnico</tspan></text>
-<text x="290.0" y="1289.2" font-size="12" text-anchor="middle" fill="#111111">reservas 10.20.10.100-119 (cable)</text>
-<text x="290.0" y="1305.4" font-size="12" text-anchor="middle" fill="#111111">SSH/HTTPS de gestión solo desde aquí</text>
+<text x="290.0" y="1273.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">kvm02 / kvm03</tspan> - nodos opcionales</text>
+<text x="290.0" y="1289.2" font-size="12" text-anchor="middle" fill="#111111">10.20.10.6-7 | fd5a:fc7e:d716:10::6-7</text>
+<text x="290.0" y="1305.4" font-size="12" text-anchor="middle" fill="#111111">laptops del grupo (perfiles 2 y 3)</text>
+<rect x="100" y="1360" width="380" height="90" rx="6" fill="#FFFFFF" stroke="#C62828" stroke-width="2"/>
+<text x="290.0" y="1393.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Equipos del personal técnico</tspan></text>
+<text x="290.0" y="1409.2" font-size="12" text-anchor="middle" fill="#111111">reservas 10.20.10.100-119 (cable)</text>
+<text x="290.0" y="1425.4" font-size="12" text-anchor="middle" fill="#111111">SSH/HTTPS de gestión solo desde aquí</text>
 <rect x="560" y="700" width="460" height="910" rx="6" fill="#E8F0FE" stroke="#1565C0" stroke-width="2"/>
 <rect x="560" y="662" width="204.0" height="30" rx="4" fill="#1565C0"/>
 <text x="570" y="683" font-size="17" fill="#FFFFFF">VLAN 20 - Servidores</text>
@@ -38,15 +42,15 @@
 <rect x="600" y="880" width="380" height="90" rx="6" fill="#FFFFFF" stroke="#1565C0" stroke-width="2"/>
 <text x="790.0" y="913.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">infra01</tspan> - BIND9 + Chrony</text>
 <text x="790.0" y="929.2" font-size="12" text-anchor="middle" fill="#111111">10.20.20.10 | fd5a:fc7e:d716:20::10</text>
-<text x="790.0" y="945.4" font-size="12" text-anchor="middle" fill="#111111">ns1 / ntp.salud.movil</text>
+<text x="790.0" y="945.4" font-size="12" text-anchor="middle" fill="#111111">ns1 / ntp.salud.movil (VM infra01)</text>
 <rect x="600" y="1000" width="380" height="90" rx="6" fill="#FFFFFF" stroke="#1565C0" stroke-width="2"/>
 <text x="790.0" y="1033.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">dc01</tspan> - Samba AD DC</text>
 <text x="790.0" y="1049.2" font-size="12" text-anchor="middle" fill="#111111">10.20.20.11 | fd5a:fc7e:d716:20::11</text>
-<text x="790.0" y="1065.4" font-size="12" text-anchor="middle" fill="#111111">dominio ad.salud.movil</text>
+<text x="790.0" y="1065.4" font-size="12" text-anchor="middle" fill="#111111">ad.salud.movil (rol en la VM infra01)</text>
 <rect x="600" y="1120" width="380" height="90" rx="6" fill="#FFFFFF" stroke="#1565C0" stroke-width="2"/>
-<text x="790.0" y="1153.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">files01</tspan> - Samba SMB + NFS</text>
+<text x="790.0" y="1153.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">files01</tspan> - SMB, NFS, backups</text>
 <text x="790.0" y="1169.2" font-size="12" text-anchor="middle" fill="#111111">10.20.20.12 | fd5a:fc7e:d716:20::12</text>
-<text x="790.0" y="1185.4" font-size="12" text-anchor="middle" fill="#111111">archivos.salud.movil</text>
+<text x="790.0" y="1185.4" font-size="12" text-anchor="middle" fill="#111111">archivos.salud.movil (rol en la VM ops01)</text>
 <rect x="600" y="1240" width="380" height="90" rx="6" fill="#FFFFFF" stroke="#1565C0" stroke-width="2"/>
 <text x="790.0" y="1273.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">apps01</tspan> - DHIS2 + PostgreSQL</text>
 <text x="790.0" y="1289.2" font-size="12" text-anchor="middle" fill="#111111">10.20.20.13 | fd5a:fc7e:d716:20::13</text>
@@ -57,9 +61,9 @@
 <text x="790.0" y="1417.3000000000002" font-size="12" text-anchor="middle" fill="#111111">biblioteca / registro.salud.movil</text>
 <text x="790.0" y="1433.5" font-size="12" text-anchor="middle" fill="#111111">único host de la VLAN 20 abierto a invitados</text>
 <rect x="600" y="1480" width="380" height="90" rx="6" fill="#FFFFFF" stroke="#1565C0" stroke-width="2"/>
-<text x="790.0" y="1513.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">mon01</tspan> - Prometheus/Grafana/Loki</text>
+<text x="790.0" y="1513.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">mon01</tspan> - Prometheus, Grafana, rsyslog</text>
 <text x="790.0" y="1529.2" font-size="12" text-anchor="middle" fill="#111111">10.20.20.14 | fd5a:fc7e:d716:20::14</text>
-<text x="790.0" y="1545.4" font-size="12" text-anchor="middle" fill="#111111">monitoreo.salud.movil</text>
+<text x="790.0" y="1545.4" font-size="12" text-anchor="middle" fill="#111111">monitoreo.salud.movil (rol en la VM ops01)</text>
 <rect x="1060" y="700" width="460" height="910" rx="6" fill="#E6F4EA" stroke="#2E7D32" stroke-width="2"/>
 <rect x="1060" y="662" width="231.6" height="30" rx="4" fill="#2E7D32"/>
 <text x="1070" y="683" font-size="17" fill="#FFFFFF">VLAN 30 - Clínica/Admin</text>
@@ -114,7 +118,7 @@
 <text x="360.0" y="439.9" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Router-on-a-stick</tspan></text>
 <text x="360.0" y="456.09999999999997" font-size="12" text-anchor="middle" fill="#111111">kvm01 -- trunk 802.1Q --&gt; sw01</text>
 <text x="360.0" y="472.29999999999995" font-size="12" text-anchor="middle" fill="#111111">VLANs 10,20,30,40 + 900 (WAN); nativa 999 (parking)</text>
-<text x="360.0" y="488.5" font-size="12" text-anchor="middle" fill="#111111">las VMs se conectan a bridges por VLAN en kvm01</text>
+<text x="360.0" y="488.5" font-size="12" text-anchor="middle" fill="#111111">kvm02/kvm03: trunk solo con VLAN 10 y 20</text>
 <rect x="1440" y="390" width="560" height="140" rx="6" fill="#FFFFFF" stroke="#9E9E9E" stroke-width="2" stroke-dasharray="10,6"/>
 <text x="1720.0" y="439.9" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">IPv6</tspan>: ULA fd5a:fc7e:d716::/48 (RFC 4193)</text>
 <text x="1720.0" y="456.09999999999997" font-size="12" text-anchor="middle" fill="#111111">un /64 por VLAN (subred = ID de VLAN)</text>
