@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Renderiza diagrama-logico.lucid.json (Lucid Standard Import) a SVG.
+"""Renderiza un diagrama *.lucid.json (Lucid Standard Import) a SVG.
 
 Sirve para versionar una imagen del diagrama junto al documento. La fuente
 oficial sigue siendo el documento en Lucidchart; este SVG es una copia fiel
@@ -73,7 +73,8 @@ def render(doc):
             pts.append((bb["x"] + p["x"] * bb["w"], bb["y"] + p["y"] * bb["h"]))
         (x1, y1), (x2, y2) = pts
         stc = l.get("stroke", {})
-        o.append(f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{stc.get("color", "#333")}" stroke-width="{stc.get("width", 2)}"/>')
+        ldash = ' stroke-dasharray="8,6"' if stc.get("style") == "dashed" else ""
+        o.append(f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{stc.get("color", "#333")}" stroke-width="{stc.get("width", 2)}"{ldash}/>')
         for lt in l.get("text", []):
             label = re.sub(r"<[^>]+>", "", lt["text"]); pos = lt.get("position", 0.5)
             lx, ly = x1 + (x2 - x1) * pos, y1 + (y2 - y1) * pos

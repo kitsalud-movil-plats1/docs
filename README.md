@@ -5,12 +5,15 @@ Documentación del **Kit móvil de atención primaria en salud** (Plataformas I,
 | Ruta | Contenido |
 |---|---|
 | `arquitectura/00-punto-de-partida.md` (+ `.pdf`) | Documento inicial: decisiones, supuestos, topología, plan IPv4/IPv6, DNS, flujos |
-| `diagramas/` | Diagrama lógico (PNG/SVG) y su especificación para Lucid (`*.lucid.json`) |
+| `diagramas/` | Diagramas lógico y físico (PNG/SVG) y su especificación para Lucid (`*.lucid.json`) |
 | `decisiones/` | Registros de decisiones (ADR) posteriores a v0.1 |
 | `sustentacion/` | Material de la sustentación (E8) |
 | `tools/` | Generación de PDF y diagramas |
 
-Diagrama editable en Lucidchart: <https://lucid.app/lucidchart/6bf45f05-e5a8-42cb-a7af-6a79dc097531/edit>
+Diagramas editables en Lucidchart:
+
+- Lógico: <https://lucid.app/lucidchart/bec89bac-3c62-48ee-b8ad-b4654760d2db/edit>
+- Físico: <https://lucid.app/lucidchart/25a5f530-03be-44bc-a850-373c63256cc5/edit>
 
 ## Generar el PDF
 
@@ -20,13 +23,14 @@ Requiere `pandoc` ≥ 3 y Chromium/Chrome:
 ./tools/build-pdf.sh arquitectura/00-punto-de-partida.md
 ```
 
-## Regenerar el diagrama
+## Regenerar los diagramas
+
+Requiere `python3` y Chromium/Chrome:
 
 ```bash
-python3 tools/gen_lucid.py                     # actualiza diagramas/diagrama-logico.lucid.json
-python3 tools/render_diagram_svg.py diagramas/diagrama-logico.lucid.json diagramas/diagrama-logico.svg
-chromium-browser --headless=new --hide-scrollbars --window-size=2100,1590 \
-  --screenshot="$PWD/diagramas/diagrama-logico.png" "file://$PWD/diagramas/diagrama-logico.svg"
+./tools/build-diagrams.sh
 ```
 
-Si cambia la especificación, se debe volver a importar el JSON en Lucid para que ambos queden iguales.
+El script ejecuta `tools/gen_lucid.py` (especificaciones `diagramas/diagrama-{logico,fisico}.lucid.json`), las convierte a SVG con `tools/render_diagram_svg.py` y genera el PNG que usa el PDF.
+
+Si cambia la especificación, se debe volver a importar el JSON en Lucid (un documento nuevo por versión) para que ambos queden iguales.

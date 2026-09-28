@@ -87,3 +87,7 @@ strong { font-weight: 700; }
 @page horizontal { size: A4 landscape; margin: 10mm; }
 div.diagrama { page: horizontal; text-align: center; }
 div.diagrama img { width: 100%; max-height: 185mm; object-fit: contain; }
+
+/* El diagrama físico cabe a lo ancho de una página vertical. */
+div.diagrama-fisico { text-align: center; page-break-inside: avoid; margin: 3mm 0 5mm 0; }
+div.diagrama-fisico img { width: 100%; }

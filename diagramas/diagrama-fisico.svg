@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1020" viewBox="0 0 1600 1020" font-family="Liberation Sans, Arial, sans-serif">
+<rect width="1600" height="1020" fill="#FFFFFF"/>
+<rect x="20" y="320" width="1560" height="680" rx="18" fill="#FAFAFA" stroke="#2E7D32" stroke-width="3"/>
+<rect x="20" y="282" width="240.79999999999998" height="30" rx="4" fill="#2E7D32"/>
+<text x="30" y="303" font-size="17" fill="#FFFFFF">KIT MÓVIL - vista física</text>
+<ellipse cx="800.0" cy="70.0" rx="130.0" ry="50.0" fill="#ECEFF1" stroke="#607D8B" stroke-width="2"/>
+<text x="800.0" y="65.775" font-size="13" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Internet</tspan></text>
+<text x="800.0" y="83.325" font-size="13" text-anchor="middle" fill="#111111">red de la universidad</text>
+<rect x="675" y="170" width="250" height="90" rx="6" fill="#ECEFF1" stroke="#607D8B" stroke-width="2"/>
+<text x="800.0" y="203.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">MikroTik RB3011</tspan></text>
+<text x="800.0" y="219.2" font-size="12" text-anchor="middle" fill="#111111">uplink del sitio (fuera del kit)</text>
+<text x="800.0" y="235.4" font-size="12" text-anchor="middle" fill="#111111">192.168.88.0/24</text>
+<rect x="60" y="400" width="400" height="140" rx="6" fill="#FFFDE7" stroke="#F9A825" stroke-width="2" stroke-dasharray="10,6"/>
+<text x="260.0" y="441.8" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">UPS (lógica)</tspan> - no hay equipo físico</text>
+<text x="260.0" y="458.0" font-size="12" text-anchor="middle" fill="#111111">NUT dummy-ups en kvm01 simula OB/LB</text>
+<text x="260.0" y="474.20000000000005" font-size="12" text-anchor="middle" fill="#111111">referencia 1000 VA/600 W: 60-90 min</text>
+<text x="260.0" y="490.40000000000003" font-size="12" text-anchor="middle" fill="#111111">carga típica ≈ 70 W, pico ≈ 135 W</text>
+<text x="260.0" y="506.6" font-size="12" text-anchor="middle" fill="#111111">alimenta kvm01, sw01 y el inyector PoE de ap01</text>
+<rect x="580" y="420" width="440" height="100" rx="6" fill="#EEEEEE" stroke="#424242" stroke-width="2"/>
+<text x="800.0" y="458.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">sw01</tspan> - Cisco SG350X-24</text>
+<text x="800.0" y="474.2" font-size="12" text-anchor="middle" fill="#111111">gestión 10.20.10.2 (VLAN 10)</text>
+<text x="800.0" y="490.4" font-size="12" text-anchor="middle" fill="#111111">puertos sin uso: shutdown, VLAN 999</text>
+<rect x="1140" y="420" width="400" height="100" rx="6" fill="#FFFFFF" stroke="#9E9E9E" stroke-width="2" stroke-dasharray="10,6"/>
+<text x="1340.0" y="458.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Convenciones</tspan></text>
+<text x="1340.0" y="474.2" font-size="12" text-anchor="middle" fill="#111111">línea continua: cable Ethernet</text>
+<text x="1340.0" y="490.4" font-size="12" text-anchor="middle" fill="#111111">línea punteada: energía o Wi-Fi</text>
+<rect x="60" y="640" width="400" height="130" rx="6" fill="#E8F0FE" stroke="#1565C0" stroke-width="2"/>
+<text x="260.0" y="676.8000000000001" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">kvm01</tspan> - MinisForum Venus</text>
+<text x="260.0" y="693.0000000000001" font-size="12" text-anchor="middle" fill="#111111">Ubuntu 24.04 + KVM: fw01 y 6 VMs de servicio</text>
+<text x="260.0" y="709.2" font-size="12" text-anchor="middle" fill="#111111">NIC 2.5 GbE (trunk) - gestión 10.20.10.5</text>
+<text x="260.0" y="725.4000000000001" font-size="12" text-anchor="middle" fill="#111111">NVMe 1 TB: SO + VMs | disco 2 (1 TB): backups</text>
+<text x="260.0" y="741.6000000000001" font-size="12" text-anchor="middle" fill="#111111">NUT: apagado ordenado de VMs y host</text>
+<rect x="540" y="640" width="220" height="130" rx="6" fill="#FDECEA" stroke="#C62828" stroke-width="2"/>
+<text x="650.0" y="693.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Estaciones de gestión</tspan></text>
+<text x="650.0" y="709.2" font-size="12" text-anchor="middle" fill="#111111">personal técnico</text>
+<text x="650.0" y="725.4" font-size="12" text-anchor="middle" fill="#111111">VLAN 10 (solo cable)</text>
+<rect x="840" y="640" width="220" height="130" rx="6" fill="#E6F4EA" stroke="#2E7D32" stroke-width="2"/>
+<text x="950.0" y="693.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Estaciones clínicas</tspan></text>
+<text x="950.0" y="709.2" font-size="12" text-anchor="middle" fill="#111111">personal de salud</text>
+<text x="950.0" y="725.4" font-size="12" text-anchor="middle" fill="#111111">VLAN 30</text>
+<rect x="1140" y="640" width="400" height="130" rx="6" fill="#FEF7E0" stroke="#EF6C00" stroke-width="2"/>
+<text x="1340.0" y="684.9000000000001" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">ap01</tspan> - AP multi-SSID (Wi-Fi 5/6)</text>
+<text x="1340.0" y="701.1000000000001" font-size="12" text-anchor="middle" fill="#111111">gestión 10.20.10.3 (VLAN 10 nativa)</text>
+<text x="1340.0" y="717.3000000000001" font-size="12" text-anchor="middle" fill="#111111">SaludMovil-Clinica → VLAN 30</text>
+<text x="1340.0" y="733.5000000000001" font-size="12" text-anchor="middle" fill="#111111">SaludMovil-Comunidad → VLAN 40</text>
+<rect x="1140" y="850" width="190" height="110" rx="6" fill="#E6F4EA" stroke="#2E7D32" stroke-width="2"/>
+<text x="1235.0" y="893.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Personal de salud</tspan></text>
+<text x="1235.0" y="909.2" font-size="12" text-anchor="middle" fill="#111111">portátiles y tablets</text>
+<text x="1235.0" y="925.4" font-size="12" text-anchor="middle" fill="#111111">WPA3/WPA2-Personal</text>
+<rect x="1350" y="850" width="190" height="110" rx="6" fill="#FEF7E0" stroke="#EF6C00" stroke-width="2"/>
+<text x="1445.0" y="893.0" font-size="12" text-anchor="middle" fill="#111111"><tspan font-weight="bold">Comunidad</tspan></text>
+<text x="1445.0" y="909.2" font-size="12" text-anchor="middle" fill="#111111">dispositivos propios</text>
+<text x="1445.0" y="925.4" font-size="12" text-anchor="middle" fill="#111111">abierta + portal cautivo</text>
+<line x1="800.0" y1="120" x2="800.0" y2="170" stroke="#333333" stroke-width="2"/>
+<line x1="800.0" y1="260" x2="800.0" y2="420" stroke="#333333" stroke-width="3"/>
+<rect x="683.5" y="329.0" width="233" height="22" fill="#FFFFFF"/>
+<text x="800.0" y="344.0" font-size="12" text-anchor="middle">gi1/0/3 - acceso VLAN 900 (WAN)</text>
+<line x1="624.0" y1="520" x2="260.0" y2="640" stroke="#333333" stroke-width="3"/>
+<rect x="357.0" y="569.0" width="170" height="22" fill="#FFFFFF"/>
+<text x="442.0" y="584.0" font-size="12" text-anchor="middle">gi1/0/1 - trunk 802.1Q</text>
+<line x1="734.0" y1="520" x2="650.0" y2="640" stroke="#333333" stroke-width="2"/>
+<rect x="614.0" y="569.0" width="156" height="22" fill="#FFFFFF"/>
+<text x="692.0" y="584.0" font-size="12" text-anchor="middle">gi1/0/9-10 - VLAN 10</text>
+<line x1="866.0" y1="520" x2="950.0" y2="640" stroke="#333333" stroke-width="2"/>
+<rect x="833.5" y="569.0" width="149" height="22" fill="#FFFFFF"/>
+<text x="908.0" y="584.0" font-size="12" text-anchor="middle">gi1/0/4-8 - VLAN 30</text>
+<line x1="976.0" y1="520" x2="1340.0" y2="640" stroke="#333333" stroke-width="3"/>
+<rect x="1027.5" y="569.0" width="261" height="22" fill="#FFFFFF"/>
+<text x="1158.0" y="584.0" font-size="12" text-anchor="middle">gi1/0/2 - trunk (30, 40; 10 nativa)</text>
+<line x1="460" y1="470.0" x2="580" y2="470.0" stroke="#F9A825" stroke-width="2" stroke-dasharray="8,6"/>
+<rect x="487.5" y="459.0" width="65" height="22" fill="#FFFFFF"/>
+<text x="520.0" y="474.0" font-size="12" text-anchor="middle">energía</text>
+<line x1="140.0" y1="540" x2="140.0" y2="640" stroke="#F9A825" stroke-width="2" stroke-dasharray="8,6"/>
+<rect x="65.5" y="579.0" width="149" height="22" fill="#FFFFFF"/>
+<text x="140.0" y="594.0" font-size="12" text-anchor="middle">energía + USB (NUT)</text>
+<line x1="1236.0" y1="770" x2="1235.0" y2="850" stroke="#EF6C00" stroke-width="2" stroke-dasharray="8,6"/>
+<rect x="1185.5" y="799.0" width="100" height="22" fill="#FFFFFF"/>
+<text x="1235.5" y="814.0" font-size="12" text-anchor="middle">SSID Clinica</text>
+<line x1="1444.0" y1="770" x2="1445.0" y2="850" stroke="#EF6C00" stroke-width="2" stroke-dasharray="8,6"/>
+<rect x="1387.5" y="799.0" width="114" height="22" fill="#FFFFFF"/>
+<text x="1444.5" y="814.0" font-size="12" text-anchor="middle">SSID Comunidad</text>
+</svg>

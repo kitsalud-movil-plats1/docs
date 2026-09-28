@@ -2,15 +2,17 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.1
+## Documento de arquitectura inicial (punto de partida) - v0.2
 
 **Proyecto final - Plataformas I - 2026-2** · Organización: `kitsalud-movil-plats1`
 
-Este documento fija las decisiones iniciales de diseño del kit: tecnologías por servicio, topología física y lógica, segmentación, direccionamiento IPv4/IPv6, nombres DNS, supuestos y riesgos. Es la base para la arquitectura (E1) y se irá actualizando por medio de pull requests en el repositorio `docs`. Cada decisión tiene un identificador (`D-xx`), cada supuesto (`S-xx`) y cada pregunta abierta (`Q-xx`), para poder referenciarlos desde issues y el tablero Kanban.
+Este documento fija las decisiones iniciales de diseño del kit: tecnologías por servicio, topología física y lógica, segmentación, direccionamiento IPv4/IPv6, nombres DNS, supuestos y riesgos. Es la base para la arquitectura (E1) y se irá actualizando por medio de pull requests en el repositorio `docs`. Cada decisión tiene un identificador (`D-xx`), cada supuesto (`S-xx`) y cada pregunta abierta (`Q-xx`), para poder referenciarlos desde issues y el tablero Kanban. Los cambios entre versiones están en la sección 16.
 
 ## 1. Contexto y alcance
 
 Una brigada de salud debe desplegar en sitio una infraestructura pequeña que preste servicios clínicos, administrativos y comunitarios **sin depender de Internet**. El kit se compone de un miniservidor con virtualización, un switch administrable y un punto de acceso Wi-Fi. La alimentación segura (UPS) se incluye en el diseño de forma lógica, porque no se cuenta con el equipo físico. El enlace a Internet del sitio es un recurso opcional; en el laboratorio se simula con un router MikroTik conectado a la red de la universidad.
+
+El criterio que guía el diseño es el del enunciado: construir una plataforma **pequeña, segura, reproducible y útil**, no reunir la mayor cantidad de tecnologías. Por eso se usan los cuatro segmentos que pide el enunciado, un solo nodo de cómputo y, para cada requisito, la herramienta más simple que lo cumple.
 
 **Dentro del alcance de esta versión:**
 
@@ -32,13 +34,13 @@ Una brigada de salud debe desplegar en sitio una infraestructura pequeña que pr
 | R3 | NTP | Chrony como servidor (`ntp.salud.movil`), `local stratum 10` sin Internet; el resto de nodos sincroniza contra él | infra01 |
 | R4 | Firewall y segmentación | VLAN 802.1Q + reglas OPNsense por interfaz, default deny, reglas espejo IPv4/IPv6 | fw01, sw01 |
 | R5 | Portal cautivo | Captive Portal de OPNsense en VLAN 40 (aceptación de condiciones) | fw01 |
-| R6 | Aplicación de pacientes | DHIS2 (Docker) + PostgreSQL; login del personal vía LDAP (Samba AD) | apps01 |
-| R7 | Portal de literatura | Kiwix-serve con archivos ZIM de salud | dmz01 |
-| R8 | Formularios de prerregistro | App propia ligera (FastAPI/Flask). Datos en PostgreSQL de apps01; consulta solo personal clínico autenticado | dmz01, apps01 |
+| R6 | Aplicación de pacientes | DHIS2 (Docker) + PostgreSQL, con cuentas locales de DHIS2 | apps01 |
+| R7 | Portal de literatura | Kiwix-serve con archivos ZIM de salud (leídos por NFS desde files01) | web01 |
+| R8 | Formularios de prerregistro | App propia ligera (FastAPI/Flask). Datos en PostgreSQL de apps01; solo el personal clínico autenticado en AD los consulta | web01, apps01 |
 | R9 | Almacenamiento compartido | SMB (Samba, autenticación AD) para documentos y exportaciones; NFS de solo lectura para contenido ZIM | files01 |
-| R10 | Identidad centralizada | Samba AD DC (`ad.salud.movil`); integra Grafana, DHIS2, SMB y la vista de administración de formularios | dc01 |
+| R10 | Identidad centralizada | Samba AD DC (`ad.salud.movil`); integra SMB, Grafana y la vista de consulta de formularios | dc01 |
 | R11 | Backups y restauración | restic cifrado a un disco distinto del principal; dumps de BD y configuraciones; retención 7d/4s/3m | kvm01 |
-| R12 | Registros y monitoreo | Prometheus (node, blackbox, snmp exporters), Loki + Alloy (syslog/journal), Grafana | mon01 |
+| R12 | Registros y monitoreo | Prometheus (node y blackbox exporters), Loki + Alloy (syslog/journal), Grafana | mon01 |
 
 ### 2.2 Pruebas de aceptación: cómo se demostrarán
 
@@ -49,11 +51,11 @@ Una brigada de salud debe desplegar en sitio una infraestructura pequeña que pr
 | P3 | Aislamiento | `curl`/`nc` desde VLAN 40 hacia apps01 y fw01 GUI → bloqueado (log del firewall) |
 | P4 | Acceso público local | Desde VLAN 40: `biblioteca.salud.movil` y `registro.salud.movil` accesibles |
 | P5 | Portal cautivo | Cliente nuevo redirigido a `portal.salud.movil` |
-| P6 | Aplicación clínica | Usuario AD del grupo `clinicos` registra y consulta un paciente ficticio en DHIS2 |
-| P7 | Identidad | Usuario AD inicia sesión en Grafana (y SMB) |
+| P6 | Aplicación clínica | Usuario del personal clínico registra y consulta un paciente ficticio en DHIS2 |
+| P7 | Identidad | Usuario AD inicia sesión en Grafana y en el recurso SMB `archivos` |
 | P8 | Tiempo | `chronyc sources`/`tracking` en dos o más nodos apuntando a infra01 |
 | P9 | Pérdida de Internet | Desconectar el RB3011 (VLAN 900): DNS, NTP, DHIS2, formularios y biblioteca siguen funcionando |
-| P10 | Firewall IPv6 | `curl -6` permitido (VLAN 40 → DMZ) y bloqueado (VLAN 40 → VLAN 20) |
+| P10 | Firewall IPv6 | `curl -6` permitido (VLAN 40 → web01) y bloqueado (VLAN 40 → apps01). Los dos destinos están en la VLAN 20, así que se ve que la regla es por host |
 | P11 | Restauración | Borrar un archivo del share o una tabla de prueba y restaurarla con `restic restore` |
 | P12 | Reinicio | Reinicio de kvm01: VMs con `autostart` y servicios `systemd`/`restart: unless-stopped` levantan solos |
 | P13 | Diagnóstico | Falla inducida (p. ej. BIND9 detenido); se localiza con Grafana/Loki y `systemctl`/`journalctl` |
@@ -91,18 +93,19 @@ Una brigada de salud debe desplegar en sitio una infraestructura pequeña que pr
 | D-03 | El RB3011 queda **fuera del kit** y actúa como uplink del sitio. El CCR2004 no se usa | CCR2004 como core | OPNsense ya enruta todas las VLAN. Un segundo salto L3 agrega complejidad sin aportar nada. Desconectar el RB3011 sirve como prueba P9 |
 | D-04 | Ubuntu Server 24.04 LTS + KVM/libvirt; aplicaciones en Docker Compose dentro de VMs | Proxmox VE, solo Docker | Continuidad con la experiencia del grupo; VMs para aislar roles; contenedores para desplegar apps de forma reproducible |
 | D-05 | Identidad: **Samba AD DC** | Windows Server AD, FreeIPA, OpenLDAP | Compatible con AD y LDAP para las apps; liviano; permite unir un cliente Windows |
-| D-06 | Pacientes: **DHIS2** | OpenMRS | Es la sugerida por el enunciado; tiene tracker de pacientes, imagen Docker oficial y soporte LDAP |
-| D-07 | Formularios: **app propia ligera** con datos en PostgreSQL de apps01 | LimeSurvey, formulario DHIS2 | Da control total de dónde se guardan los datos y quién los consulta; la DMZ no guarda datos sensibles |
+| D-06 | Pacientes: **DHIS2 con cuentas locales** | OpenMRS; DHIS2 con login LDAP | Es la sugerida por el enunciado y tiene tracker de pacientes e imagen Docker oficial. Con cuentas locales, la aplicación crítica no depende de dc01: si AD falla, el registro de pacientes sigue funcionando. R10 se cumple con SMB, Grafana y formularios |
+| D-07 | Formularios: **app propia ligera** en web01, con los datos en PostgreSQL de apps01 | LimeSurvey, formulario DHIS2 | Da control total de dónde se guardan los datos y quién los consulta. web01 no guarda datos: escribe con un usuario que solo tiene permiso de `INSERT`. La consulta la hace el personal del grupo AD `clinicos` |
 | D-08 | Biblioteca: **Kiwix-serve** | CMS, sitio estático | Funciona sin conexión y usa contenido médico listo (WikiMed, MedlinePlus) |
-| D-09 | Observabilidad: **Prometheus + Grafana + Loki** | Zabbix, Uptime Kuma | El grupo ya lo conoce; métricas y logs quedan en un mismo panel |
-| D-10 | Backups con **restic** cifrado en un segundo disco; copia externa con rclone cuando haya Internet | NAS, solo snapshots | Cumple "otro medio", cifrado, deduplicación y restauración granular |
+| D-09 | Observabilidad: **Prometheus + Grafana + Loki**, sin Alertmanager ni SNMP | Zabbix, Uptime Kuma; Alertmanager, snmp_exporter | El grupo ya lo conoce; métricas y logs quedan en un mismo panel. Sin Internet no hay a dónde enviar alertas, así que se revisan en Grafana. fw01 expone métricas con el plugin `os-node_exporter`; sw01 y ap01 se vigilan con ping (blackbox) y syslog |
+| D-10 | Backups con **restic** cifrado en un segundo disco | NAS, solo snapshots; copia externa con rclone | Cumple "otro medio", cifrado, deduplicación y restauración granular. La copia externa cuando haya Internet queda documentada como evolución, porque el enunciado no la exige |
 | D-11 | IPv4 `10.20.<VLAN>.0/24`, gateway `.1` | `192.168.<VLAN>.0/24` | Evita solaparse con el uplink `192.168.88.0/24` y se resume en una sola regla `10.20.0.0/16` |
 | D-12 | IPv6 **ULA `fd5a:fc7e:d716::/48`** con un /64 por VLAN; GUA opcional vía DHCPv6-PD | Solo GUA, `2001:db8::/32` | Direcciones estables sin Internet. No se usa `2001:db8::/32` porque es el prefijo reservado para documentación (RFC 3849) |
 | D-13 | Organización con repos por dominio: `.github`, `docs`, `network`, `platform`, `apps`, `observability` | Monorepo, un repo por servicio | Da trazabilidad por área, permisos por equipo y PRs pequeños |
 | D-14 | WAN de OPNsense como **VLAN 900** sobre el mismo trunk | NIC USB adicional | Funciona con una sola NIC (S-01). Si hay una segunda NIC, se usa directa |
-| D-15 | Servicios públicos en una **DMZ (VLAN 50)** separada de la red de servidores | Publicar desde la VLAN 20 | Los invitados solo pueden alcanzar la DMZ, así que una vulnerabilidad en una app pública no expone la VLAN 20 |
-| D-16 | TLS con **CA interna** (Caddy `tls internal` o step-ca). El certificado raíz se instala en equipos clínicos y de gestión | HTTP plano | Protege credenciales y datos clínicos en tránsito (ver Q-05 para invitados) |
-| D-17 | Credenciales fuera de Git: `.env.example` + `ansible-vault`/`sops` | Contraseñas en README | Cumple la política de "no contraseñas en texto plano" |
+| D-15 | **Sin DMZ.** Los servicios públicos (biblioteca y formularios) van en una VM propia, **web01**, dentro de la VLAN 20 | DMZ en una VLAN 50; publicar desde apps01 | El enunciado pide cuatro segmentos y permite que los invitados accedan a "portales públicos concretos" (sección 6). Los invitados solo alcanzan la IP de web01 en 80/443. Tener web01 como VM aparte permite filtrar por IP en fw01, cosa que no sería posible si todo estuviera en apps01. El riesgo que se acepta está en R-06 |
+| D-16 | TLS con la **CA interna de Caddy** (`tls internal`), con una sola raíz compartida por los Caddy de apps01 y web01. La raíz se instala en equipos clínicos y de gestión | HTTP plano, step-ca | Protege credenciales y datos clínicos en tránsito sin agregar otro servicio (ver Q-05 para invitados) |
+| D-17 | Credenciales fuera de Git: `.env.example` + `ansible-vault` | Contraseñas en README, sops | Cumple la política de "no contraseñas en texto plano" con una sola herramienta |
+| D-18 | **Gestión solo por cable**: no hay SSID en la VLAN 10 | SSID `SaludMovil-Gestion` | Menos superficie de ataque sobre la red de administración y una configuración menos en el AP. El enunciado pide SSID separados para la comunidad y para la red clínica/administrativa |
 
 ## 5. Arquitectura física
 
@@ -120,7 +123,7 @@ Una brigada de salud debe desplegar en sitio una infraestructura pequeña que pr
 
 | Puerto sw01 | Conectado a | Modo | VLAN |
 |---|---|---|---|
-| gi1/0/1 | kvm01 (NIC 2.5 GbE) | Trunk | 10, 20, 30, 40, 50, 900 etiquetadas; nativa 999 |
+| gi1/0/1 | kvm01 (NIC 2.5 GbE) | Trunk | 10, 20, 30, 40, 900 etiquetadas; nativa 999 |
 | gi1/0/2 | ap01 | Trunk | 10 nativa (gestión del AP); 30, 40 etiquetadas |
 | gi1/0/3 | RB3011 (uplink) | Acceso | 900 |
 | gi1/0/4-8 | Estaciones clínicas | Acceso | 30 |
@@ -132,16 +135,25 @@ Una brigada de salud debe desplegar en sitio una infraestructura pequeña que pr
 | SSID | VLAN | Seguridad |
 |---|---|---|
 | `SaludMovil-Comunidad` | 40 | Abierta + portal cautivo, con aislamiento de clientes |
-| `SaludMovil-Clinica` | 30 | WPA3/WPA2-Personal. 802.1X contra AD como mejora (Q-04) |
-| `SaludMovil-Gestion` | 10 | WPA3-Personal, uso exclusivo del personal técnico |
+| `SaludMovil-Clinica` | 30 | WPA3/WPA2-Personal |
+
+La VLAN 10 no tiene SSID: la gestión se hace solo desde los puertos cableados gi1/0/9-10 (D-18).
+
+### 5.4 Diagrama físico
+
+Fuente editable en Lucidchart: <https://lucid.app/lucidchart/25a5f530-03be-44bc-a850-373c63256cc5/edit>. La especificación versionada está en `diagramas/diagrama-fisico.lucid.json`.
+
+<div class="diagrama-fisico"><img src="../diagramas/diagrama-fisico.png" alt="Diagrama físico del kit"></div>
 
 ## 6. Arquitectura lógica
 
+Fuente editable del diagrama en Lucidchart: <https://lucid.app/lucidchart/bec89bac-3c62-48ee-b8ad-b4654760d2db/edit>. La especificación versionada está en `diagramas/diagrama-logico.lucid.json`. Los dos diagramas se regeneran con `tools/build-diagrams.sh`.
+
 <div class="diagrama"><img src="../diagramas/diagrama-logico.png" alt="Diagrama lógico del kit"></div>
 
-Fuente editable del diagrama en Lucidchart: <https://lucid.app/lucidchart/6bf45f05-e5a8-42cb-a7af-6a79dc097531/edit>. La especificación versionada está en `diagramas/diagrama-logico.lucid.json` y se regenera con `tools/gen_lucid.py`.
-
 **Router-on-a-stick.** La NIC de kvm01 es un trunk 802.1Q hacia sw01. En kvm01, un bridge Linux con VLAN (`br0`, `vlan_filtering=1`) entrega el trunk completo a fw01, y cada VM de servicio queda como puerto de acceso en su VLAN. OPNsense es el único gateway L3: cada VLAN tiene su interfaz con `.1` / `::1`.
+
+**Servicios públicos sin DMZ (D-15).** web01 está en la VLAN 20, pero es el único servidor al que pueden llegar los invitados, y solo por 80/443. El tráfico de web01 hacia apps01, files01 y dc01 no pasa por fw01, porque va dentro de la misma VLAN; ese tráfico se controla en cada servidor (ver sección 11 y R-06).
 
 **Dependencias entre servicios (orden de arranque):**
 
@@ -150,8 +162,8 @@ Fuente editable del diagrama en Lucidchart: <https://lucid.app/lucidchart/6bf45f
 3. infra01 (DNS, NTP)
 4. dc01 (AD, necesita DNS y tiempo)
 5. files01 (SMB con AD, NFS)
-6. apps01 (PostgreSQL → DHIS2, necesita DNS y LDAP)
-7. dmz01 (Caddy, Kiwix con NFS, formularios con BD en apps01)
+6. apps01 (PostgreSQL → DHIS2, necesita DNS; no depende de AD)
+7. web01 (Caddy, Kiwix con NFS de files01, formularios con BD en apps01 y login AD para la consulta)
 8. mon01 (Prometheus, Loki, Grafana con LDAP)
 
 El orden se controla con el `autostart` de libvirt más retardos de arranque, y con `depends_on`/healthchecks en Compose.
@@ -166,7 +178,6 @@ El orden se controla con el `autostart` de libvirt más retardos de arranque, y 
 | 20 | Servidores | 10.20.20.0/24 | 10.20.20.1 | Estática | - |
 | 30 | Clínica/Administrativa | 10.20.30.0/24 | 10.20.30.1 | DHCPv4 | 10.20.30.100-199 (lease 8 h) |
 | 40 | Comunidad/Invitados | 10.20.40.0/24 | 10.20.40.1 | DHCPv4 | 10.20.40.100-250 (lease 1 h) |
-| 50 | DMZ pública | 10.20.50.0/24 | 10.20.50.1 | Estática | - |
 | 900 | WAN (tránsito) | 192.168.88.0/24 | 192.168.88.1 (RB3011) | DHCP del RB3011 | - |
 | 999 | Parking | - | - | Sin L3 | - |
 
@@ -187,7 +198,7 @@ El orden se controla con el `autostart` de libvirt más retardos de arranque, y 
 | files01 | Samba SMB + NFS | 10.20.20.12 | fd5a:fc7e:d716:20::12 |
 | apps01 | DHIS2 + PostgreSQL | 10.20.20.13 | fd5a:fc7e:d716:20::13 |
 | mon01 | Prometheus, Grafana, Loki | 10.20.20.14 | fd5a:fc7e:d716:20::14 |
-| dmz01 | Caddy, Kiwix, formularios | 10.20.50.10 | fd5a:fc7e:d716:50::10 |
+| web01 | Caddy, Kiwix, formularios (servicios públicos) | 10.20.20.15 | fd5a:fc7e:d716:20::15 |
 
 ## 8. Plan IPv6
 
@@ -196,7 +207,7 @@ El orden se controla con el `autostart` de libvirt más retardos de arranque, y 
 - **Prefijo interno:** ULA `fd5a:fc7e:d716::/48`. El Global ID de 40 bits se generó aleatoriamente, como pide la RFC 4193. Es estable y no depende del proveedor, así que el kit funciona igual con o sin Internet.
 - **Subredes:** un /64 por VLAN, y el ID de subred es el número de VLAN (`fd5a:fc7e:d716:<VLAN>::/64`). Queda espacio para 65 536 subredes.
 - **Servidores:** direcciones estáticas que espejan el último octeto IPv4 (`10.20.20.10` ↔ `fd5a:fc7e:d716:20::10`). Esto facilita la lectura de reglas, zonas DNS y logs.
-- **GUA opcional:** si el uplink entrega un prefijo por DHCPv6-PD, OPNsense lo reparte como segundo prefijo solo en las VLAN 20, 30 y 50. Las políticas se escriben sobre alias, no sobre prefijos, así que no cambian.
+- **GUA opcional:** si el uplink entrega un prefijo por DHCPv6-PD, OPNsense lo reparte como segundo prefijo solo en las VLAN 20 y 30. Las políticas se escriben sobre alias, no sobre prefijos, así que no cambian.
 
 ### 8.2 Asignación por segmento
 
@@ -206,15 +217,14 @@ El orden se controla con el `autostart` de libvirt más retardos de arranque, y 
 | 20 | fd5a:fc7e:d716:20::/64 | Estático (sin SLAAC en servidores) | M=0, O=0 | Estático |
 | 30 | fd5a:fc7e:d716:30::/64 | SLAAC + DHCPv6 stateless (DNS, dominio de búsqueda, NTP) | M=0, O=1 | RDNSS + DHCPv6 |
 | 40 | fd5a:fc7e:d716:40::/64 | SLAAC + RDNSS (Android no tiene cliente DHCPv6) | M=0, O=0 | RDNSS |
-| 50 | fd5a:fc7e:d716:50::/64 | Estático | M=0, O=0 | Estático |
 
 El DNS anunciado es `fd5a:fc7e:d716:20::10` (infra01), igual que en DHCPv4, donde se anuncia `10.20.20.10`.
 
 ### 8.3 Seguridad IPv6
 
-- Las reglas de firewall son **equivalentes en v4 y v6**. Se escriben sobre alias con miembros de ambas familias (p. ej. `H_APPS01 = 10.20.20.13, fd5a:fc7e:d716:20::13`).
+- Las reglas de firewall son **equivalentes en v4 y v6**. Se escriben sobre alias con miembros de ambas familias (p. ej. `H_WEB01 = 10.20.20.15, fd5a:fc7e:d716:20::15`).
 - Se permite el ICMPv6 imprescindible (NDP, RA/RS, Packet Too Big, Time Exceeded y Parameter Problem, según la RFC 4890). El eco ICMPv6 solo se permite desde la VLAN 10 y para las pruebas.
-- El portal cautivo de OPNsense solo cubre IPv4. Por eso, en la VLAN 40, IPv6 **solo** llega a la DMZ, DNS y NTP. No hay salida a Internet por IPv6 para invitados y así IPv6 no queda como una vía que se salte el portal.
+- El portal cautivo de OPNsense solo cubre IPv4. Por eso, en la VLAN 40, IPv6 **solo** llega a web01, DNS y NTP. No hay salida a Internet por IPv6 para invitados y así IPv6 no queda como una vía que se salte el portal.
 - Se activa RA Guard y DHCPv6 Guard en los puertos de acceso del switch, si el firmware lo soporta, para evitar RA falsos.
 
 ## 9. DNS y nombres de servicio
@@ -224,8 +234,8 @@ Zona autoritativa `salud.movil` en infra01. Las zonas inversas son `10.20.in-add
 | Nombre | Destino | A | AAAA |
 |---|---|---|---|
 | `pacientes.salud.movil` | apps01 (DHIS2) | 10.20.20.13 | fd5a:fc7e:d716:20::13 |
-| `biblioteca.salud.movil` | dmz01 (Kiwix) | 10.20.50.10 | fd5a:fc7e:d716:50::10 |
-| `registro.salud.movil` | dmz01 (formularios) | 10.20.50.10 | fd5a:fc7e:d716:50::10 |
+| `biblioteca.salud.movil` | web01 (Kiwix) | 10.20.20.15 | fd5a:fc7e:d716:20::15 |
+| `registro.salud.movil` | web01 (formularios) | 10.20.20.15 | fd5a:fc7e:d716:20::15 |
 | `ntp.salud.movil` | infra01 | 10.20.20.10 | fd5a:fc7e:d716:20::10 |
 | `archivos.salud.movil` | files01 | 10.20.20.12 | fd5a:fc7e:d716:20::12 |
 | `ns1.salud.movil` | infra01 | 10.20.20.10 | fd5a:fc7e:d716:20::10 |
@@ -238,47 +248,49 @@ Zona autoritativa `salud.movil` en infra01. Las zonas inversas son `10.20.in-add
 
 | VM | SO / runtime | Servicios | vCPU | RAM | Disco |
 |---|---|---|---|---|---|
-| fw01 | OPNsense 26.x | Enrutamiento, filtro v4/v6, NAT, Kea DHCPv4, RA/DHCPv6, portal cautivo | 2 | 4 GB | 32 GB |
+| fw01 | OPNsense 26.x | Enrutamiento, filtro v4/v6, NAT, Kea DHCPv4, RA/DHCPv6, portal cautivo, `os-node_exporter` | 2 | 4 GB | 32 GB |
 | infra01 | Ubuntu 24.04 | BIND9, Chrony | 1 | 1 GB | 16 GB |
 | dc01 | Ubuntu 24.04 | Samba AD DC | 2 | 2 GB | 32 GB |
 | files01 | Ubuntu 24.04 | Samba (miembro del dominio), NFS | 1 | 2 GB | 32 GB + 200 GB de datos |
-| apps01 | Ubuntu 24.04 + Docker | DHIS2, PostgreSQL (DHIS2 y formularios), Caddy interno | 4 | 10 GB | 120 GB |
-| dmz01 | Ubuntu 24.04 + Docker | Caddy, Kiwix-serve, app de formularios | 2 | 3 GB | 40 GB |
-| mon01 | Ubuntu 24.04 + Docker | Prometheus, Alertmanager, Loki, Grafana | 2 | 4 GB | 80 GB |
+| apps01 | Ubuntu 24.04 + Docker | DHIS2, PostgreSQL (DHIS2 y formularios), Caddy | 4 | 10 GB | 120 GB |
+| mon01 | Ubuntu 24.04 + Docker | Prometheus, blackbox exporter, Loki, Grafana | 2 | 4 GB | 80 GB |
+| web01 | Ubuntu 24.04 + Docker | Caddy, Kiwix-serve, app de formularios | 2 | 3 GB | 40 GB |
 | kvm01 (host) | Ubuntu 24.04 | KVM/libvirt, restic, NUT, node_exporter | - | 2 GB reservados | - |
 
-Todos los nodos Linux llevan `node_exporter`, Alloy (envío de journal y logs a Loki), `chrony` apuntando a `ntp.salud.movil`, SSH solo con llave, cuentas individuales y sin login directo de root.
+Todos los nodos Linux llevan `node_exporter`, Alloy (envío de journal y logs a Loki), `chrony` apuntando a `ntp.salud.movil`, SSH solo con llave, cuentas individuales, sin login directo de root y un firewall local (`ufw`) que deniega por defecto el tráfico entrante.
 
 ## 11. Matriz de flujos preliminar
 
 Política por defecto: **denegar todo el tráfico entre VLAN y registrarlo**. Todas las reglas aplican a IPv4 e IPv6, salvo que se indique otra cosa.
 
+Los flujos marcados como _intra-VLAN 20_ no pasan por fw01, porque origen y destino están en la misma VLAN. Se controlan con el firewall local (`ufw`) de cada servidor y con los permisos de cada servicio (`pg_hba.conf`, exports NFS, grupos de AD).
+
 | ID | Origen | Destino | Puertos | Justificación |
 |---|---|---|---|---|
-| F-01 | VLAN 10 | Todas las VLAN, fw01 | 22, 443, 8443, 161/udp, ICMP | Administración (SSH, GUI, SNMP) solo desde gestión |
-| F-02 | VLAN 10, 30, 40, 50, 20 | infra01 | 53 tcp/udp, 123/udp | DNS y NTP internos |
+| F-01 | VLAN 10 | Todas las VLAN, fw01 | 22, 443, 8443, ICMP | Administración (SSH, GUI) solo desde gestión |
+| F-02 | VLAN 10, 30, 40 | infra01 | 53 tcp/udp, 123/udp | DNS y NTP internos (desde la VLAN 20 es intra-VLAN) |
 | F-03 | VLAN 30 | apps01 | 443 | DHIS2 (`pacientes`) |
 | F-04 | VLAN 30 | files01 | 445 | Recurso SMB `archivos` |
-| F-05 | VLAN 30 | dmz01 | 443 | Formularios (vista del personal) y biblioteca |
+| F-05 | VLAN 30 | web01 | 443 | Formularios (vista de consulta del personal) y biblioteca |
 | F-06 | VLAN 30 | dc01 | 88, 389, 464, 636, 445, 135, 49152-65535 | Solo si se unen equipos al dominio (Q-03) |
-| F-07 | VLAN 40 | dmz01 | 80, 443 | Biblioteca y formularios públicos |
+| F-07 | VLAN 40 | web01 | 80, 443 | Biblioteca y formularios públicos. **Única excepción** de invitados hacia la VLAN 20 |
 | F-08 | VLAN 40 | fw01 | 8000/tcp (portal), 53 | Portal cautivo |
 | F-09 | VLAN 40 | Internet | any (solo IPv4, tras autenticarse en el portal) | Conectividad comunitaria |
-| F-10 | dmz01 | apps01 | 5432 | BD de formularios (usuario con permisos solo de `INSERT` desde la DMZ) |
-| F-11 | dmz01 | files01 | 2049 | NFS de solo lectura con el contenido ZIM |
-| F-12 | dmz01, apps01, mon01, files01 | dc01 | 636 | LDAPS para autenticación |
-| F-13 | Todas las VMs | mon01 | 3100 | Envío de logs a Loki |
-| F-14 | mon01 | Todos los nodos | 9100, 9115, 161/udp, 443 | Scraping de métricas, sondas blackbox, SNMP |
-| F-15 | fw01, sw01, ap01 | mon01 | 514/udp | Syslog de equipos de red |
-| F-16 | VLAN 20, 50 | Internet | 80, 443 | Actualizaciones de paquetes e imágenes (solo con Internet) |
+| F-10 | web01 | apps01 | 5432 | _Intra-VLAN 20._ BD de formularios. `pg_hba.conf` solo acepta a web01, con un usuario que solo tiene permiso de `INSERT` |
+| F-11 | web01 | files01 | 2049 | _Intra-VLAN 20._ NFS de solo lectura con el contenido ZIM, exportado solo para web01 |
+| F-12 | web01, mon01, files01 | dc01 | 636; files01 además 88, 389, 445, 464 | _Intra-VLAN 20._ LDAPS para la consulta de formularios y Grafana; Kerberos/LDAP para files01 como miembro del dominio |
+| F-13 | Todos los nodos | mon01 | 3100 | Envío de logs a Loki |
+| F-14 | mon01 | Todos los nodos, fw01 | 9100, 53, 443, ICMP | Scraping de `node_exporter` y sondas blackbox (DNS, HTTPS, ping a sw01 y ap01) |
+| F-15 | fw01, sw01, ap01 | mon01 | 514/udp | Syslog de equipos de red (eventos de firewall y DHCP) |
+| F-16 | VLAN 20 | Internet | 80, 443 | Actualizaciones de paquetes e imágenes (solo con Internet, R-05) |
 | F-17 | infra01 | Internet | 53, 123/udp | Forwarders DNS y fuentes NTP externas |
 | F-18 | Todas | Todas | ICMPv6 NDP/PMTU | Funcionamiento de IPv6 (RFC 4890) |
-| F-19 | VLAN 40 | VLAN 10, 20, 30, fw01 GUI | any | **Bloqueado y registrado** (prueba P3/P10) |
+| F-19 | VLAN 40 | VLAN 10, 30, resto de la VLAN 20, fw01 GUI | any | **Bloqueado y registrado** (prueba P3/P10). En la VLAN 20 solo se permiten F-02 y F-07 |
 
 ## 12. Dimensionamiento y energía (preliminar)
 
 - **Cómputo:** 14 vCPU asignadas sobre 16 hilos (sobreasignación baja). La carga pico esperada es la de DHIS2 durante el registro.
-- **Memoria:** 28 GB asignados más 2 GB para el host. **Mínimo 32 GB; se recomiendan 64 GB** para poder crecer (p. ej. un DNS secundario o más usuarios en DHIS2).
+- **Memoria:** 26 GB asignados a las VMs más 2 GB reservados para el host (28 GB en total). **Mínimo 32 GB; se recomiendan 64 GB** para poder crecer (p. ej. un DNS secundario o más usuarios en DHIS2).
 - **Almacenamiento:** unos 350 GB para VMs y 200 GB de datos → NVMe de 1 TB. Backups en un segundo disco de 1 TB, que con retención 7d/4s/3m y deduplicación da un uso estimado de 150-300 GB.
 - **Clientes:** 5-10 del personal y hasta 50 de la comunidad. El pool de invitados tiene 151 direcciones con lease de 1 h.
 - **Red:** trunk de 2.5 GbE (el switch negocia 1 GbE); AP Wi-Fi 5/6 con un mínimo recomendado de 50 clientes simultáneos.
@@ -305,11 +317,12 @@ Política por defecto: **denegar todo el tráfico entre VLAN y registrarlo**. To
 | R-02 | El SG350X-24 es de 1U y pesado para un kit portátil | Alternativa compacta: switch de 8-10 puertos gestionable con PoE (p. ej. SG350-10P o MikroTik CSS/CRS) |
 | R-03 | DHIS2 consume mucha RAM | Limitar el heap de la JVM y monitorear. Con 32 GB, apagar servicios no esenciales durante las pruebas |
 | R-04 | Portal cautivo solo IPv4 | Política IPv6 restrictiva en la VLAN 40 (8.3) |
-| R-05 | Actualizaciones sin Internet | Caché de paquetes APT (apt-cacher-ng) e imágenes Docker guardadas. Ventana de actualización documentada en E3 |
+| R-05 | Actualizaciones sin Internet | No se actualiza sin Internet. Las actualizaciones se aplican en base o cuando haya conexión, en una ventana documentada en E3 y con snapshot previo de la VM. Las imágenes Docker usan versión fija y se guardan con `docker save` en el disco de backups, para poder reinstalar sin conexión |
+| R-06 | web01 atiende a invitados y comparte la VLAN 20 con los servidores internos; su tráfico hacia ellos no pasa por fw01 (D-15) | Firewall local (`ufw`) en cada servidor, con entrada denegada por defecto. `pg_hba.conf` solo acepta a web01, con un usuario de solo `INSERT`. Export NFS de solo lectura y solo para web01. Contenedores sin root. Si el kit crece o atiende más público, los servicios públicos vuelven a una VLAN propia |
 | Q-01 | ¿Modelo exacto del MinisForum Venus (RAM, NIC)? | Confirmar con el laboratorio |
 | Q-02 | ¿Qué AP hay disponible? | Confirmar; requiere multi-SSID + 802.1Q |
 | Q-03 | ¿Se unirá un cliente Windows al dominio? | Si es así, habilitar F-06 |
-| Q-04 | ¿El SSID clínico usará 802.1X (RADIUS contra AD)? | Mejora opcional (FreeRADIUS o NPS) |
+| Q-04 | ¿El SSID clínico usará 802.1X (RADIUS contra AD)? | **Cerrada:** no. Se usa WPA3/WPA2-Personal; 802.1X queda fuera del alcance |
 | Q-05 | ¿TLS para invitados? `registro` maneja datos personales | Opciones: HTTPS con CA interna (con advertencia en el navegador) o HTTP solo para la biblioteca. Decidir en el hito de Wi-Fi y seguridad |
 | Q-06 | ¿Acceso del docente a los repositorios? | Los repositorios son públicos, así que el docente puede leerlos sin invitación. Invitarlo a la organización solo si debe comentar o revisar PRs. Por ser públicos, se refuerza la regla de cero secretos (D-17) |
 
@@ -323,7 +336,7 @@ Política por defecto: **denegar todo el tráfico entre VLAN y registrarlo**. To
 | `docs` | Arquitectura, decisiones, diagramas, guías E2-E6 y sustentación |
 | `network` | Configuración exportada de OPNsense (sin secretos), switch y AP |
 | `platform` | kvm01 (libvirt, netplan), infra01 (BIND9, Chrony), dc01, files01, backups (restic), Ansible |
-| `apps` | Compose de DHIS2, dmz01 (Caddy, Kiwix, formularios) |
+| `apps` | Compose de DHIS2 (apps01) y de web01 (Caddy, Kiwix, formularios) |
 | `observability` | Prometheus, reglas de alerta, dashboards de Grafana, Loki/Alloy |
 
 **Flujo de trabajo:**
@@ -339,7 +352,14 @@ Política por defecto: **denegar todo el tráfico entre VLAN y registrarlo**. To
 |---|---|
 | Diseño | Revisar este documento en grupo, resolver Q-01 a Q-06, confirmar hardware, crear el tablero Kanban |
 | Servicios base | Instalar kvm01 y bridges; fw01 con VLAN, DHCP y RA; infra01 (DNS y NTP); dc01 (AD); acceso administrativo |
-| Almacenamiento y aplicaciones | files01 (SMB/NFS), DHIS2, Kiwix, app de formularios, TLS interno |
-| Wi-Fi y seguridad | AP y SSID, portal cautivo, matriz de flujos v4/v6 definitiva (E4) |
+| Almacenamiento y aplicaciones | files01 (SMB/NFS), DHIS2, web01 (Kiwix y app de formularios), TLS interno |
+| Wi-Fi y seguridad | AP y SSID, portal cautivo, matriz de flujos v4/v6 definitiva (E4), firewall local en los servidores de la VLAN 20 |
 | Resiliencia | restic y restauración, apagado ordenado con NUT simulado, autostart, observabilidad, prueba sin Internet |
 | Entrega final | Guías E2/E3, evidencias P1-P13, limpieza del repositorio, sustentación |
+
+## 16. Historial de cambios
+
+| Versión | Fecha | Cambios |
+|---|---|---|
+| v0.1 | 2026-09-24 | Documento inicial |
+| v0.2 | 2026-09-27 | Simplificación del diseño. Se elimina la DMZ (VLAN 50): biblioteca y formularios pasan a web01 en la VLAN 20 (D-15, R-06). Se quitan el SSID de gestión (D-18), Alertmanager y SNMP (D-09), el login LDAP en DHIS2 (D-06), apt-cacher-ng (R-05) y la copia externa con rclone (D-10). Se fijan Caddy `tls internal` con una sola raíz (D-16) y `ansible-vault` (D-17). Se cierra Q-04. Se agrega el diagrama físico (5.4) y se corrige el total de memoria (sección 12) |
