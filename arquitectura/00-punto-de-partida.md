@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.4
+## Documento de arquitectura inicial (punto de partida) - v0.5
 
 **Proyecto final - Plataformas I - 2026-2** · Organización: `kitsalud-movil-plats1`
 
@@ -10,7 +10,7 @@ Este documento fija las decisiones de diseño del kit: tecnologías por servicio
 
 ## 1. Contexto y alcance
 
-Una brigada de salud debe desplegar en sitio una infraestructura pequeña que preste servicios clínicos, administrativos y comunitarios **sin depender de Internet**. El kit se compone de **un mini PC**, un switch administrable y un punto de acceso Wi-Fi. El mini PC es a la vez el router/firewall del kit y el hipervisor de dos máquinas virtuales: una para los servicios clínicos y otra para los comunitarios. Si hace falta más memoria, se agrega como máximo **un equipo más** (una laptop del grupo). La alimentación segura (UPS) se incluye en el diseño de forma lógica, porque no se cuenta con el equipo físico. El enlace a Internet del sitio es opcional; en el laboratorio se simula con un router MikroTik conectado a la red de la universidad.
+Una brigada de salud debe desplegar en sitio una infraestructura pequeña que preste servicios clínicos, administrativos y comunitarios **sin depender de Internet**. El kit se compone de **un mini PC** (Beelink EQi12), **un MikroTik CCR2004** que hace de switch y **un punto de acceso Wi-Fi** (TP-Link TL-WA801ND). El mini PC es a la vez el router/firewall del kit y el hipervisor de dos máquinas virtuales: una para los servicios clínicos y otra para los comunitarios. Si hace falta más memoria, se agrega como máximo **un equipo más** (una laptop del grupo). La alimentación segura (UPS) se incluye en el diseño de forma lógica, porque no se cuenta con el equipo físico. El enlace a Internet del sitio es opcional; en el laboratorio se simula con un router MikroTik conectado a la red de la universidad.
 
 **Contenido para la comunidad.** Los contenidos deben servirle a la comunidad, no solo al personal de salud. Por eso, además de la literatura de salud (R7), el kit ofrece una **biblioteca educativa para niños** y contenido de salud y comunitario en **audio y video** (sección 10.5).
 
@@ -42,7 +42,7 @@ El criterio que guía el diseño es el del enunciado: construir una plataforma *
 | R9 | Almacenamiento compartido | SMB con autenticación AD: `archivos` (documentos y exportaciones) y `contenido` (medios y ZIM que se publican en comunidad01) | clinica01 |
 | R10 | Identidad centralizada | Samba AD DC (`ad.salud.movil`). La usan SMB, Grafana y la consulta de formularios | clinica01 |
 | R11 | Backups y restauración | restic cifrado en un disco USB, en **modelo pull**: kit01 extrae los dumps de cada VM por SSH. Retención 7d/4s/3m | kit01, disco USB |
-| R12 | Registros y monitoreo | Prometheus (node y blackbox exporters: disponibilidad, puertos, CPU, memoria y disco) y Grafana. rsyslog centraliza en kit01 los eventos de DHCP (Kea), DNS (BIND9), firewall (`fw-drop`) y autenticación (Samba AD y SSH) | kit01 |
+| R12 | Registros y monitoreo | Prometheus (node y blackbox exporters: disponibilidad, puertos, CPU, memoria y disco) y Grafana. rsyslog centraliza en kit01 los eventos de DHCP (Kea), DNS (BIND9), firewall (`fw-drop`) y autenticación (Samba AD y SSH), además del syslog de sw01 | kit01 |
 
 ### 2.2 Pruebas de aceptación: cómo se demostrarán
 
@@ -77,9 +77,9 @@ El criterio que guía el diseño es el del enunciado: construir una plataforma *
 
 | ID | Supuesto | Impacto si es falso |
 |---|---|---|
-| S-01 | El mini PC MinisForum (x86-64, 16 GB de RAM, SSD de 512 GB, **dos NIC Ethernet**; confirmado en Q-01) estará disponible para el desarrollo y la sustentación | Si no estuviera, el mismo diseño corre en una laptop de 16 GB con un adaptador USB-Ethernet para la WAN |
-| S-02 | El laboratorio presta un switch Cisco SG350X-24 (802.1Q) y el MikroTik RB3011 | Cualquier switch 802.1Q sirve; el uplink puede ser directo a la red de la universidad |
-| S-03 | Habrá un AP con dos SSID etiquetados en VLAN (802.1Q). El modelo está por definir | Sin multi-SSID, la red Interna sería solo cableada |
+| S-01 | El mini PC Beelink EQi12 (Intel Core i3-1220P de 10 núcleos y 12 hilos, 16 GB DDR4, SSD de 500 GB, **dos NIC de 1 GbE**) estará disponible para el desarrollo y la sustentación | Si no estuviera, el mismo diseño corre en una laptop de 16 GB con un adaptador USB-Ethernet para la WAN |
+| S-02 | El laboratorio presta el MikroTik CCR2004-16G-2S+PC (usado como switch) y el MikroTik RB3011 (uplink) | Cualquier switch 802.1Q sirve; el uplink puede ser directo a la red de la universidad |
+| S-03 | El AP TP-Link TL-WA801ND v3 en modo Multi-SSID asigna una VLAN a cada SSID (hasta cuatro) y envía sin etiqueta los SSID con VLAN ID 1 y su propia gestión, como describe su manual | Si el firmware no se comporta así, la red Interna sería solo cableada y el AP quedaría solo para la Comunidad |
 | S-04 | El uplink entrega IPv4 por DHCP con NAT y no entrega prefijo IPv6 | Si entrega DHCPv6-PD, se puede agregar GUA más adelante; no cambia las políticas |
 | S-05 | La demostración se hace en el laboratorio; el "sitio remoto" se simula | Ninguno |
 | S-06 | La carga esperada es de 5-10 dispositivos del personal y hasta 50 dispositivos simultáneos de la comunidad | Ampliar el pool de la comunidad a /23 y agregar un AP |
@@ -101,9 +101,9 @@ El criterio que guía el diseño es el del enunciado: construir una plataforma *
 
 | ID | Decisión | Alternativas descartadas | Justificación |
 |---|---|---|---|
-| D-01 | Kit = **un mini PC (`kit01`)** + switch administrable + AP multi-SSID; UPS lógica (C-01). Si falta RAM, se agrega una laptop (10.4) | Varios nodos KVM; un servidor físico por rol | Es lo mínimo que cumple el enunciado. Cada VM conserva su IP y su MAC, así que moverla no cambia el direccionamiento, el DNS ni el firewall |
+| D-01 | Kit = **un mini PC (`kit01`)** + MikroTik CCR2004 como switch (`sw01`) + AP multi-SSID (`ap01`); UPS lógica (C-01). Si falta RAM, se agrega una laptop (10.4) | Varios nodos KVM; un servidor físico por rol | Es lo mínimo que cumple el enunciado. Cada VM conserva su IP y su MAC, así que moverla no cambia el direccionamiento, el DNS ni el firewall |
 | D-02 | El **host Ubuntu es el router/firewall**: nftables, Kea, radvd, BIND9, Chrony y portal cautivo como servicios `systemd` | OPNsense como VM; pfSense; MikroTik | El núcleo de red no depende de ninguna VM. No hay que aprender FreeBSD para el router y se ahorran 3 GB de RAM. Las reglas son archivos de texto versionados, y una sola tabla `inet` aplica a IPv4 e IPv6 |
-| D-03 | El RB3011 queda **fuera del kit** como uplink del sitio. El switch Cisco trabaja **solo en capa 2**: sin `ip routing` y con una única SVI, la de gestión | RB3011 como switch o core; switch L3 | Si el switch enrutara, el tráfico entre VLAN se saltaría nftables. Desconectar el uplink sirve como prueba P9 |
+| D-03 | El RB3011 queda **fuera del kit** como uplink del sitio. El **CCR2004 trabaja solo en capa 2** (`sw01`): un bridge con VLAN filtering, una sola interfaz de gestión en la VLAN 10 y el reenvío IP desactivado | CCR2004 como router/firewall del kit; RB3011 como switch | Un solo punto de enrutamiento y de política: si el CCR2004 también enrutara, habría reglas en dos equipos y el tráfico entre VLAN podría saltarse nftables. Como router, además, separaría las reglas IPv4 de las IPv6 y su portal (Hotspot) solo cubre IPv4. Desconectar el uplink sirve como prueba P9 |
 | D-04 | **Ubuntu Server 24.04 LTS** en el host y en las VMs; KVM/libvirt; aplicaciones en Docker Compose **dentro de las VMs** | Proxmox VE; Docker en el host | Un solo SO y un solo Ansible. Docker en el host reescribiría las reglas del firewall del router; dentro de las VMs no toca el firewall de kit01 |
 | D-05 | Identidad: **Samba AD DC en clinica01**, que también sirve los recursos SMB `archivos` y `contenido` | VM propia de identidad; FreeIPA; OpenLDAP | Cubre R9 y R10 con un solo servicio y sin otra VM (+1,5 GB). Es compatible con AD y LDAP para Grafana y la consulta de formularios |
 | D-06 | Pacientes: **DHIS2 con cuentas locales** | OpenMRS; DHIS2 con login LDAP | La sugiere el enunciado y tiene tracker de pacientes e imagen Docker oficial. Si AD falla, el registro de pacientes sigue funcionando |
@@ -114,7 +114,7 @@ El criterio que guía el diseño es el del enunciado: construir una plataforma *
 | D-11 | IPv4 `10.20.<id>.0/24`, gateway `.1` | `192.168.<id>.0/24` | Evita solaparse con el uplink `192.168.88.0/24` y se resume en una sola regla `10.20.0.0/16` |
 | D-12 | IPv6 **ULA `fd5a:fc7e:d716::/48`** con un /64 por segmento; sin GUA | Solo GUA; `2001:db8::/32` | Direcciones estables sin Internet. `2001:db8::/32` es solo para documentación (RFC 3849) |
 | D-13 | Organización con repos por dominio: `.github`, `docs`, `network`, `platform`, `apps`, `observability` | Monorepo; un repo por servicio | Trazabilidad por área y PRs pequeños |
-| D-14 | **Dos NIC**: `wan0` hacia el uplink y `lan0` como trunk 802.1Q hacia el switch | WAN como VLAN 900 en el trunk | El MinisForum tiene dos NIC (Q-01): la WAN queda separada físicamente y desaparece una VLAN |
+| D-14 | **Dos NIC**: `wan0` hacia el uplink y `lan0` como trunk 802.1Q hacia el switch | WAN como VLAN 900 en el trunk | El Beelink EQi12 tiene dos NIC de 1 GbE (Q-01): la WAN queda separada físicamente y desaparece una VLAN |
 | D-15 | **Dos VLAN físicas** (10 Interna y 40 Comunidad) + **red de servidores virtual** (`br-srv`, un bridge sin puerto físico dentro de kit01) | Cuatro VLAN; tres VLAN con una de gestión aparte | Menos configuración en switch y AP que con cuatro VLAN. El enunciado admite interfaces virtuales y firewalls como mecanismo de separación. Todo el tráfico entre redes pasa por nftables, incluso el que va entre las dos VMs (6.3) |
 | D-16 | **TLS mixto** con la CA interna de Caddy (`tls internal`): HTTPS para `registro`, `pacientes`, `archivos` web y `monitoreo`; HTTP para `biblioteca` y `videos` | HTTPS en todo; HTTP en todo lo comunitario | El contenido público no lleva datos personales y así se evita la advertencia del navegador. Los formularios sí cifran: la advertencia se acepta una vez y el portal explica cómo instalar la CA |
 | D-17 | Credenciales fuera de Git: `.env.example` + `ansible-vault` | Contraseñas en el README; sops | Cumple "no contraseñas en texto plano" con una sola herramienta |
@@ -130,32 +130,52 @@ El criterio que guía el diseño es el del enunciado: construir una plataforma *
 
 | Equipo | Rol | Notas |
 |---|---|---|
-| `kit01` - mini PC MinisForum | Router/firewall, servicios de red, hipervisor de clinica01 y comunidad01 | 16 GB de RAM, SSD de 512 GB, NIC1 `wan0` y NIC2 `lan0` |
+| `kit01` - mini PC Beelink EQi12 | Router/firewall, servicios de red, hipervisor de clinica01 y comunidad01 | Intel Core i3-1220P (10 núcleos, 12 hilos, hasta 4,4 GHz), 16 GB DDR4, SSD de 500 GB, dos NIC de 1 GbE (`wan0` y `lan0`), fuente interna de 85 W |
 | Disco USB (256 GB o más) | Repositorio de backups (restic) | Conectado a kit01; se monta solo durante el backup |
-| Switch Cisco SG350X-24 (`sw01`) | Conmutación L2, trunk 802.1Q | Alternativa más compacta en R-02 |
-| AP multi-SSID (`ap01`) | Wi-Fi con SSID por VLAN | Modelo por definir (Q-02) |
+| MikroTik CCR2004-16G-2S+PC (`sw01`) | Conmutación L2 con VLAN 802.1Q | RouterOS 7, CPU ARM de 4 núcleos, 4 GB de RAM, 16 puertos de 1 GbE y 2 SFP+ de 10 Gb/s, refrigeración pasiva, alimentación 36-57 V DC. |
+| TP-Link TL-WA801ND v3 (`ap01`) | Wi-Fi con un SSID por VLAN | 802.11n en 2,4 GHz (300 Mb/s nominales), un puerto Ethernet de 10/100, hasta 4 SSID con VLAN, PoE pasivo con inyector incluido (9 V, 0,6 A) |
 | UPS (lógica) | Alimentación segura y apagado controlado | Sin equipo físico; NUT `dummy-ups` en kit01 (13) |
 | Laptop (opcional) | Aloja comunidad01 si falta RAM | Solo en el perfil "+1 equipo" (10.4) |
 | _Fuera del kit:_ MikroTik RB3011 | Uplink del sitio (NAT a la red de la universidad) | `192.168.88.0/24`, conectado directo a `wan0` |
 
-### 5.2 Conexiones y puertos del switch
+### 5.2 Conexiones y puertos de sw01
 
-| Puerto sw01 | Conectado a | Modo | VLAN |
-|---|---|---|---|
-| gi1/0/1 | kit01 (`lan0`) | Trunk | 10 y 40 etiquetadas (20 solo en el perfil "+1 equipo"); nativa 999 |
-| gi1/0/2 | ap01 | Trunk | 10 nativa (gestión del AP y SSID Clínica); 40 etiquetada |
-| gi1/0/3 | Laptop (opcional) | Trunk | 10 y 20 etiquetadas; nativa 999. En `shutdown` si no se usa |
-| gi1/0/4-9 | Estaciones clínicas y de administración | Acceso | 10 |
-| resto | Sin uso | Acceso, `shutdown` | 999 |
+| Puerto | Nombre en RouterOS | Conectado a | Modo | VLAN |
+|---|---|---|---|---|
+| ether1 | `ether1-kit01` | kit01 (`lan0`) | Trunk | 10 y 40 etiquetadas (20 solo en el perfil "+1 equipo"); solo admite tramas etiquetadas |
+| ether2 | `ether2-ap01` | ap01 | Híbrido | 10 sin etiqueta (PVID 10: gestión del AP y SSID Clínica) y 40 etiquetada (SSID Comunidad) |
+| ether3 | `ether3-laptop` | Laptop (opcional) | Trunk | 10 y 20 etiquetadas; deshabilitado si no se usa |
+| ether4-ether8 | `ether4-interna` … `ether8-interna` | Estaciones clínicas y de administración | Acceso | 10 (PVID 10, solo tramas sin etiqueta) |
+| ether9-ether16, sfp-sfpplus1-2 | - | Sin uso | Deshabilitados y fuera del bridge | - |
 
-El RB3011 no pasa por el switch: va directo a `wan0`. El switch tiene una sola SVI (gestión, `10.20.10.2`), con una lista de acceso de gestión que solo admite a kit01 y a las IPs de administración. RA Guard y DHCPv6 Guard se activan en los puertos de acceso, si el firmware lo soporta: solo gi1/0/1 puede emitir RA.
+El RB3011 no pasa por sw01: va directo a `wan0`.
+
+**Cómo sw01 hace de switch.** En RouterOS, cada puerto es por defecto una interfaz de router independiente. Para que conmute, los puertos en uso se agregan a un **bridge** (un switch dentro del equipo), llamado `bridge-kit`, con `vlan-filtering=yes`: la tabla de VLAN del bridge define qué VLAN lleva cada puerto, con etiqueta o sin ella, y descarta lo que no corresponda (filtrado de ingreso). Los puertos que no se usan quedan deshabilitados y fuera del bridge.
+
+- **Gestión:** la única dirección de sw01 está en la interfaz `vlan10-Interna`, creada sobre el bridge (`10.20.10.2` y `fd5a:fc7e:d716:10::2`, ruta por defecto hacia `10.20.10.1`).
+- **Sin enrutamiento:** el reenvío IPv4 e IPv6 está desactivado. Aunque el equipo es un router, no puede enrutar entre VLAN; todo el tráfico entre redes pasa por kit01.
+- **Un solo chip:** todos los puertos del kit están en el primer chip de switch (`switch1`: ether1-ether8). El segundo chip (`switch2`: ether9-ether16) no conmuta con el primero por hardware y los SFP+ van directo a la CPU; mezclar chips haría pasar ese tráfico siempre por la CPU. Aun así, la CPU no es un límite para el tráfico del kit, muy por debajo de 1 Gb/s.
+- **Acceso inicial:** por la consola serial RJ45 (115200 8N1) o por Winbox con la MAC, antes de que exista la VLAN de gestión.
+
+**Protección de sw01:**
+
+- Los servicios de gestión de RouterOS (SSH y Winbox) solo aceptan a kit01 y a las IPs de administración; telnet, FTP, web y API se desactivan.
+- **DHCP snooping** en el bridge, con ether1 como único puerto de confianza: ningún otro puerto puede responder como servidor DHCPv4.
+- RouterOS no tiene RA Guard como función. Se evalúa bloquear con reglas del bridge los RA que entren por puertos distintos de ether1; si no se pueden distinguir del resto de ICMPv6, queda como riesgo (R-06).
 
 ### 5.3 SSID
 
-| SSID | VLAN | Seguridad |
-|---|---|---|
-| `SaludMovil-Clinica` | 10 (Interna) | WPA3/WPA2-Personal |
-| `SaludMovil-Comunidad` | 40 (Comunidad) | Abierta + portal cautivo, con aislamiento de clientes |
+El AP trabaja en modo Multi-SSID con VLAN. Envía con etiqueta el tráfico de cada SSID, salvo el del SSID con VLAN ID 1, que sale sin etiqueta junto con la gestión del propio AP; sw01 lo pone en la VLAN 10 (PVID de ether2).
+
+| SSID | VLAN ID en el AP | VLAN del kit | Seguridad |
+|---|---|---|---|
+| `SaludMovil-Clinica` | 1 (sin etiqueta) | 10 (Interna) | WPA2-PSK con AES (el AP no soporta WPA3) |
+| `SaludMovil-Comunidad` | 40 | 40 (Comunidad) | Abierta + portal cautivo |
+
+- El aislamiento de clientes del AP (*AP Isolation*) es global: aplica a los dos SSID, así que los dispositivos inalámbricos no se ven entre sí.
+- WPS desactivado.
+- La gestión del AP es una página web por HTTP, solo en IPv4. Según su manual, cualquier cliente inalámbrico puede llegar a ella, así que la contraseña de fábrica se cambia antes de conectarlo a la red (R-12).
+- El AP no envía syslog: su registro se consulta en su propia página.
 
 ### 5.4 Diagrama físico
 
@@ -248,7 +268,7 @@ El orden entre VMs se controla con el `autostart` de libvirt más un retardo. De
 | kit01 | Gateway de cada red interna | 10.20.10.1 / 10.20.20.1 / 10.20.40.1 | `fe80::1` y `fd5a:fc7e:d716:{10,20,40}::1` |
 | kit01 (servicios) | DNS, NTP, monitoreo | 10.20.20.10 | fd5a:fc7e:d716:20::10 |
 | sw01 | Switch (gestión) | 10.20.10.2 | fd5a:fc7e:d716:10::2 |
-| ap01 | AP (gestión) | 10.20.10.3 | fd5a:fc7e:d716:10::3 |
+| ap01 | AP (gestión) | 10.20.10.3 | - (el AP solo se gestiona por IPv4) |
 | clinica01 | DHIS2, Samba AD DC, SMB, consulta de formularios | 10.20.20.11 | fd5a:fc7e:d716:20::11 |
 | comunidad01 | Kiwix, Jellyfin, formularios | 10.20.20.12 | fd5a:fc7e:d716:20::12 |
 | Estaciones de admin | Reservas por MAC | 10.20.10.10-29 | SLAAC |
@@ -279,14 +299,14 @@ radvd anuncia el prefijo con el flag `A` y el flag `O`, sin RDNSS. Kea DHCPv6 re
 | kit01 `lan0.10`, `lan0.40`, `br-srv` | `fe80::1` (fija) | Origen de los RA, gateway IPv6 de clientes (`default via fe80::1`) y servidor DHCPv6 (escucha en `ff02::1:2`, responde desde `fe80::1`) |
 | kit01 `wan0` | Automática (`fe80::/64`) | Sin uso: el uplink no entrega IPv6. Se ignoran los RA que lleguen por la WAN |
 | clinica01, comunidad01 | Automática | Ruta por defecto estática `via fe80::1` en `br-srv` |
-| Clientes, sw01, ap01 | Automática | NDP y solicitudes DHCPv6 |
+| Clientes y sw01 | Automática | NDP y solicitudes DHCPv6 |
 
 La misma `fe80::1` en varias interfaces es válida, porque una link-local solo tiene sentido dentro de su enlace. Las link-local no se publican en DNS. El firewall las tiene en cuenta (8.4).
 
 ### 8.4 Seguridad IPv6
 
 - Las reglas son **equivalentes en v4 y v6**: cada política tiene su par en la misma tabla `inet` (6.3).
-- Se permite el ICMPv6 imprescindible (NDP, RS/RA, Packet Too Big, Time Exceeded, Parameter Problem; RFC 4890) desde `fe80::/10` y desde la ULA. Los RA solo se aceptan en los clientes cuando vienen de `fe80::1`, y el switch los bloquea en los puertos de acceso (RA Guard).
+- Se permite el ICMPv6 imprescindible (NDP, RS/RA, Packet Too Big, Time Exceeded, Parameter Problem; RFC 4890) desde `fe80::/10` y desde la ULA. Solo kit01 emite RA (desde `fe80::1`); el AP aísla a los clientes inalámbricos entre sí y en sw01 se evalúa bloquear los RA de los demás puertos (sección 5.2, R-06).
 - DHCPv6: entrada `udp/547` desde `fe80::/10` hacia kit01, en las redes Interna y Comunidad.
 - El eco ICMP/ICMPv6 se permite desde la red Interna hacia kit01 y los servidores, y desde la Comunidad solo hacia su gateway. Así se puede demostrar la conectividad extremo a extremo y diagnosticar sin exponer los servidores a la comunidad.
 - El portal cautivo autoriza por MAC, así que aplica igual a IPv4 e IPv6 (D-22).
@@ -307,7 +327,7 @@ Zona autoritativa `salud.movil` en BIND9 (kit01). Las zonas inversas son `10.20.
 | `ntp.salud.movil`, `ns1.salud.movil` | kit01 | 10.20.20.10 | fd5a:fc7e:d716:20::10 |
 | `monitoreo.salud.movil` | kit01 (Grafana) | 10.20.20.10 | fd5a:fc7e:d716:20::10 |
 | `portal.salud.movil` | kit01 (portal cautivo) | 10.20.40.1 | fd5a:fc7e:d716:40::1 |
-| `kit01`, `sw01`, `ap01` `.salud.movil` | Gestión | 10.20.10.1 / .2 / .3 | fd5a:fc7e:d716:10::1 / ::2 / ::3 |
+| `kit01`, `sw01`, `ap01` `.salud.movil` | Gestión | 10.20.10.1 / .2 / .3 | fd5a:fc7e:d716:10::1 / ::2 / - |
 
 ## 10. Servicios, recursos y perfiles
 
@@ -323,7 +343,7 @@ Zona autoritativa `salud.movil` en BIND9 (kit01). Las zonas inversas son `10.20.
 Criterios de las cifras:
 
 - **clinica01:** la guía de DHIS2 pide al menos 2 GB para una instancia pequeña, repartidos entre la JVM y PostgreSQL. Con 5-10 usuarios y Samba AD (≈ 0,5 GB) se asignan 7 GB. Se valida con una prueba de humo (R-03).
-- **comunidad01:** Jellyfin consume poco si no transcodifica. Los videos se preparan antes en H.264/AAC a 720p y los audios en MP3, para que se reproduzcan directo.
+- **comunidad01:** Jellyfin consume poco si no transcodifica. Los videos se preparan antes en H.264/AAC a 480p (≈ 1 Mb/s, por la capacidad del AP; sección 13) y los audios en MP3, para que se reproduzcan directo.
 - **Disco:** qcow2 con aprovisionamiento delgado; solo ocupa lo que se escribe (≈ 80-120 GB al inicio). Los ZIM de salud e infantiles ocupan unos pocos GB; el resto del espacio es para audio y video.
 
 Todas las VMs llevan `node_exporter`, rsyslog con reenvío a kit01, `chrony` apuntando a `ntp.salud.movil`, SSH solo con llave y solo desde kit01, cuentas individuales, sin login directo de root y `ufw` con entrada denegada por defecto (segunda capa detrás de nftables).
@@ -353,7 +373,7 @@ Cambiar de perfil es `virsh autostart` / `virsh shutdown` de una VM, más activa
 
 Si DHIS2 necesita más memoria que la prevista (R-03), **comunidad01 se mueve a una laptop** con Ubuntu y KVM:
 
-- La laptop se conecta a gi1/0/3 (trunk 10 y 20). En kit01, `br-srv` agrega `lan0.20` como puerto y la VLAN 20 lleva la red de servidores hasta la laptop. Es el único caso en que existe la VLAN 20.
+- La laptop se conecta a ether3 de sw01 (trunk 10 y 20). En kit01, `br-srv` agrega `lan0.20` como puerto y la VLAN 20 lleva la red de servidores hasta la laptop. Es el único caso en que existe la VLAN 20.
 - comunidad01 conserva su IP y su MAC: se copia el qcow2 y la definición (`virsh dumpxml` / `virsh define`), o se redespliega con Ansible.
 - El tráfico entre clinica01 y comunidad01 sigue pasando por el bridge de kit01, así que nftables lo sigue filtrando.
 - La laptop no se suspende (tampoco al cerrar la tapa) y tiene batería propia.
@@ -403,7 +423,7 @@ Política por defecto: **denegar y registrar**. Todas las reglas aplican a IPv4 
 | F-13 | kit01 | clinica01 | 636 | Login LDAPS de Grafana contra AD |
 | F-14 | kit01 | clinica01, comunidad01 | 9100 | Scraping de `node_exporter` (las sondas blackbox salen de kit01) |
 | F-15 | clinica01, comunidad01 | kit01 `.10` | 514/tcp | Envío de logs (rsyslog) |
-| F-16 | sw01, ap01 | kit01 | 514/udp, 123/udp | Syslog y hora de los equipos de red |
+| F-16 | sw01, ap01 | kit01 | sw01: 514/udp y 123/udp; ap01: 123/udp | Syslog y hora del switch; hora del AP (el AP no envía syslog) |
 | F-17 | clinica01, comunidad01 | Internet | 80, 443, **solo IPv4** | Actualizaciones de paquetes e imágenes, solo con Internet y en ventana de mantenimiento (R-05) |
 | F-18 | kit01 | Internet | 53, 123/udp, 443, NetBird | Forwarders DNS, NTP externo, actualizaciones y túnel de administración |
 | F-19 | Todas | Todas | ICMPv6 NDP/PMTU desde `fe80::/10` y ULA | Funcionamiento de IPv6 (RFC 4890) |
@@ -422,22 +442,22 @@ Procedimiento que otro administrador puede ejecutar (se detalla en E3):
 
 ## 13. Dimensionamiento y energía
 
-- **Cómputo:** 6 vCPU en VMs, más los servicios del host, sobre 8 hilos o más (sobreasignación baja). La carga pico es la de DHIS2 durante su arranque y el registro.
+- **Cómputo:** 6 vCPU en VMs, más los servicios del host, sobre los 12 hilos del i3-1220P (sobreasignación baja). La carga pico es la de DHIS2 durante su arranque y el registro.
 - **Memoria:** 12,5 GB de 16 en el perfil de referencia: ≈ 3,5 GB de margen.
-- **Almacenamiento:** ≈ 340 GB asignados (≈ 80-120 GB ocupados al inicio) en el SSD de 512 GB. Backups en un disco USB de 256 GB o más: con deduplicación, 30-60 GB para datos y configuraciones, más el tamaño de los medios de `contenido`.
-- **Clientes:** 5-10 del personal y hasta 50 de la comunidad. El pool de la comunidad tiene 151 direcciones con lease de 1 h.
-- **Red:** trunk de 1 GbE hacia el switch. Un video a 720p necesita ≈ 2-3 Mb/s, así que 20 reproducciones simultáneas caben con holgura en 1 GbE; el límite real es el Wi-Fi. Por eso se recomienda un AP Wi-Fi 5/6 con al menos 50 clientes simultáneos.
+- **Almacenamiento:** ≈ 340 GB asignados (≈ 80-120 GB ocupados al inicio) en el SSD de 500 GB. Backups en un disco USB de 256 GB o más: con deduplicación, 30-60 GB para datos y configuraciones, más el tamaño de los medios de `contenido`.
+- **Clientes:** 5-10 del personal y hasta 50 de la comunidad. El pool de la comunidad tiene 151 direcciones con lease de 1 h; el límite real lo pone el AP.
+- **Red:** el trunk entre kit01 y sw01 es de 1 GbE. El cuello de botella es el AP: Wi-Fi 802.11n en 2,4 GHz (300 Mb/s nominales, del orden de 50-80 Mb/s reales compartidos entre todos los clientes) y un puerto Ethernet de 100 Mb/s. Por eso los videos se preparan a 480p (≈ 1 Mb/s): caben unas 20-30 reproducciones simultáneas, y con 50 celulares conectados la experiencia depende sobre todo del espacio y la interferencia (R-13).
 
 | Equipo | Consumo típico | Pico |
 |---|---|---|
-| Mini PC | 35 W | 90 W |
-| Switch SG350X-24 | 25 W | 30 W |
-| AP (PoE/inyector) | 10 W | 15 W |
-| **Total (brigada de salud)** | **≈ 70 W** | **≈ 135 W** |
+| Mini PC Beelink EQi12 | ≈ 25 W | ≈ 60 W (fuente interna de 85 W) |
+| MikroTik CCR2004-16G-2S+PC | ≈ 18 W (estimado) | 36 W (ficha del fabricante) |
+| AP TL-WA801ND con inyector PoE | ≈ 4 W | 5,4 W (9 V × 0,6 A) |
+| **Total (brigada de salud)** | **≈ 47 W** | **≈ 101 W** |
 
 **Alimentación segura (implementación lógica).** No se cuenta con UPS física, así que el diseño la trata como un componente lógico:
 
-- **Dimensionamiento de referencia:** para la carga típica de unos 70 W, una UPS de 1000 VA/600 W (unos 200 Wh nominales, de los que se aprovecha cerca del 60 %) daría una **autonomía estimada de 60 a 90 minutos**. En la jornada comunitaria, con clinica01 apagada, el mini PC consume menos y la autonomía aumenta.
+- **Dimensionamiento de referencia:** una UPS de 1000 VA/600 W tiene unos 200 Wh nominales, de los que se aprovecha cerca del 60 % (≈ 120 Wh). Con la carga típica de unos 47 W daría una **autonomía estimada de 2 a 2,5 horas**; con la carga pico, algo más de una hora. En la jornada comunitaria, con clinica01 apagada, el mini PC consume menos y la autonomía aumenta.
 - **Simulación:** en kit01, NUT usa el driver `dummy-ups` con un archivo de estado. Al cambiar el estado a `OB` (en batería) y luego a `LB` (batería baja), se simulan el corte y la batería baja.
 - **Apagado ordenado:** `upsmon` ejecuta el script de apagado: comunidad01 → clinica01 (con espera a que PostgreSQL y Samba cierren) → kit01.
 - **Paso a hardware real:** con una UPS USB solo se cambia el driver (p. ej. `usbhid-ups`); el procedimiento no cambia.
@@ -448,7 +468,7 @@ Procedimiento que otro administrador puede ejecutar (se detalla en E3):
 - **Pasar Samba AD a una VM propia** (+1,5 GB) y usar Samba miembro para los recursos.
 - **clinica01 a 10-12 GB**, con la memoria repartida entre la JVM y PostgreSQL.
 - **Un segundo nodo** con DNS secundario y réplica de la BD, para quitar el punto único de falla (R-01).
-- **Pool de la comunidad a /23** y un segundo AP (S-06).
+- **Un AP de doble banda (Wi-Fi 5 o 6) con puerto gigabit**, o un segundo AP, y el pool de la comunidad a /23 (S-06, R-13).
 
 ### 13.2 Sincronización cuando se recupera Internet
 
@@ -466,20 +486,22 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | ID | Riesgo / pregunta | Mitigación / siguiente paso |
 |---|---|---|
 | R-01 | kit01 es un punto único de falla: es el router y el hipervisor | Backups probados, apagado ordenado, reconstrucción con Ansible y restauración (P11). Segundo nodo como evolución (13.1) |
-| R-02 | El SG350X-24 es de 1U y pesado para un kit portátil | Alternativa compacta: switch gestionable de 8-10 puertos con PoE |
+| R-02 | sw01 es un router (CCR2004): un error de configuración (una dirección en otra VLAN o el reenvío activado) lo haría enrutar entre VLAN y el tráfico se saltaría nftables | Reenvío IPv4 e IPv6 desactivado y una sola dirección (la de gestión), comprobados en cada cambio (`/ip settings print`, `/ip address print`); configuración exportada (`/export`) y versionada |
 | R-03 | DHIS2 consume mucha RAM | Heap limitado a 2 GB. Prueba de humo antes del hito de aplicaciones (`docker stats`, tiempo de arranque). Si no alcanza, perfil "+1 equipo" (10.4) |
 | R-04 | El portal cautivo es código propio y la detección de portal falla sin Internet | Lógica mínima (una página, un script y un set de nftables). BIND9 responde los dominios de detección con la IP del portal. Pruebas con Android, iOS y Windows |
 | R-05 | Actualizaciones sin Internet | No se actualiza en campo. Se actualiza en base, en una ventana documentada en E3, con snapshot previo de cada VM. Imágenes Docker con versión fija, guardadas con `docker save` en el disco USB |
-| R-06 | La red Interna mezcla personal clínico y administración: el switch y el AP son alcanzables dentro de la VLAN y una IP de administración se puede suplantar | ACL de gestión en el switch, credenciales individuales, SSH solo con llave, reservas por MAC y registro de accesos. Crecer = separar la VLAN de gestión (13.1) |
+| R-06 | La red Interna mezcla personal clínico y administración: el switch y el AP son alcanzables dentro de la VLAN y una IP de administración se puede suplantar | Servicios de gestión de sw01 limitados por dirección (`/ip service`), DHCP snooping, credenciales individuales, SSH solo con llave, reservas por MAC y registro de accesos. Crecer = separar la VLAN de gestión (13.1) |
 | R-07 | La laptop del perfil "+1 equipo" puede no estar disponible | Solo aloja comunidad01, el servicio menos crítico (10.2). Se vuelve al perfil de referencia |
 | R-08 | Nombres de interfaz que cambian entre reinicios o instalaciones; adaptador USB-Ethernet de la laptop opcional sin soporte de VLAN | Fijar el nombre por MAC en netplan (`wan0`, `lan0`). Probar la laptop temprano (`ip link add link <if> name <if>.20 type vlan id 20`) |
 | R-09 | Samba AD DC y Docker en la misma VM; Samba recomienda no usar el DC como servidor de archivos en instalaciones grandes | Para el tamaño del kit es aceptable. Se valida en el hito de servicios base. Si da problemas, AD pasa a su propia VM (+1,5 GB) |
 | R-10 | Material audiovisual con personas de la comunidad | Solo con consentimiento; sin datos de pacientes en los medios; se publica en la red local, no en Internet |
 | R-11 | NetBird depende de un servicio externo y de Internet | Solo se usa para desarrollo. Se puede desactivar en campo (`systemctl disable netbird`) sin afectar el kit |
-| Q-01 | ¿El MinisForum tiene dos NIC? | **Cerrada:** sí. Se usa D-14 (WAN directa por `wan0`) |
-| Q-02 | ¿Qué AP hay disponible? | Requiere multi-SSID + 802.1Q |
+| R-12 | El AP sale con la contraseña de fábrica (`admin`), se gestiona solo por HTTP e IPv4 y, según su manual, cualquier cliente inalámbrico puede llegar a su página de gestión | Contraseña única guardada en `ansible-vault` antes de conectarlo, WPS desactivado y firmware revisado en base. La gestión se usa solo durante el mantenimiento. Evolución: un AP con VLAN de gestión propia |
+| R-13 | El AP es de 2,4 GHz, 802.11n y con puerto de 100 Mb/s: con muchos celulares y video, el Wi-Fi se satura antes que cualquier otro componente | Videos a 480p, aislamiento de clientes y canal elegido según el lugar. Prueba de carga con 10-20 celulares. Evolución: AP de doble banda con puerto gigabit (13.1) |
+| Q-01 | ¿El mini PC tiene dos NIC? | **Cerrada:** sí (Beelink EQi12, dos NIC de 1 GbE). Se usa D-14 (WAN directa por `wan0`) |
+| Q-02 | ¿Qué AP hay disponible? | **Cerrada:** TP-Link TL-WA801ND v3, con Multi-SSID y VLAN (sección 5.3) |
 | Q-03 | ¿Se unirá un cliente Windows al dominio? | Si es así, habilitar F-06 |
-| Q-04 | ¿El SSID clínico usará 802.1X? | **Cerrada:** no. WPA3/WPA2-Personal |
+| Q-04 | ¿El SSID clínico usará 802.1X? | **Cerrada:** no. WPA2-PSK con AES (el AP no soporta WPA3) |
 | Q-05 | ¿TLS para invitados? | **Cerrada:** TLS mixto (D-16) |
 | Q-06 | ¿Acceso del docente a los repositorios? | Los repositorios son públicos. Se refuerza la regla de cero secretos (D-17) |
 | Q-07 | ¿Qué laptop puede ser el "+1 equipo" (RAM, Ethernet, Linux)? | Inventariar en el hito de diseño |
@@ -509,8 +531,8 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 
 | Fecha | Hito | Tareas |
 |---|---|---|
-| **19 de octubre** | **Entrega 1: diseño** | Documento v0.4, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-02 y Q-07. Prueba de humo de DHIS2 (R-03) |
-| 20-26 de octubre | Servicios base | kit01: netplan, nftables, Kea, radvd, BIND9, Chrony, NetBird. Switch y AP. clinica01 con Samba AD |
+| **19 de octubre** | **Entrega 1: diseño** | Documento v0.5, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
+| 20-26 de octubre | Servicios base | kit01: netplan, nftables, Kea, radvd, BIND9, Chrony, NetBird. sw01 (CCR2004) y AP. clinica01 con Samba AD |
 | 27 de octubre - 2 de noviembre | Almacenamiento y aplicaciones | DHIS2, recursos SMB, comunidad01 (Kiwix, Jellyfin, formularios), TLS interno, flujo de contenido |
 | 3-6 de noviembre | Wi-Fi y seguridad | Portal cautivo, matriz de flujos v4/v6 definitiva (E4), filtrado entre VMs |
 | 7-9 de noviembre | Resiliencia | Backups y restauración, apagado ordenado, autostart, observabilidad, prueba sin Internet |
@@ -523,4 +545,5 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.1 | 2026-09-24 | Documento inicial |
 | v0.2 | 2026-09-27 | Simplificación del diseño. Se elimina la DMZ (VLAN 50): biblioteca y formularios pasan a web01 en la VLAN 20. Se quitan el SSID de gestión, Alertmanager y SNMP, el login LDAP en DHIS2, apt-cacher-ng y la copia externa con rclone. Se fijan Caddy `tls internal` y `ansible-vault`. Se agrega el diagrama físico |
 | v0.3 | 2026-09-28 | Ajuste al hardware disponible: recursos por VM, perfiles con laptops, de siete a cinco VMs, rsyslog en lugar de Loki, backups con rest-server |
-| v0.4 | 2026-10-05 | El host Ubuntu pasa a ser el router/firewall con nftables y desaparece OPNsense (D-02). Dos VLAN físicas y red de servidores virtual (D-15). De cinco VMs a dos, clinica01 y comunidad01, con perfiles por misión (D-19, 10.3) y un solo equipo adicional opcional (10.4). WAN directa por una segunda NIC (D-14). IPv6 con SLAAC + DHCPv6 stateless, sin RDNSS, y plan link-local (D-20, 8.3). Backups pull sin rest-server (D-10). Biblioteca educativa para niños y Jellyfin con contenido de salud y comunitario (D-08, 10.5). Formularios mínimos y asistidos (D-07). TLS mixto (D-16, cierra Q-05). NetBird para administración remota (D-21). Portal cautivo propio con cobertura IPv6 (D-22). Restricciones (3.2), criticidad (10.2), diagnóstico rápido (12), sincronización al recuperar Internet (13.2), calendario (16). Eco ICMP para la prueba IPv6 extremo a extremo (F-22, F-23). Se confirma el MinisForum con dos NIC (cierra Q-01). Diagramas en draw.io |
+| v0.4 | 2026-10-05 | El host Ubuntu pasa a ser el router/firewall con nftables y desaparece OPNsense (D-02). Dos VLAN físicas y red de servidores virtual (D-15). De cinco VMs a dos, clinica01 y comunidad01, con perfiles por misión (D-19, 10.3) y un solo equipo adicional opcional (10.4). WAN directa por una segunda NIC (D-14). IPv6 con SLAAC + DHCPv6 stateless, sin RDNSS, y plan link-local (D-20, 8.3). Backups pull sin rest-server (D-10). Biblioteca educativa para niños y Jellyfin con contenido de salud y comunitario (D-08, 10.5). Formularios mínimos y asistidos (D-07). TLS mixto (D-16, cierra Q-05). NetBird para administración remota (D-21). Portal cautivo propio con cobertura IPv6 (D-22). Restricciones (3.2), criticidad (10.2), diagnóstico rápido (12), sincronización al recuperar Internet (13.2), calendario (16). Eco ICMP para la prueba IPv6 extremo a extremo (F-22, F-23). Se confirma que el mini PC tiene dos NIC (cierra Q-01). Diagramas en draw.io |
+| v0.5 | 2026-10-05 | Hardware real del kit: mini PC Beelink EQi12 (i3-1220P, 16 GB, 500 GB, dos NIC de 1 GbE), MikroTik CCR2004-16G-2S+PC como switch L2 (`sw01`) y AP TP-Link TL-WA801ND v3 (S-01 a S-03, D-03, sección 5). Puertos con la nomenclatura de RouterOS, todos en el chip `switch1` (ether1-ether8), bridge `bridge-kit` con VLAN filtering, sin reenvío IP, DHCP snooping y gestión limitada (5.2). SSID Clínica con VLAN ID 1 sin etiqueta y WPA2-PSK; aislamiento global; gestión del AP solo IPv4 y sin syslog (5.3, F-16). Energía (≈ 47 W típicos, 2-2,5 h de autonomía) y capacidad del AP recalculadas; videos a 480p (13). Riesgos R-02, R-12 y R-13. Se cierra Q-02 |

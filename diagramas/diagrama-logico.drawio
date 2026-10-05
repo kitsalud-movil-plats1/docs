@@ -16,7 +16,7 @@
         <mxCell id="nb" value="&lt;b&gt;Administrador remoto&lt;/b&gt; (NetBird, desarrollo)&lt;br&gt;túnel WireGuard sobre wan0 · solo SSH y monitoreo" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="1120" y="105" width="340" height="55" as="geometry"/>
         </mxCell>
-        <mxCell id="kit" value="&lt;b&gt;kit01&lt;/b&gt; · Mini PC MinisForum (16 GB, SSD 512 GB, 2 NIC) · Ubuntu Server 24.04 · router, firewall e hipervisor KVM" style="rounded=1;arcSize=2;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=12;spacingTop=16;fontSize=15;strokeWidth=2;" vertex="1" parent="1">
+        <mxCell id="kit" value="&lt;b&gt;kit01&lt;/b&gt; · Mini PC Beelink EQi12 (i3-1220P, 16 GB, SSD 500 GB, 2 NIC 1 GbE) · Ubuntu Server 24.04 · router, firewall e hipervisor KVM" style="rounded=1;arcSize=2;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=12;spacingTop=16;fontSize=15;strokeWidth=2;" vertex="1" parent="1">
           <mxGeometry x="20" y="200" width="1460" height="470" as="geometry"/>
         </mxCell>
         <mxCell id="wan0" value="wan0 (NIC1) · DHCPv4" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;" vertex="1" parent="1">
@@ -74,7 +74,7 @@
         <mxCell id="e_nb" value="wt0" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;dashed=1;strokeColor=#666666;fontSize=12;" edge="1" parent="1" source="nb" target="soporte">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="sw" value="&lt;b&gt;sw01&lt;/b&gt; Cisco SG350X-24 (solo L2) · &lt;b&gt;ap01&lt;/b&gt; un SSID por VLAN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+        <mxCell id="sw" value="&lt;b&gt;sw01&lt;/b&gt; MikroTik CCR2004 (solo L2) · &lt;b&gt;ap01&lt;/b&gt; TL-WA801ND, un SSID por VLAN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="560" y="715" width="380" height="45" as="geometry"/>
         </mxCell>
         <mxCell id="e_lan" value="" style="html=1;endArrow=none;strokeColor=#666666;strokeWidth=3;" edge="1" parent="1" source="lan0" target="sw">
@@ -86,7 +86,7 @@
         <mxCell id="v10a" value="&lt;b&gt;Estaciones cableadas&lt;/b&gt;&lt;br&gt;DHCPv4 .100-.199 (8 h)&lt;br&gt;SLAAC + DHCPv6" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="40" y="870" width="215" height="110" as="geometry"/>
         </mxCell>
-        <mxCell id="v10b" value="&lt;b&gt;SSID SaludMovil-Clinica&lt;/b&gt;&lt;br&gt;WPA3/WPA2-Personal&lt;br&gt;personal de salud" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+        <mxCell id="v10b" value="&lt;b&gt;SSID SaludMovil-Clinica&lt;/b&gt;&lt;br&gt;WPA2-PSK (AES)&lt;br&gt;personal de salud" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="270" y="870" width="215" height="110" as="geometry"/>
         </mxCell>
         <mxCell id="v10c" value="&lt;b&gt;Administración&lt;/b&gt;&lt;br&gt;IPs reservadas .10-.29&lt;br&gt;únicas con SSH y GUIs&lt;br&gt;sw01 .2 · ap01 .3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
@@ -95,7 +95,7 @@
         <mxCell id="v40" value="&lt;b&gt;VLAN 40 · Comunidad&lt;/b&gt; (invitados)&lt;br&gt;10.20.40.0/24 · fd5a:fc7e:d716:40::/64 · gw .1 / fe80::1 · SLAAC + DHCPv6 stateless" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;verticalAlign=top;spacingTop=6;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=13;strokeWidth=2;" vertex="1" parent="1">
           <mxGeometry x="760" y="800" width="720" height="200" as="geometry"/>
         </mxCell>
-        <mxCell id="v40a" value="&lt;b&gt;SSID SaludMovil-Comunidad&lt;/b&gt;&lt;br&gt;abierta + portal cautivo&lt;br&gt;aislamiento de clientes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="1">
+        <mxCell id="v40a" value="&lt;b&gt;SSID SaludMovil-Comunidad&lt;/b&gt;&lt;br&gt;abierta + portal cautivo&lt;br&gt;aislamiento de clientes (AP Isolation)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="780" y="870" width="215" height="110" as="geometry"/>
         </mxCell>
         <mxCell id="v40b" value="&lt;b&gt;Celulares de la comunidad&lt;/b&gt;&lt;br&gt;DHCPv4 .100-.250 (1 h)&lt;br&gt;hasta 50 dispositivos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="1">
