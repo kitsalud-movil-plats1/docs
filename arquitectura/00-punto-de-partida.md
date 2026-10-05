@@ -520,11 +520,15 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | `platform` | Base de kit01 (libvirt, VMs, NUT, NetBird), BIND9, Chrony, Samba AD de clinica01, backups (restic) y Ansible |
 | `apps` | Compose de clinica01 (DHIS2, consulta de formularios) y de comunidad01 (Caddy, Kiwix, Jellyfin, formularios) |
 | `observability` | Prometheus, reglas de alerta, dashboards de Grafana, configuración de rsyslog |
+| `workspace` | Espacio de trabajo: reglas para personas y agentes (`AGENTS.md`), plantillas de plan y evidencia, laboratorio virtual y script para clonar los repositorios. No es un entregable |
 
 **Flujo de trabajo:**
 
-- `main` protegida; ramas `feat/<tema>` o `fix/<tema>`.
-- PR con al menos una revisión y referencia al issue y al ID de decisión o requisito (p. ej. `R2`, `D-20`).
+- Tablero en GitHub Projects: cada issue es la especificación de una tarea, con hito, tamaño, prioridad, equipo y bloqueos.
+- `main` protegida en todos los repositorios; ramas `feat/<numero>-<tema>` o `fix/<numero>-<tema>` en el repositorio del issue.
+- Antes de configurar, un plan de micro-tareas en el issue; cada micro-tarea se verifica (primero en el laboratorio virtual) antes de pasar a la siguiente, con un commit por micro-tarea.
+- PR con al menos una revisión, `Closes` al issue y referencia al ID de decisión o requisito (p. ej. `R2`, `D-20`); la evidencia de verificación va en el PR.
+- Las reglas completas están en `AGENTS.md` del repositorio `workspace`.
 - Commits en español y en imperativo.
 - Nunca se suben secretos: `.gitignore` los excluye; `.env.example` sirve de plantilla.
 
