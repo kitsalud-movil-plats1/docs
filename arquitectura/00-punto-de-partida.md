@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.5
+## Documento de arquitectura inicial (punto de partida) - v0.6
 
 **Proyecto final - Plataformas I - 2026-2** · Organización: `kitsalud-movil-plats1`
 
@@ -79,7 +79,7 @@ El criterio que guía el diseño es el del enunciado: construir una plataforma *
 |---|---|---|
 | S-01 | El mini PC Beelink EQi12 (Intel Core i3-1220P de 10 núcleos y 12 hilos, 16 GB DDR4, SSD de 500 GB, **dos NIC de 1 GbE**) estará disponible para el desarrollo y la sustentación | Si no estuviera, el mismo diseño corre en una laptop de 16 GB con un adaptador USB-Ethernet para la WAN |
 | S-02 | El laboratorio presta el MikroTik CCR2004-16G-2S+PC (usado como switch) y el MikroTik RB3011 (uplink) | Cualquier switch 802.1Q sirve; el uplink puede ser directo a la red de la universidad |
-| S-03 | El AP TP-Link TL-WA801ND v3 en modo Multi-SSID asigna una VLAN a cada SSID (hasta cuatro) y envía sin etiqueta los SSID con VLAN ID 1 y su propia gestión, como describe su manual | Si el firmware no se comporta así, la red Interna sería solo cableada y el AP quedaría solo para la Comunidad |
+| S-03 | El AP TP-Link TL-WA801ND v3 (firmware 3.16.9) en modo Multi-SSID etiqueta cada SSID con su VLAN (hasta cuatro) y deja su gestión en la VLAN del SSID1, como indica su interfaz web | Se comprueba en la primera configuración. Si la gestión no respondiera etiquetada, ether2 pasaría a PVID 10 para la gestión; si el Multi-SSID con VLAN fallara, la red Interna sería solo cableada |
 | S-04 | El uplink entrega IPv4 por DHCP con NAT y no entrega prefijo IPv6 | Si entrega DHCPv6-PD, se puede agregar GUA más adelante; no cambia las políticas |
 | S-05 | La demostración se hace en el laboratorio; el "sitio remoto" se simula | Ninguno |
 | S-06 | La carga esperada es de 5-10 dispositivos del personal y hasta 50 dispositivos simultáneos de la comunidad | Ampliar el pool de la comunidad a /23 y agregar un AP |
@@ -133,7 +133,7 @@ El criterio que guía el diseño es el del enunciado: construir una plataforma *
 | `kit01` - mini PC Beelink EQi12 | Router/firewall, servicios de red, hipervisor de clinica01 y comunidad01 | Intel Core i3-1220P (10 núcleos, 12 hilos, hasta 4,4 GHz), 16 GB DDR4, SSD de 500 GB, dos NIC de 1 GbE (`wan0` y `lan0`), fuente interna de 85 W |
 | Disco USB (256 GB o más) | Repositorio de backups (restic) | Conectado a kit01; se monta solo durante el backup |
 | MikroTik CCR2004-16G-2S+PC (`sw01`) | Conmutación L2 con VLAN 802.1Q | RouterOS 7, CPU ARM de 4 núcleos, 4 GB de RAM, 16 puertos de 1 GbE y 2 SFP+ de 10 Gb/s, refrigeración pasiva, alimentación 36-57 V DC. |
-| TP-Link TL-WA801ND v3 (`ap01`) | Wi-Fi con un SSID por VLAN | 802.11n en 2,4 GHz (300 Mb/s nominales), un puerto Ethernet de 10/100, hasta 4 SSID con VLAN, PoE pasivo con inyector incluido (9 V, 0,6 A) |
+| TP-Link TL-WA801ND v3 (`ap01`) | Wi-Fi con un SSID por VLAN | Firmware 3.16.9 Build 150723. 802.11n en 2,4 GHz (300 Mb/s nominales), un puerto Ethernet de 10/100, hasta 4 SSID con VLAN, PoE pasivo con inyector incluido (9 V, 0,6 A) |
 | UPS (lógica) | Alimentación segura y apagado controlado | Sin equipo físico; NUT `dummy-ups` en kit01 (13) |
 | Laptop (opcional) | Aloja comunidad01 si falta RAM | Solo en el perfil "+1 equipo" (10.4) |
 | _Fuera del kit:_ MikroTik RB3011 | Uplink del sitio (NAT a la red de la universidad) | `192.168.88.0/24`, conectado directo a `wan0` |
@@ -143,7 +143,7 @@ El criterio que guía el diseño es el del enunciado: construir una plataforma *
 | Puerto | Nombre en RouterOS | Conectado a | Modo | VLAN |
 |---|---|---|---|---|
 | ether1 | `ether1-kit01` | kit01 (`lan0`) | Trunk | 10 y 40 etiquetadas (20 solo en el perfil "+1 equipo"); solo admite tramas etiquetadas |
-| ether2 | `ether2-ap01` | ap01 | Híbrido | 10 sin etiqueta (PVID 10: gestión del AP y SSID Clínica) y 40 etiquetada (SSID Comunidad) |
+| ether2 | `ether2-ap01` | ap01 | Trunk | 10 (SSID Clínica y gestión del AP) y 40 (SSID Comunidad) etiquetadas; solo admite tramas etiquetadas |
 | ether3 | `ether3-laptop` | Laptop (opcional) | Trunk | 10 y 20 etiquetadas; deshabilitado si no se usa |
 | ether4-ether8 | `ether4-interna` … `ether8-interna` | Estaciones clínicas y de administración | Acceso | 10 (PVID 10, solo tramas sin etiqueta) |
 | ether9-ether16, sfp-sfpplus1-2 | - | Sin uso | Deshabilitados y fuera del bridge | - |
@@ -165,17 +165,18 @@ El RB3011 no pasa por sw01: va directo a `wan0`.
 
 ### 5.3 SSID
 
-El AP trabaja en modo Multi-SSID con VLAN. Envía con etiqueta el tráfico de cada SSID, salvo el del SSID con VLAN ID 1, que sale sin etiqueta junto con la gestión del propio AP; sw01 lo pone en la VLAN 10 (PVID de ether2).
+El AP (firmware 3.16.9) trabaja en modo Multi-SSID con VLAN: el tráfico de cada SSID sale **etiquetado** con su VLAN y la gestión del propio AP solo se alcanza desde la VLAN del **SSID1**, también etiquetada. Por eso `SaludMovil-Clinica` es el SSID1 (VLAN 10) y ether2 de sw01 es un trunk como ether1.
 
-| SSID | VLAN ID en el AP | VLAN del kit | Seguridad |
+| Posición | SSID | VLAN ID | Seguridad |
 |---|---|---|---|
-| `SaludMovil-Clinica` | 1 (sin etiqueta) | 10 (Interna) | WPA2-PSK con AES (el AP no soporta WPA3) |
-| `SaludMovil-Comunidad` | 40 | 40 (Comunidad) | Abierta + portal cautivo |
+| SSID1 | `SaludMovil-Clinica` | 10 (Interna; también la gestión del AP) | WPA2-PSK con AES (el AP no soporta WPA3) |
+| SSID2 | `SaludMovil-Comunidad` | 40 (Comunidad) | Abierta + portal cautivo |
 
-- El aislamiento de clientes del AP (*AP Isolation*) es global: aplica a los dos SSID, así que los dispositivos inalámbricos no se ven entre sí.
-- WPS desactivado.
-- La gestión del AP es una página web por HTTP, solo en IPv4. Según su manual, cualquier cliente inalámbrico puede llegar a ella, así que la contraseña de fábrica se cambia antes de conectarlo a la red (R-12).
-- El AP no envía syslog: su registro se consulta en su propia página.
+- **Dirección del AP:** fija, `10.20.10.3/24` con gateway `10.20.10.1`. "Allow remote access" queda desactivado, así que la gestión solo responde desde la VLAN 10, que es donde están las IPs de administración. Por NetBird se llega a través de kit01.
+- **Servidor DHCP del AP desactivado.** De fábrica viene activo y repartiría direcciones en la VLAN 10; se apaga antes de conectarlo a sw01.
+- **Seguridad del AP:** aislamiento de clientes (*AP Isolation*), que es global y aplica a los dos SSID; WPS y SNMP desactivados.
+- **Gestión:** página web por HTTP, solo en IPv4. Según su documentación, los clientes inalámbricos también pueden llegar a ella, así que la contraseña de fábrica se cambia antes de conectarlo (R-12).
+- **Registro:** el AP no envía syslog; su registro se consulta en su propia página.
 
 ### 5.4 Diagrama físico
 
@@ -496,7 +497,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | R-09 | Samba AD DC y Docker en la misma VM; Samba recomienda no usar el DC como servidor de archivos en instalaciones grandes | Para el tamaño del kit es aceptable. Se valida en el hito de servicios base. Si da problemas, AD pasa a su propia VM (+1,5 GB) |
 | R-10 | Material audiovisual con personas de la comunidad | Solo con consentimiento; sin datos de pacientes en los medios; se publica en la red local, no en Internet |
 | R-11 | NetBird depende de un servicio externo y de Internet | Solo se usa para desarrollo. Se puede desactivar en campo (`systemctl disable netbird`) sin afectar el kit |
-| R-12 | El AP sale con la contraseña de fábrica (`admin`), se gestiona solo por HTTP e IPv4 y, según su manual, cualquier cliente inalámbrico puede llegar a su página de gestión | Contraseña única guardada en `ansible-vault` antes de conectarlo, WPS desactivado y firmware revisado en base. La gestión se usa solo durante el mantenimiento. Evolución: un AP con VLAN de gestión propia |
+| R-12 | El AP sale con la contraseña de fábrica (`admin`), se gestiona solo por HTTP e IPv4 y, según su manual, cualquier cliente inalámbrico puede llegar a su página de gestión | Antes de conectarlo: contraseña única guardada en `ansible-vault`, servidor DHCP propio desactivado, WPS y SNMP desactivados y "Allow remote access" apagado (gestión solo desde la VLAN 10); firmware revisado en base. La gestión se usa solo durante el mantenimiento. Evolución: un AP con VLAN de gestión propia |
 | R-13 | El AP es de 2,4 GHz, 802.11n y con puerto de 100 Mb/s: con muchos celulares y video, el Wi-Fi se satura antes que cualquier otro componente | Videos a 480p, aislamiento de clientes y canal elegido según el lugar. Prueba de carga con 10-20 celulares. Evolución: AP de doble banda con puerto gigabit (13.1) |
 | Q-01 | ¿El mini PC tiene dos NIC? | **Cerrada:** sí (Beelink EQi12, dos NIC de 1 GbE). Se usa D-14 (WAN directa por `wan0`) |
 | Q-02 | ¿Qué AP hay disponible? | **Cerrada:** TP-Link TL-WA801ND v3, con Multi-SSID y VLAN (sección 5.3) |
@@ -531,7 +532,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 
 | Fecha | Hito | Tareas |
 |---|---|---|
-| **19 de octubre** | **Entrega 1: diseño** | Documento v0.5, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
+| **19 de octubre** | **Entrega 1: diseño** | Documento v0.6, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
 | 20-26 de octubre | Servicios base | kit01: netplan, nftables, Kea, radvd, BIND9, Chrony, NetBird. sw01 (CCR2004) y AP. clinica01 con Samba AD |
 | 27 de octubre - 2 de noviembre | Almacenamiento y aplicaciones | DHIS2, recursos SMB, comunidad01 (Kiwix, Jellyfin, formularios), TLS interno, flujo de contenido |
 | 3-6 de noviembre | Wi-Fi y seguridad | Portal cautivo, matriz de flujos v4/v6 definitiva (E4), filtrado entre VMs |
