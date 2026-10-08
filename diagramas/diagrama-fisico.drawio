@@ -25,7 +25,7 @@
         <mxCell id="sw" value="&lt;b&gt;sw01 · MikroTik CCR2004-16G-2S+PC&lt;/b&gt; (solo L2)&lt;br&gt;bridge-kit con VLAN filtering · sin reenvío IP&lt;br&gt;VLAN 10 Interna · 40 Comunidad · 20 solo con el +1 equipo&lt;br&gt;gestión 10.20.10.2 (solo kit01 y admin) · DHCP snooping" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=13;strokeWidth=2;" vertex="1" parent="1">
           <mxGeometry x="360" y="385" width="460" height="115" as="geometry"/>
         </mxCell>
-        <mxCell id="ap" value="&lt;b&gt;ap01 · TP-Link TL-WA801ND v3&lt;/b&gt;&lt;br&gt;802.11n 2,4 GHz · puerto 10/100 · PoE pasivo&lt;br&gt;gestión 10.20.10.3 (sin etiqueta)&lt;br&gt;SaludMovil-Clinica: VLAN ID 1 → VLAN 10&lt;br&gt;SaludMovil-Comunidad: VLAN ID 40" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+        <mxCell id="ap" value="&lt;b&gt;ap01 · TP-Link TL-WA801ND v3&lt;/b&gt;&lt;br&gt;802.11n 2,4 GHz · puerto 10/100 · PoE pasivo&lt;br&gt;firmware 3.16.9 · gestión 10.20.10.3 (VLAN 10)&lt;br&gt;SSID1 SaludMovil-Clinica → VLAN 10&lt;br&gt;SSID2 SaludMovil-Comunidad → VLAN 40" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="20" y="580" width="300" height="120" as="geometry"/>
         </mxCell>
         <mxCell id="est" value="&lt;b&gt;Estaciones clínicas y de administración&lt;/b&gt;&lt;br&gt;ether4-ether8 · acceso VLAN 10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
@@ -61,7 +61,7 @@
         <mxCell id="e_trunk" value="lan0 (NIC2) ↔ ether1&lt;br&gt;trunk 10, 40 (solo etiquetadas)" style="html=1;endArrow=none;strokeColor=#333333;strokeWidth=4;fontSize=12;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="kit" target="sw">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="e_ap" value="ether2 · 10 sin etiqueta (PVID)&lt;br&gt;40 etiquetada" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeColor=#333333;strokeWidth=2;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=0.15;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="sw" target="ap">
+        <mxCell id="e_ap" value="ether2 · trunk&lt;br&gt;10, 40 (etiquetadas)" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeColor=#333333;strokeWidth=2;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=0.15;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="sw" target="ap">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_est" value="ether4-ether8" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeColor=#6c8ebf;strokeWidth=2;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=0.25;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="sw" target="est">
