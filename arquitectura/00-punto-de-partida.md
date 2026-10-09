@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.8
+## Documento de arquitectura inicial (punto de partida) - v0.9
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -130,7 +130,7 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 
 | Equipo | Rol | Notas |
 |---|---|---|
-| `kit01` - mini PC Beelink EQi12 | Router/firewall, servicios de red, hipervisor de clinica01 y comunidad01 | Intel Core i3-1220P (10 núcleos, 12 hilos, hasta 4,4 GHz), 16 GB DDR4, SSD de 500 GB, dos NIC de 1 GbE (`wan0` y `lan0`), fuente interna de 85 W |
+| `kit01` - mini PC Beelink EQi12 | Router/firewall, servicios de red, hipervisor de clinica01 y comunidad01 | Intel Core i3-1220P (10 núcleos, 12 hilos, hasta 4,4 GHz), 16 GB DDR4, SSD de 500 GB, dos NIC de 1 GbE (`wan0` es `enp170s0` y `lan0` es `enp171s0`, identificadas por MAC porque los puertos no tienen rótulo), fuente interna de 85 W |
 | Disco USB (256 GB o más) | Repositorio de backups (restic) | Conectado a kit01; se monta solo durante el backup |
 | MikroTik CCR2004-16G-2S+PC (`sw01`) | Conmutación L2 con VLAN 802.1Q | RouterOS 7, CPU ARM de 4 núcleos, 4 GB de RAM, 16 puertos de 1 GbE y 2 SFP+ de 10 Gb/s, refrigeración pasiva, alimentación 36-57 V DC. |
 | TP-Link TL-WA801ND v3 (`ap01`) | Wi-Fi con un SSID por VLAN | Firmware 3.16.9 Build 150723. 802.11n en 2,4 GHz (300 Mb/s nominales), un puerto Ethernet de 10/100, hasta 4 SSID con VLAN, PoE pasivo con inyector incluido (9 V, 0,6 A) |
@@ -142,13 +142,13 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 
 | Puerto | Nombre en RouterOS | Conectado a | Modo | VLAN |
 |---|---|---|---|---|
-| ether1 | `ether1-kit01` | kit01 (`lan0`) | Trunk | 10 y 40 etiquetadas (20 solo en el perfil "+1 equipo"); solo admite tramas etiquetadas |
+| ether1 | `ether1-kit01` | kit01 `lan0` (`enp171s0`, MAC `78:55:36:09:07:0a`) | Trunk | 10 y 40 etiquetadas (20 solo en el perfil "+1 equipo"); solo admite tramas etiquetadas |
 | ether2 | `ether2-ap01` | ap01 | Híbrido | Hacia el AP salen 10 (SSID Clínica y gestión) y 40 (SSID Comunidad) etiquetadas. Desde el AP entra lo etiquetado y, sin etiqueta, lo que va a PVID 10 (respuestas de la gestión del AP) |
 | ether3 | `ether3-laptop` | Laptop (opcional) | Trunk | 10 y 20 etiquetadas; deshabilitado si no se usa |
 | ether4-ether8 | `ether4-interna` … `ether8-interna` | Estaciones clínicas y de administración | Acceso | 10 (PVID 10, solo tramas sin etiqueta) |
 | ether9-ether16, sfp-sfpplus1-2 | - | Sin uso | Deshabilitados y fuera del bridge | - |
 
-El uplink no pasa por sw01: va directo a `wan0`.
+El uplink no pasa por sw01 y va directo a `wan0` (`enp170s0`, MAC `78:55:36:09:07:0b`). Los dos puertos Ethernet del mini PC no tienen rótulo, así que cada uno se identifica por el nombre de su interfaz y su MAC.
 
 **Cómo sw01 hace de switch.** En RouterOS, cada puerto es por defecto una interfaz de router independiente. Para que conmute, los puertos en uso se agregan a un **bridge** (un switch dentro del equipo), llamado `bridge-kit`, con `vlan-filtering=yes`: la tabla de VLAN del bridge define qué VLAN lleva cada puerto, con etiqueta o sin ella, y descarta lo que no corresponda (filtrado de ingreso). Los puertos que no se usan quedan deshabilitados y fuera del bridge.
 
@@ -538,7 +538,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 
 | Fecha | Hito | Tareas |
 |---|---|---|
-| **19 de octubre** | **Entrega 1: diseño** | Documento v0.8, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
+| **19 de octubre** | **Entrega 1: diseño** | Documento v0.9, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
 | 20-26 de octubre | Servicios base | kit01: netplan, nftables, Kea, radvd, BIND9, Chrony, NetBird. sw01 (CCR2004) y AP. clinica01 con Samba AD |
 | 27 de octubre - 2 de noviembre | Almacenamiento y aplicaciones | DHIS2, recursos SMB, comunidad01 (Kiwix, Jellyfin, formularios), TLS interno, flujo de contenido |
 | 3-6 de noviembre | Wi-Fi y seguridad | Portal cautivo, matriz de flujos v4/v6 definitiva (E4), filtrado entre VMs |
@@ -557,3 +557,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.6 | 2026-10-08 | ap01 según su firmware real (3.16.9), con SSID1 `SaludMovil-Clinica` en la VLAN 10 etiquetada junto con la gestión del AP, SSID2 `SaludMovil-Comunidad` en la VLAN 40, ether2 de sw01 como trunk, servidor DHCP del AP desactivado, "Allow remote access" y SNMP apagados (S-03, 5.2, 5.3, R-12) |
 | v0.7 | 2026-10-08 | Administración con un usuario compartido y SSH con contraseña, sin root directo, limitado por origen (D-18, 10.1, R-06); riesgo aceptado R-14. Repositorio `workspace` y flujo de trabajo por micro-tareas (sección 15) |
 | v0.8 | 2026-10-09 | Primera sesión de laboratorio. ether2 de sw01 queda híbrido porque la gestión del AP responde sin etiqueta (S-03, 5.2, 5.3); uplink del laboratorio con dirección fija y prefijo IPv6 anunciado que el kit no usa (S-04, D-11, 7.1); Q-09 sobre el papel del RB3011 |
+| v0.9 | 2026-10-10 | Interfaces de kit01 identificadas por nombre y MAC, porque los puertos del mini PC no tienen rótulo (5.1, 5.2 y diagrama físico) |
