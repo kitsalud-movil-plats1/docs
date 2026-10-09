@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.7
+## Documento de arquitectura inicial (punto de partida) - v0.8
 
 **Proyecto final - Plataformas I - 2026-2** · Organización: `kitsalud-movil-plats1`
 
@@ -79,8 +79,8 @@ El criterio que guía el diseño es el del enunciado: construir una plataforma *
 |---|---|---|
 | S-01 | El mini PC Beelink EQi12 (Intel Core i3-1220P de 10 núcleos y 12 hilos, 16 GB DDR4, SSD de 500 GB, **dos NIC de 1 GbE**) estará disponible para el desarrollo y la sustentación | Si no estuviera, el mismo diseño corre en una laptop de 16 GB con un adaptador USB-Ethernet para la WAN |
 | S-02 | El laboratorio presta el MikroTik CCR2004-16G-2S+PC (usado como switch) y el MikroTik RB3011 (uplink) | Cualquier switch 802.1Q sirve; el uplink puede ser directo a la red de la universidad |
-| S-03 | El AP TP-Link TL-WA801ND v3 (firmware 3.16.9) en modo Multi-SSID etiqueta cada SSID con su VLAN (hasta cuatro) y deja su gestión en la VLAN del SSID1, como indica su interfaz web | Se comprueba en la primera configuración. Si la gestión no respondiera etiquetada, ether2 pasaría a PVID 10 para la gestión; si el Multi-SSID con VLAN fallara, la red Interna sería solo cableada |
-| S-04 | El uplink entrega IPv4 por DHCP con NAT y no entrega prefijo IPv6 | Si entrega DHCPv6-PD, se puede agregar GUA más adelante; no cambia las políticas |
+| S-03 | El AP TP-Link TL-WA801ND v3 (firmware 3.16.9) en modo Multi-SSID etiqueta cada SSID con su VLAN (hasta cuatro). Su gestión **recibe** tramas etiquetadas en la VLAN del SSID1 y **responde sin etiqueta** (comprobado en el laboratorio) | ether2 de sw01 es híbrido para aceptar esas respuestas (sección 5.2). Falta comprobar con clientes que los dos SSID salen etiquetados; si el Multi-SSID con VLAN fallara, la red Interna sería solo cableada |
+| S-04 | El uplink entrega IPv4 con salida a Internet (por DHCP o con dirección fija, según el sitio). Si anuncia IPv6, el kit no lo usa: IPv6 es interno (D-12) y `wan0` no acepta RA. En el laboratorio: red `192.168.160.0/24` con dirección fija, DNS `192.168.215.20` y `.30`, y un prefijo IPv6 anunciado por SLAAC (`2001:db8:a:c::/64`) | Si el sitio entrega DHCPv6-PD, se puede agregar GUA más adelante; no cambia las políticas |
 | S-05 | La demostración se hace en el laboratorio; el "sitio remoto" se simula | Ninguno |
 | S-06 | La carga esperada es de 5-10 dispositivos del personal y hasta 50 dispositivos simultáneos de la comunidad | Ampliar el pool de la comunidad a /23 y agregar un AP |
 | S-07 | Todo el software es libre. Windows solo aparece como cliente opcional para unirse al dominio | Ninguno |
@@ -111,7 +111,7 @@ El criterio que guía el diseño es el del enunciado: construir una plataforma *
 | D-08 | Contenido comunitario: **Kiwix** (biblioteca de salud y contenido infantil) + **Jellyfin** (audio y video: contenido médico general y contenido para la comunidad) | Kolibri; solo Kiwix | Jellyfin publica cualquier carpeta de audio o video sin preparación previa. Kolibri requiere Kolibri Studio (con Internet) para el contenido propio |
 | D-09 | Observabilidad: **Prometheus + Grafana + rsyslog en kit01** | Zabbix; Loki; monitoreo dentro de una VM | Permite diagnosticar aunque una VM se caiga. Sin Internet no hay a dónde enviar alertas, así que se revisan en Grafana |
 | D-10 | Backups con **restic en modelo pull**: kit01 extrae por SSH los dumps de cada VM y los guarda cifrados en un disco USB | rest-server append-only; push por SFTP | Las VMs no tienen credenciales del repositorio de backups. Es otro medio físico y se desmonta al terminar. Se respaldan datos y configuraciones, no imágenes de VM |
-| D-11 | IPv4 `10.20.<id>.0/24`, gateway `.1` | `192.168.<id>.0/24` | Evita solaparse con el uplink `192.168.88.0/24` y se resume en una sola regla `10.20.0.0/16` |
+| D-11 | IPv4 `10.20.<id>.0/24`, gateway `.1` | `192.168.<id>.0/24` | Evita solaparse con las redes del uplink (`192.168.x`, como `192.168.160.0/24` en el laboratorio) y se resume en una sola regla `10.20.0.0/16` |
 | D-12 | IPv6 **ULA `fd5a:fc7e:d716::/48`** con un /64 por segmento; sin GUA | Solo GUA; `2001:db8::/32` | Direcciones estables sin Internet. `2001:db8::/32` es solo para documentación (RFC 3849) |
 | D-13 | Organización con repos por dominio: `.github`, `docs`, `network`, `platform`, `apps`, `observability` | Monorepo; un repo por servicio | Trazabilidad por área y PRs pequeños |
 | D-14 | **Dos NIC**: `wan0` hacia el uplink y `lan0` como trunk 802.1Q hacia el switch | WAN como VLAN 900 en el trunk | El Beelink EQi12 tiene dos NIC de 1 GbE (Q-01): la WAN queda separada físicamente y desaparece una VLAN |
@@ -136,19 +136,19 @@ El criterio que guía el diseño es el del enunciado: construir una plataforma *
 | TP-Link TL-WA801ND v3 (`ap01`) | Wi-Fi con un SSID por VLAN | Firmware 3.16.9 Build 150723. 802.11n en 2,4 GHz (300 Mb/s nominales), un puerto Ethernet de 10/100, hasta 4 SSID con VLAN, PoE pasivo con inyector incluido (9 V, 0,6 A) |
 | UPS (lógica) | Alimentación segura y apagado controlado | Sin equipo físico; NUT `dummy-ups` en kit01 (13) |
 | Laptop (opcional) | Aloja comunidad01 si falta RAM | Solo en el perfil "+1 equipo" (10.4) |
-| _Fuera del kit:_ MikroTik RB3011 | Uplink del sitio (NAT a la red de la universidad) | `192.168.88.0/24`, conectado directo a `wan0` |
+| _Fuera del kit:_ uplink del sitio | Salida a Internet (NAT) | En el laboratorio, la red `192.168.160.0/24` conectada directo a `wan0`; si pasa por el MikroTik RB3011 se confirma en Q-09 |
 
 ### 5.2 Conexiones y puertos de sw01
 
 | Puerto | Nombre en RouterOS | Conectado a | Modo | VLAN |
 |---|---|---|---|---|
 | ether1 | `ether1-kit01` | kit01 (`lan0`) | Trunk | 10 y 40 etiquetadas (20 solo en el perfil "+1 equipo"); solo admite tramas etiquetadas |
-| ether2 | `ether2-ap01` | ap01 | Trunk | 10 (SSID Clínica y gestión del AP) y 40 (SSID Comunidad) etiquetadas; solo admite tramas etiquetadas |
+| ether2 | `ether2-ap01` | ap01 | Híbrido | Hacia el AP: 10 (SSID Clínica y gestión) y 40 (SSID Comunidad) etiquetadas. Desde el AP: etiquetadas y, sin etiqueta, en PVID 10 (respuestas de la gestión del AP) |
 | ether3 | `ether3-laptop` | Laptop (opcional) | Trunk | 10 y 20 etiquetadas; deshabilitado si no se usa |
 | ether4-ether8 | `ether4-interna` … `ether8-interna` | Estaciones clínicas y de administración | Acceso | 10 (PVID 10, solo tramas sin etiqueta) |
 | ether9-ether16, sfp-sfpplus1-2 | - | Sin uso | Deshabilitados y fuera del bridge | - |
 
-El RB3011 no pasa por sw01: va directo a `wan0`.
+El uplink no pasa por sw01: va directo a `wan0`.
 
 **Cómo sw01 hace de switch.** En RouterOS, cada puerto es por defecto una interfaz de router independiente. Para que conmute, los puertos en uso se agregan a un **bridge** (un switch dentro del equipo), llamado `bridge-kit`, con `vlan-filtering=yes`: la tabla de VLAN del bridge define qué VLAN lleva cada puerto, con etiqueta o sin ella, y descarta lo que no corresponda (filtrado de ingreso). Los puertos que no se usan quedan deshabilitados y fuera del bridge.
 
@@ -165,7 +165,7 @@ El RB3011 no pasa por sw01: va directo a `wan0`.
 
 ### 5.3 SSID
 
-El AP (firmware 3.16.9) trabaja en modo Multi-SSID con VLAN: el tráfico de cada SSID sale **etiquetado** con su VLAN y la gestión del propio AP solo se alcanza desde la VLAN del **SSID1**, también etiquetada. Por eso `SaludMovil-Clinica` es el SSID1 (VLAN 10) y ether2 de sw01 es un trunk como ether1.
+El AP (firmware 3.16.9) trabaja en modo Multi-SSID con VLAN: el tráfico de cada SSID sale **etiquetado** con su VLAN, y la gestión del propio AP se alcanza desde la VLAN del **SSID1**. En el laboratorio se comprobó que la gestión recibe las tramas etiquetadas pero **responde sin etiqueta**; por eso ether2 de sw01 es híbrido: entrega las VLAN 10 y 40 etiquetadas y acepta también tramas sin etiqueta, que mete en la VLAN 10 (PVID 10). Los clientes del SSID Comunidad no pueden aprovecharlo: el AP etiqueta su tráfico con la VLAN 40. `SaludMovil-Clinica` es el SSID1 (VLAN 10).
 
 | Posición | SSID | VLAN ID | Seguridad |
 |---|---|---|---|
@@ -257,7 +257,7 @@ El orden entre VMs se controla con el `autostart` de libvirt más un retardo. De
 | Interna (VLAN 10) | `lan0.10` | 10.20.10.0/24 | 10.20.10.1 | Estática (red) + reservas (admin) + DHCPv4 | 10.20.10.100-199 (lease 8 h) |
 | Servidores | `br-srv` | 10.20.20.0/24 | 10.20.20.1 | Estática | - |
 | Comunidad (VLAN 40) | `lan0.40` | 10.20.40.0/24 | 10.20.40.1 | DHCPv4 | 10.20.40.100-250 (lease 1 h) |
-| WAN | `wan0` | 192.168.88.0/24 | 192.168.88.1 (RB3011) | DHCP del RB3011 | - |
+| WAN | `wan0` | La del uplink (en el laboratorio, `192.168.160.0/24`) | El del uplink (en el laboratorio, `192.168.160.1`) | DHCP o fija según el sitio (en el laboratorio, fija: `192.168.160.69`) | - |
 | Parking (VLAN 999) | - | - | - | Sin L3 | - |
 
 **Convención de hosts:** `.1` gateway, `.2-.9` equipos de red, `.10-.29` servidores (Servidores) o estaciones de administración con reserva (Interna), `.100-.250` clientes.
@@ -508,6 +508,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | Q-06 | ¿Acceso del docente a los repositorios? | Los repositorios son públicos. Se refuerza la regla de cero secretos (D-17) |
 | Q-07 | ¿Qué laptop puede ser el "+1 equipo" (RAM, Ethernet, Linux)? | Inventariar en el hito de diseño |
 | Q-08 | ¿Entrega final el 11 de noviembre o el 23/25 de noviembre? | Confirmar con el docente; el calendario (16) asume el 11 de noviembre |
+| Q-09 | ¿El uplink del laboratorio (`192.168.160.0/24`) pasa por el RB3011 o es la red del laboratorio directa? | Confirmar en la próxima sesión; define si el RB3011 forma parte del montaje de pruebas |
 
 ## 15. Organización del trabajo
 
@@ -537,7 +538,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 
 | Fecha | Hito | Tareas |
 |---|---|---|
-| **19 de octubre** | **Entrega 1: diseño** | Documento v0.7, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
+| **19 de octubre** | **Entrega 1: diseño** | Documento v0.8, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
 | 20-26 de octubre | Servicios base | kit01: netplan, nftables, Kea, radvd, BIND9, Chrony, NetBird. sw01 (CCR2004) y AP. clinica01 con Samba AD |
 | 27 de octubre - 2 de noviembre | Almacenamiento y aplicaciones | DHIS2, recursos SMB, comunidad01 (Kiwix, Jellyfin, formularios), TLS interno, flujo de contenido |
 | 3-6 de noviembre | Wi-Fi y seguridad | Portal cautivo, matriz de flujos v4/v6 definitiva (E4), filtrado entre VMs |
@@ -555,3 +556,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.5 | 2026-10-05 | Hardware real del kit: mini PC Beelink EQi12 (i3-1220P, 16 GB, 500 GB, dos NIC de 1 GbE), MikroTik CCR2004-16G-2S+PC como switch L2 (`sw01`) y AP TP-Link TL-WA801ND v3 (S-01 a S-03, D-03, sección 5). Puertos con la nomenclatura de RouterOS, todos en el chip `switch1` (ether1-ether8), bridge `bridge-kit` con VLAN filtering, sin reenvío IP, DHCP snooping y gestión limitada (5.2). SSID Clínica con VLAN ID 1 sin etiqueta y WPA2-PSK; aislamiento global; gestión del AP solo IPv4 y sin syslog (5.3, F-16). Energía (≈ 47 W típicos, 2-2,5 h de autonomía) y capacidad del AP recalculadas; videos a 480p (13). Riesgos R-02, R-12 y R-13. Se cierra Q-02 |
 | v0.6 | 2026-10-08 | ap01 según su firmware real (3.16.9): SSID1 `SaludMovil-Clinica` en la VLAN 10 etiquetada junto con la gestión del AP, SSID2 `SaludMovil-Comunidad` en la VLAN 40, ether2 de sw01 como trunk, servidor DHCP del AP desactivado, "Allow remote access" y SNMP apagados (S-03, 5.2, 5.3, R-12) |
 | v0.7 | 2026-10-08 | Administración con un usuario compartido y SSH con contraseña, sin root directo, limitado por origen (D-18, 10.1, R-06); riesgo aceptado R-14. Repositorio `workspace` y flujo de trabajo por micro-tareas (sección 15) |
+| v0.8 | 2026-10-09 | Primera sesión de laboratorio: ether2 de sw01 híbrido porque la gestión del AP responde sin etiqueta (S-03, 5.2, 5.3); uplink del laboratorio con dirección fija y prefijo IPv6 anunciado que el kit no usa (S-04, D-11, 7.1); Q-09 sobre el papel del RB3011 |
