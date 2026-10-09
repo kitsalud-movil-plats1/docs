@@ -4,13 +4,13 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="leyenda" value="&lt;b&gt;Kit móvil de salud · diagrama lógico (v0.4)&lt;/b&gt;&lt;br&gt;Todo el tráfico entre redes pasa por nftables en kit01&lt;br&gt;Política por defecto: denegar y registrar (IPv4 e IPv6)&lt;br&gt;ULA fd5a:fc7e:d716::/48 · gateway .1 / fe80::1 en cada red interna" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;align=left;spacingLeft=10;fillColor=#FFFFFF;strokeColor=#999999;fontSize=13;" vertex="1" parent="1">
+        <mxCell id="leyenda" value="&lt;b&gt;Kit móvil de salud · diagrama lógico (v0.8)&lt;/b&gt;&lt;br&gt;Todo el tráfico entre redes pasa por nftables en kit01&lt;br&gt;La política por defecto es denegar y registrar (IPv4 e IPv6)&lt;br&gt;ULA fd5a:fc7e:d716::/48 · gateway .1 / fe80::1 en cada red interna" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;align=left;spacingLeft=10;fillColor=#FFFFFF;strokeColor=#999999;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="20" y="20" width="460" height="110" as="geometry"/>
         </mxCell>
         <mxCell id="inet" value="Internet (opcional)" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#999999;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="560" y="5" width="200" height="85" as="geometry"/>
         </mxCell>
-        <mxCell id="rb" value="&lt;b&gt;RB3011&lt;/b&gt; · uplink del sitio (fuera del kit)&lt;br&gt;192.168.88.0/24 · NAT a la red de la universidad" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
+        <mxCell id="rb" value="&lt;b&gt;Uplink del sitio&lt;/b&gt; (fuera del kit)&lt;br&gt;en el laboratorio 192.168.160.0/24 · NAT a Internet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="515" y="110" width="290" height="50" as="geometry"/>
         </mxCell>
         <mxCell id="nb" value="&lt;b&gt;Administrador remoto&lt;/b&gt; (NetBird, desarrollo)&lt;br&gt;túnel WireGuard sobre wan0 · solo SSH y monitoreo" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
@@ -22,10 +22,10 @@
         <mxCell id="wan0" value="wan0 (NIC1) · DHCPv4" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="560" y="185" width="200" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="nucleo" value="&lt;b&gt;Núcleo de red (servicios systemd)&lt;/b&gt;&lt;br&gt;• nftables: filtro inet IPv4/IPv6 + NAT IPv4&lt;br&gt;• Kea DHCPv4 (pools y reservas) y DHCPv6 stateless&lt;br&gt;• radvd: SLAAC con M=0, O=1, sin RDNSS&lt;br&gt;• BIND9: zona salud.movil (A, AAAA, PTR)&lt;br&gt;• Chrony: ntp.salud.movil&lt;br&gt;• Portal cautivo: nginx + set de MAC (8 h)" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fillColor=#FFFFFF;strokeColor=#666666;fontSize=13;" vertex="1" parent="1">
+        <mxCell id="nucleo" value="&lt;b&gt;Núcleo de red (servicios systemd)&lt;/b&gt;&lt;br&gt;• nftables con filtro inet IPv4/IPv6 y NAT IPv4&lt;br&gt;• Kea DHCPv4 (pools y reservas) y DHCPv6 stateless&lt;br&gt;• radvd con SLAAC (M=0, O=1), sin RDNSS&lt;br&gt;• BIND9 con la zona salud.movil (A, AAAA, PTR)&lt;br&gt;• Chrony (ntp.salud.movil)&lt;br&gt;• Portal cautivo con nginx y set de MAC (8 h)" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fillColor=#FFFFFF;strokeColor=#666666;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="45" y="245" width="440" height="200" as="geometry"/>
         </mxCell>
-        <mxCell id="zonas" value="&lt;b&gt;Zonas de nftables&lt;/b&gt;&lt;br&gt;wan0 · lan0.10 Interna · lan0.40 Comunidad&lt;br&gt;br-srv Servidores · wt0 NetBird&lt;br&gt;La familia bridge filtra también entre las VMs&lt;br&gt;Gestión (SSH, GUIs): solo admin .10-.29 y wt0" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;" vertex="1" parent="1">
+        <mxCell id="zonas" value="&lt;b&gt;Zonas de nftables&lt;/b&gt;&lt;br&gt;wan0 · lan0.10 Interna · lan0.40 Comunidad&lt;br&gt;br-srv Servidores · wt0 NetBird&lt;br&gt;La familia bridge filtra también entre las VMs&lt;br&gt;Gestión (SSH, GUIs) solo desde admin .10-.29 y wt0" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="45" y="465" width="440" height="160" as="geometry"/>
         </mxCell>
         <mxCell id="brsrv" value="&lt;b&gt;br-srv · Red de servidores (bridge virtual, sin puerto físico)&lt;/b&gt;&lt;br&gt;10.20.20.0/24 · fd5a:fc7e:d716:20::/64 · gw .1 / fe80::1" style="rounded=1;arcSize=3;whiteSpace=wrap;html=1;verticalAlign=top;spacingTop=6;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;" vertex="1" parent="1">
@@ -34,10 +34,10 @@
         <mxCell id="svc" value="&lt;b&gt;Servicios del host&lt;/b&gt; · 10.20.20.10 · ::10&lt;br&gt;ns1 · ntp · monitoreo" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="530" y="305" width="440" height="50" as="geometry"/>
         </mxCell>
-        <mxCell id="clin" value="&lt;b&gt;VM clinica01&lt;/b&gt;&lt;br&gt;10.20.20.11 · ::11&lt;br&gt;4 vCPU · 7 GB&lt;br&gt;• DHIS2 + PostgreSQL&lt;br&gt;• Consulta de formularios&lt;br&gt;• Samba AD DC&lt;br&gt;• SMB: archivos, contenido&lt;br&gt;&lt;i&gt;Accesible desde: Interna&lt;/i&gt;" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;strokeWidth=2;" vertex="1" parent="1">
+        <mxCell id="clin" value="&lt;b&gt;VM clinica01&lt;/b&gt;&lt;br&gt;10.20.20.11 · ::11&lt;br&gt;4 vCPU · 7 GB&lt;br&gt;• DHIS2 + PostgreSQL&lt;br&gt;• Consulta de formularios&lt;br&gt;• Samba AD DC&lt;br&gt;• SMB con archivos y contenido&lt;br&gt;&lt;i&gt;Accesible desde la Interna&lt;/i&gt;" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;strokeWidth=2;" vertex="1" parent="1">
           <mxGeometry x="525" y="375" width="195" height="250" as="geometry"/>
         </mxCell>
-        <mxCell id="com" value="&lt;b&gt;VM comunidad01&lt;/b&gt;&lt;br&gt;10.20.20.12 · ::12&lt;br&gt;2 vCPU · 2,5 GB&lt;br&gt;• Caddy&lt;br&gt;• Kiwix (biblioteca)&lt;br&gt;• Jellyfin (videos)&lt;br&gt;• Formularios (registro)&lt;br&gt;&lt;i&gt;Accesible desde: Interna y Comunidad (80/443)&lt;/i&gt;" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;strokeWidth=2;" vertex="1" parent="1">
+        <mxCell id="com" value="&lt;b&gt;VM comunidad01&lt;/b&gt;&lt;br&gt;10.20.20.12 · ::12&lt;br&gt;2 vCPU · 2,5 GB&lt;br&gt;• Caddy&lt;br&gt;• Kiwix (biblioteca)&lt;br&gt;• Jellyfin (videos)&lt;br&gt;• Formularios (registro)&lt;br&gt;&lt;i&gt;Accesible desde la Interna y la Comunidad (80/443)&lt;/i&gt;" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;strokeWidth=2;" vertex="1" parent="1">
           <mxGeometry x="780" y="375" width="195" height="250" as="geometry"/>
         </mxCell>
         <mxCell id="f_ins" value="5432&lt;br&gt;INSERT" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#b85450;fontSize=11;labelBackgroundColor=#d5e8d4;" edge="1" parent="1" source="com" target="clin">
@@ -50,7 +50,7 @@
             <mxPoint as="offset" x="0" y="-18"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="soporte" value="&lt;b&gt;Soporte (host)&lt;/b&gt;&lt;br&gt;• Prometheus + Grafana (monitoreo)&lt;br&gt;• rsyslog central&lt;br&gt;• restic: backups pull por SSH&lt;br&gt;• NUT dummy-ups: apagado ordenado&lt;br&gt;• NetBird (wt0)&lt;br&gt;• libvirt/KVM: autostart de las VMs" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fillColor=#FFFFFF;strokeColor=#666666;fontSize=13;" vertex="1" parent="1">
+        <mxCell id="soporte" value="&lt;b&gt;Soporte (host)&lt;/b&gt;&lt;br&gt;• Prometheus + Grafana (monitoreo)&lt;br&gt;• rsyslog central&lt;br&gt;• restic con backups pull por SSH&lt;br&gt;• NUT dummy-ups para el apagado ordenado&lt;br&gt;• NetBird (wt0)&lt;br&gt;• libvirt/KVM con autostart de las VMs" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fillColor=#FFFFFF;strokeColor=#666666;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="1015" y="245" width="440" height="200" as="geometry"/>
         </mxCell>
         <mxCell id="usb" value="&lt;b&gt;Disco USB&lt;/b&gt;&lt;br&gt;repositorio restic cifrado&lt;br&gt;7d / 4s / 3m" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
@@ -101,7 +101,7 @@
         <mxCell id="v40b" value="&lt;b&gt;Celulares de la comunidad&lt;/b&gt;&lt;br&gt;DHCPv4 .100-.250 (1 h)&lt;br&gt;hasta 50 dispositivos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="1010" y="870" width="215" height="110" as="geometry"/>
         </mxCell>
-        <mxCell id="v40c" value="&lt;b&gt;Política&lt;/b&gt;&lt;br&gt;antes del portal: DHCP, DNS, portal&lt;br&gt;después: comunidad01 80/443 e Internet (IPv4)&lt;br&gt;&lt;font color=&quot;#b85450&quot;&gt;bloqueado: Interna, clinica01, gestión&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="1">
+        <mxCell id="v40c" value="&lt;b&gt;Política&lt;/b&gt;&lt;br&gt;antes del portal, DHCP, DNS y portal&lt;br&gt;después, comunidad01 80/443 e Internet (IPv4)&lt;br&gt;&lt;font color=&quot;#b85450&quot;&gt;bloqueado hacia la Interna, clinica01 y gestión&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="1240" y="870" width="225" height="110" as="geometry"/>
         </mxCell>
         <mxCell id="e_v10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;strokeColor=#6c8ebf;strokeWidth=2;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="sw" target="v10">

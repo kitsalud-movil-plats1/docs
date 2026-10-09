@@ -7,13 +7,13 @@
         <mxCell id="inet" value="Internet (opcional)" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#999999;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="40" y="10" width="180" height="80" as="geometry"/>
         </mxCell>
-        <mxCell id="rb" value="&lt;b&gt;MikroTik RB3011&lt;/b&gt;&lt;br&gt;fuera del kit · uplink del sitio&lt;br&gt;192.168.88.0/24" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
+        <mxCell id="rb" value="&lt;b&gt;Uplink del sitio&lt;/b&gt; (fuera del kit)&lt;br&gt;en el laboratorio 192.168.160.0/24&lt;br&gt;RB3011 por confirmar (Q-09)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="20" y="135" width="220" height="75" as="geometry"/>
         </mxCell>
         <mxCell id="nb" value="&lt;b&gt;Administrador remoto&lt;/b&gt;&lt;br&gt;NetBird (WireGuard)&lt;br&gt;solo durante el desarrollo" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="20" y="270" width="220" height="70" as="geometry"/>
         </mxCell>
-        <mxCell id="kit" value="&lt;b&gt;kit01 · Mini PC Beelink EQi12&lt;/b&gt;&lt;br&gt;i3-1220P (10 núcleos, 12 hilos) · 16 GB · SSD 500 GB · 2 NIC 1 GbE&lt;br&gt;Ubuntu Server 24.04 + KVM&lt;br&gt;router/firewall, DNS, DHCP, NTP, portal&lt;br&gt;VMs: clinica01 y comunidad01&lt;br&gt;NIC1 = wan0 · NIC2 = lan0 (trunk)" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;strokeWidth=2;" vertex="1" parent="1">
+        <mxCell id="kit" value="&lt;b&gt;kit01 · Mini PC Beelink EQi12&lt;/b&gt;&lt;br&gt;i3-1220P (10 núcleos, 12 hilos) · 16 GB · SSD 500 GB · 2 NIC 1 GbE&lt;br&gt;Ubuntu Server 24.04 + KVM&lt;br&gt;router/firewall, DNS, DHCP, NTP, portal&lt;br&gt;VMs clinica01 y comunidad01&lt;br&gt;NIC1 = wan0 · NIC2 = lan0 (trunk)" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;strokeWidth=2;" vertex="1" parent="1">
           <mxGeometry x="380" y="110" width="420" height="160" as="geometry"/>
         </mxCell>
         <mxCell id="usb" value="&lt;b&gt;Disco USB ≥ 256 GB&lt;/b&gt;&lt;br&gt;backups restic (cifrados)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
@@ -25,16 +25,16 @@
         <mxCell id="sw" value="&lt;b&gt;sw01 · MikroTik CCR2004-16G-2S+PC&lt;/b&gt; (solo L2)&lt;br&gt;bridge-kit con VLAN filtering · sin reenvío IP&lt;br&gt;VLAN 10 Interna · 40 Comunidad · 20 solo con el +1 equipo&lt;br&gt;gestión 10.20.10.2 (solo kit01 y admin) · DHCP snooping" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=13;strokeWidth=2;" vertex="1" parent="1">
           <mxGeometry x="360" y="385" width="460" height="115" as="geometry"/>
         </mxCell>
-        <mxCell id="ap" value="&lt;b&gt;ap01 · TP-Link TL-WA801ND v3&lt;/b&gt;&lt;br&gt;802.11n 2,4 GHz · puerto 10/100 · PoE pasivo&lt;br&gt;firmware 3.16.9 · gestión 10.20.10.3 (VLAN 10)&lt;br&gt;SSID1 SaludMovil-Clinica → VLAN 10&lt;br&gt;SSID2 SaludMovil-Comunidad → VLAN 40" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+        <mxCell id="ap" value="&lt;b&gt;ap01 · TP-Link TL-WA801ND v3&lt;/b&gt;&lt;br&gt;802.11n 2,4 GHz · puerto 10/100 · PoE pasivo&lt;br&gt;firmware 3.16.9 · gestión 10.20.10.3 (responde sin etiqueta)&lt;br&gt;SSID1 SaludMovil-Clinica → VLAN 10&lt;br&gt;SSID2 SaludMovil-Comunidad → VLAN 40" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="20" y="580" width="300" height="120" as="geometry"/>
         </mxCell>
         <mxCell id="est" value="&lt;b&gt;Estaciones clínicas y de administración&lt;/b&gt;&lt;br&gt;ether4-ether8 · acceso VLAN 10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="360" y="590" width="240" height="100" as="geometry"/>
         </mxCell>
-        <mxCell id="lap" value="&lt;b&gt;Laptop (opcional)&lt;/b&gt;&lt;br&gt;perfil +1 equipo: aloja comunidad01&lt;br&gt;ether3 · trunk 10, 20&lt;br&gt;deshabilitado si no se usa" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+        <mxCell id="lap" value="&lt;b&gt;Laptop (opcional)&lt;/b&gt;&lt;br&gt;perfil +1 equipo, aloja comunidad01&lt;br&gt;ether3 · trunk 10, 20&lt;br&gt;deshabilitado si no se usa" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="640" y="590" width="240" height="100" as="geometry"/>
         </mxCell>
-        <mxCell id="nota" value="&lt;b&gt;Puertos sin uso&lt;/b&gt;&lt;br&gt;ether9-ether16 (switch2) y SFP+&lt;br&gt;deshabilitados, fuera del bridge&lt;br&gt;kit solo en switch1 (ether1-8)&lt;br&gt;&lt;br&gt;&lt;b&gt;Protección&lt;/b&gt;&lt;br&gt;DHCP snooping (confía en ether1)&lt;br&gt;RA de otros puertos: por evaluar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#999999;fontSize=12;align=left;spacingLeft=10;" vertex="1" parent="1">
+        <mxCell id="nota" value="&lt;b&gt;Puertos sin uso&lt;/b&gt;&lt;br&gt;ether9-ether16 (switch2) y SFP+&lt;br&gt;deshabilitados, fuera del bridge&lt;br&gt;kit solo en switch1 (ether1-8)&lt;br&gt;&lt;br&gt;&lt;b&gt;Protección&lt;/b&gt;&lt;br&gt;DHCP snooping (confía en ether1)&lt;br&gt;RA de otros puertos por evaluar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#999999;fontSize=12;align=left;spacingLeft=10;" vertex="1" parent="1">
           <mxGeometry x="920" y="580" width="250" height="140" as="geometry"/>
         </mxCell>
         <mxCell id="wifi" value="&lt;b&gt;Dispositivos Wi-Fi&lt;/b&gt;&lt;br&gt;personal (Clínica) y comunidad (hasta 50)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="1">
@@ -61,7 +61,7 @@
         <mxCell id="e_trunk" value="lan0 (NIC2) ↔ ether1&lt;br&gt;trunk 10, 40 (solo etiquetadas)" style="html=1;endArrow=none;strokeColor=#333333;strokeWidth=4;fontSize=12;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="kit" target="sw">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="e_ap" value="ether2 · trunk&lt;br&gt;10, 40 (etiquetadas)" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeColor=#333333;strokeWidth=2;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=0.15;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="sw" target="ap">
+        <mxCell id="e_ap" value="ether2 · híbrido, 10 y 40 etiquetadas&lt;br&gt;+ sin etiqueta en PVID 10" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeColor=#333333;strokeWidth=2;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=0.15;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="sw" target="ap">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_est" value="ether4-ether8" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeColor=#6c8ebf;strokeWidth=2;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=0.25;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="sw" target="est">
