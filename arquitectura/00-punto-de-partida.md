@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.11
+## Documento de arquitectura inicial (punto de partida) - v0.12
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -216,7 +216,9 @@ Los servicios del host que usan los clientes (DNS, NTP y monitoreo) responden en
 
 ### 6.3 Firewall
 
-Una sola tabla `inet` de nftables filtra IPv4 e IPv6 con las mismas zonas (`wan0`, `lan0.10` (Interna), `br-com` (Comunidad), `br-srv` (Servidores) y `wt0`, de NetBird). La política por defecto es **denegar y registrar** (prefijo `fw-drop`). El NAT de salida va en otra tabla (`ip nat`), con una sola regla de masquerade de `10.20.0.0/16` hacia `wan0`, separada del filtrado como pide el enunciado.
+Una sola tabla `inet` de nftables filtra IPv4 e IPv6 con las mismas zonas (`wan0`, `lan0.10` (Interna), `br-com` (Comunidad), `br-srv` (Servidores) y `wt0`, de NetBird). La política por defecto es **denegar y registrar** (prefijo `fw-drop`). El NAT de salida va en otra tabla (`ip nat_kit`), con una sola regla de masquerade de `10.20.0.0/16` hacia `wan0`, separada del filtrado como pide el enunciado.
+
+NetBird y libvirt usan iptables-nft, que crea sus propias tablas (`ip filter`, `ip nat` y otras). Por eso la tabla de NAT no se llama `ip nat`, el archivo de reglas nunca usa `flush ruleset` (cada tabla del kit se borra y se vuelve a crear en la misma transacción) y detener `nftables.service` solo quita las tablas del kit. Como un paquete tiene que pasar las cadenas de todas las tablas, `inet filtro` acepta el SSH por `wt0` y el túnel de NetBird (`udp/51820`) por `wan0`.
 
 Como `br-srv` vive en kit01, nftables también filtra **entre las dos VMs** (familia `bridge`). El único tráfico permitido entre ellas es el de formularios (comunidad01 → clinica01:5432) y la publicación de contenido (clinica01 → comunidad01:22). Con un switch físico de por medio, ese tráfico no pasaría por ningún firewall.
 
@@ -439,6 +441,7 @@ La política por defecto es **denegar y registrar**. Todas las reglas aplican a 
 | F-21 | Interna (no admin) | kit01 22, VMs 22 | any | **Bloqueado y registrado**. SSH solo desde admin |
 | F-22 | Interna | kit01, clinica01, comunidad01 | Eco ICMP/ICMPv6 | Diagnóstico y prueba extremo a extremo IPv4/IPv6 (P2) |
 | F-23 | Comunidad | Su gateway (`10.20.40.1`, `fe80::1`) | Eco ICMP/ICMPv6 | El cliente verifica su propia conectividad (P1) |
+| F-24 | Interna | Internet | any, **solo IPv4** con NAT | Conectividad del personal clínico, cuando hay Internet |
 
 ## 12. Diagnóstico rápido
 
@@ -545,7 +548,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 
 | Fecha | Hito | Tareas |
 |---|---|---|
-| **19 de octubre** | **Entrega 1: diseño** | Documento v0.11, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
+| **19 de octubre** | **Entrega 1: diseño** | Documento v0.12, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
 | 20-26 de octubre | Servicios base | kit01: netplan, nftables, Kea, radvd, BIND9, Chrony, NetBird. sw01 (CCR2004) y AP. clinica01 con Samba AD |
 | 27 de octubre - 2 de noviembre | Almacenamiento y aplicaciones | DHIS2, recursos SMB, comunidad01 (Kiwix, Jellyfin, formularios), TLS interno, flujo de contenido |
 | 3-6 de noviembre | Wi-Fi y seguridad | Portal cautivo, matriz de flujos v4/v6 definitiva (E4), filtrado entre VMs, primero con `prueba01` en remoto y después en una sesión presencial con Wi-Fi y celulares |
@@ -567,3 +570,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.9 | 2026-10-10 | Interfaces de kit01 identificadas por nombre y MAC, porque los puertos del mini PC no tienen rótulo (5.1, 5.2 y diagrama físico) |
 | v0.10 | 2026-10-10 | Operación remota. Las NIC no se renombran (D-14, R-08); la WAN y NetBird no se modifican y el método de cambios remotos queda en D-23; la VLAN 40 pasa a ser el bridge `br-com` con la VM de prueba `prueba01` (D-24, 6, 7.1, 8.3, 10.1); las pruebas con Wi-Fi y el reinicio se agrupan en visitas puntuales (P12, calendario) |
 | v0.11 | 2026-10-10 | `br-srv` con la interfaz virtual `srv-dummy0` como puerto, para que sus direcciones estén disponibles sin VMs (6.2). Alcance de `networkctl reload` en D-23 |
+| v0.12 | 2026-10-10 | NAT en la tabla `ip nat_kit` y convivencia con las tablas de iptables-nft de NetBird y libvirt (6.3); flujo F-24 de la Interna hacia Internet (11) |
