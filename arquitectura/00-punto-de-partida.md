@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.9
+## Documento de arquitectura inicial (punto de partida) - v0.10
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -59,7 +59,7 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 | P9 | Pérdida de Internet | Se desconecta el cable de `wan0`: DNS, NTP, DHIS2, formularios, biblioteca y videos siguen funcionando |
 | P10 | Firewall IPv6 | Desde la VLAN 40, `curl -6` permitido hacia comunidad01 y bloqueado hacia clinica01. Los dos destinos están en la misma red, así que se ve que la regla es por host |
 | P11 | Restauración | Borrar un archivo del recurso `archivos` o una tabla de prueba y restaurarla con `restic restore` desde el disco USB |
-| P12 | Reinicio | Reinicio de kit01: servicios `systemd`, VMs con `autostart` y contenedores con `restart: unless-stopped` levantan solos |
+| P12 | Reinicio | Se hace una sola vez y con alguien disponible para ir al laboratorio si kit01 no vuelve. Reinicio de kit01, servicios `systemd`, VMs con `autostart` y contenedores con `restart: unless-stopped` levantan solos |
 | P13 | Diagnóstico | Falla inducida (p. ej. BIND9 detenido o PostgreSQL caído); se localiza con Grafana (sonda blackbox), los logs centralizados y `systemctl`/`journalctl` |
 
 ### 2.3 Entregables y repositorio responsable
@@ -80,7 +80,7 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 | S-01 | El mini PC Beelink EQi12 (Intel Core i3-1220P de 10 núcleos y 12 hilos, 16 GB DDR4, SSD de 500 GB, **dos NIC de 1 GbE**) estará disponible para el desarrollo y la sustentación | Si no estuviera, el mismo diseño corre en una laptop de 16 GB con un adaptador USB-Ethernet para la WAN |
 | S-02 | El laboratorio presta el MikroTik CCR2004-16G-2S+PC (usado como switch) y el MikroTik RB3011 (uplink) | Cualquier switch 802.1Q sirve; el uplink puede ser directo a la red de la universidad |
 | S-03 | El AP TP-Link TL-WA801ND v3 (firmware 3.16.9) en modo Multi-SSID etiqueta cada SSID con su VLAN (hasta cuatro). Su gestión **recibe** tramas etiquetadas en la VLAN del SSID1 y **responde sin etiqueta** (comprobado en el laboratorio) | ether2 de sw01 es híbrido para aceptar esas respuestas (sección 5.2). Falta comprobar con clientes que los dos SSID salen etiquetados; si el Multi-SSID con VLAN fallara, la red Interna sería solo cableada |
-| S-04 | El uplink entrega IPv4 con salida a Internet (por DHCP o con dirección fija, según el sitio). Si anuncia IPv6, el kit no lo usa, porque IPv6 es interno (D-12) y `wan0` no acepta RA. En el laboratorio el uplink es la red `192.168.160.0/24` con dirección fija, DNS `192.168.215.20` y `.30`, y un prefijo IPv6 anunciado por SLAAC (`2001:db8:a:c::/64`) | Si el sitio entrega DHCPv6-PD, se puede agregar GUA más adelante; no cambia las políticas |
+| S-04 | El uplink entrega IPv4 con salida a Internet (por DHCP o con dirección fija, según el sitio). Si anuncia IPv6, el kit no lo usa, porque IPv6 es interno (D-12) y nftables no reenvía IPv6 hacia la WAN. En el laboratorio el uplink es la red `192.168.160.0/24` con dirección fija, DNS `192.168.215.20` y `.30`, y un prefijo IPv6 anunciado por SLAAC (`2001:db8:a:c::/64`) | Si el sitio entrega DHCPv6-PD, se puede agregar GUA más adelante; no cambia las políticas |
 | S-05 | La demostración se hace en el laboratorio; el "sitio remoto" se simula | Ninguno |
 | S-06 | La carga esperada es de 5-10 dispositivos del personal y hasta 50 dispositivos simultáneos de la comunidad | Ampliar el pool de la comunidad a /23 y agregar un AP |
 | S-07 | Todo el software es libre. Windows solo aparece como cliente opcional para unirse al dominio | Ninguno |
@@ -114,7 +114,7 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 | D-11 | IPv4 `10.20.<id>.0/24`, gateway `.1` | `192.168.<id>.0/24` | Evita solaparse con las redes del uplink (`192.168.x`, como `192.168.160.0/24` en el laboratorio) y se resume en una sola regla `10.20.0.0/16` |
 | D-12 | IPv6 **ULA `fd5a:fc7e:d716::/48`** con un /64 por segmento; sin GUA | Solo GUA; `2001:db8::/32` | Direcciones estables sin Internet. `2001:db8::/32` es solo para documentación (RFC 3849) |
 | D-13 | Organización con repos por dominio (`.github`, `docs`, `network`, `platform`, `apps`, `observability`) | Monorepo; un repo por servicio | Trazabilidad por área y PRs pequeños |
-| D-14 | **Dos NIC**, `wan0` hacia el uplink y `lan0` como trunk 802.1Q hacia el switch | WAN como VLAN 900 en el trunk | El Beelink EQi12 tiene dos NIC de 1 GbE (Q-01), así que la WAN queda separada físicamente y desaparece una VLAN |
+| D-14 | **Dos NIC sin renombrar.** `wan0` (`enp170s0`) va al uplink y `lan0` (`enp171s0`) es el trunk 802.1Q hacia el switch. `wan0` y `lan0` son nombres de rol en este documento, y la configuración usa los nombres del kernel, que se mantienen entre reinicios | WAN como VLAN 900 en el trunk; renombrar las NIC por MAC | El Beelink EQi12 tiene dos NIC de 1 GbE (Q-01), así que la WAN queda separada físicamente y desaparece una VLAN. Renombrarlas exigiría un reinicio que, si fallara, cortaría la WAN y el acceso remoto por NetBird sin aportar nada al kit |
 | D-15 | **Dos VLAN físicas** (10 Interna y 40 Comunidad) + **red de servidores virtual** (`br-srv`, un bridge sin puerto físico dentro de kit01) | Cuatro VLAN; tres VLAN con una de gestión aparte | Menos configuración en switch y AP que con cuatro VLAN. El enunciado admite interfaces virtuales y firewalls como mecanismo de separación. Todo el tráfico entre redes pasa por nftables, incluso el que va entre las dos VMs (6.3) |
 | D-16 | **TLS mixto** con la CA interna de Caddy (`tls internal`). HTTPS para `registro`, `pacientes`, `archivos` web y `monitoreo`; HTTP para `biblioteca` y `videos` | HTTPS en todo; HTTP en todo lo comunitario | El contenido público no lleva datos personales y así se evita la advertencia del navegador. Los formularios sí cifran, y la advertencia se acepta una vez y el portal explica cómo instalar la CA |
 | D-17 | Credenciales fuera de Git, con `.env.example` y `ansible-vault` | Contraseñas en el README; sops | Cumple "no contraseñas en texto plano" con una sola herramienta |
@@ -122,7 +122,9 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 | D-19 | **Dos VMs separadas por público**. `clinica01` (datos sensibles) y `comunidad01` (lo que ve la comunidad). Se encienden según la misión | Cinco VMs con una IP por rol; todo en el host | Un compromiso de la biblioteca pública no alcanza los datos de pacientes. Cada VM se apaga o se mueve a una laptop sin tocar la otra |
 | D-20 | IPv6 en clientes con **SLAAC + DHCPv6 stateless** (M=0, O=1), **sin RDNSS**. `fe80::1` en cada interfaz interna de kit01 | SLAAC + RDNSS; DHCPv6 stateful | Una sola pareja de mecanismos en todo el kit. DHCPv6 queda demostrado y la ruta por defecto IPv6 es predecible |
 | D-21 | **NetBird solo en kit01** para administrar en remoto durante el desarrollo | Subnet router de NetBird; WireGuard directo; sin VPN | Funciona detrás del NAT de la universidad sin abrir puertos. Queda fuera de la operación, porque sin Internet no está disponible y el kit no lo necesita |
-| D-22 | Portal cautivo **propio** en kit01: nginx sirve la página de aceptación y un script agrega la MAC del cliente a un set de nftables (8 h) | Portal de OPNsense; portal del AP | Al estar en la tabla `inet`, el mismo set autoriza IPv4 e IPv6. La página del portal sirve además de inicio con íconos hacia biblioteca, videos y registro |
+| D-22 | Portal cautivo **propio** en kit01. nginx sirve la página de aceptación y un script agrega la MAC del cliente a un set de nftables (8 h) | Portal de OPNsense; portal del AP | Al estar en la tabla `inet`, el mismo set autoriza IPv4 e IPv6. La página del portal sirve además de inicio con íconos hacia biblioteca, videos y registro |
+| D-23 | **Operación remota segura.** kit01 se configura en remoto por NetBird sin tocar la WAN ni NetBird. Los cambios de red se aplican con `netplan generate` y `networkctl reload`, que solo reconfigura las interfaces nuevas o modificadas, siempre con una restauración programada. nftables permite siempre NetBird (`wt0` y su tráfico de salida) y SSH, se valida con `nft -c` y se aplica con restauración programada. En sw01 cada cambio remoto se hace en Safe Mode de RouterOS | Configurar en el laboratorio; `netplan apply` | Solo exige ir al laboratorio lo que no se puede probar de otra forma (Wi-Fi con celulares y el reinicio de kit01). Un error en un cambio remoto se deshace solo y no deja al equipo sin acceso |
+| D-24 | **VM de prueba `prueba01`** conectada a `br-com` (VLAN 40) para validar en remoto DHCPv4, IPv6, DNS, portal y firewall desde la red de Comunidad. Las pruebas con Wi-Fi y celulares se agrupan en una sesión presencial final | Probar solo con celulares en el laboratorio | Casi todas las pruebas de la Comunidad se repiten sin viajar; la sesión presencial confirma lo que solo se ve con el AP (P1, P4, P5) |
 
 ## 5. Arquitectura física
 
@@ -196,7 +198,7 @@ La fuente editable es `diagramas/diagrama-logico.drawio`.
 |---|---|---|
 | Clínica/administrativa | VLAN 10 **Interna**. Estaciones y SSID del personal | `lan0.10` |
 | Servidores | **`br-srv`**. Bridge virtual dentro de kit01, sin puerto físico, al que se conectan las VMs | `br-srv` |
-| Comunidad/invitados | VLAN 40 **Comunidad**. SSID abierto con portal cautivo | `lan0.40` |
+| Comunidad/invitados | VLAN 40 **Comunidad**. SSID abierto con portal cautivo | `br-com` (con `lan0.40` como puerto) |
 | Administración | **Plano de gestión**. IPs de administración reservadas por MAC en la Interna (`10.20.10.10-29`) y el túnel NetBird, que se trata como una extensión de esta red (mismas reglas, mismos usuarios y llaves). Son los únicos orígenes con SSH y GUIs; a las VMs solo se llega a través de kit01 | `lan0.10` (filtrada por IP) y `wt0` |
 
 kit01 es el `.1` (y `fe80::1`) de las tres redes internas, así que **todo el tráfico entre ellas pasa por nftables**. La WAN (`wan0`) solo hace NAT de IPv4 hacia el uplink.
@@ -207,12 +209,14 @@ kit01 es el `.1` (y `fe80::1`) de las tres redes internas, así que **todo el tr
 - **Soporte (host).** Prometheus, Grafana, rsyslog central, restic (backups pull), NUT y NetBird.
 - **VM `clinica01`.** DHIS2 + PostgreSQL y la consulta de formularios (Docker); Samba AD DC con los recursos `archivos` y `contenido` (nativo).
 - **VM `comunidad01`.** Caddy, Kiwix, Jellyfin y la app de formularios (Docker).
+- **VM `prueba01`.** Cliente de prueba conectado a `br-com`, solo para validar en remoto la red de Comunidad (D-24).
+- **Interfaces.** `wan0` es `enp170s0` y `lan0` es `enp171s0`. La VLAN 10 es `lan0.10` y la VLAN 40 es el bridge `br-com`, con `lan0.40` como puerto, para poder conectar ahí la VM de prueba.
 
 Los servicios del host que usan los clientes (DNS, NTP y monitoreo) responden en una IP propia dentro de la red de servidores (`10.20.20.10`). Así, los clientes ven un "servidor de infraestructura" igual que en cualquier red, y si ese rol se moviera a una VM, la IP se iría con él.
 
 ### 6.3 Firewall
 
-Una sola tabla `inet` de nftables filtra IPv4 e IPv6 con las mismas zonas (`wan0`, `lan0.10` (Interna), `lan0.40` (Comunidad), `br-srv` (Servidores) y `wt0`, de NetBird). La política por defecto es **denegar y registrar** (prefijo `fw-drop`). El NAT de salida va en otra tabla (`ip nat`), con una sola regla de masquerade de `10.20.0.0/16` hacia `wan0`, separada del filtrado como pide el enunciado.
+Una sola tabla `inet` de nftables filtra IPv4 e IPv6 con las mismas zonas (`wan0`, `lan0.10` (Interna), `br-com` (Comunidad), `br-srv` (Servidores) y `wt0`, de NetBird). La política por defecto es **denegar y registrar** (prefijo `fw-drop`). El NAT de salida va en otra tabla (`ip nat`), con una sola regla de masquerade de `10.20.0.0/16` hacia `wan0`, separada del filtrado como pide el enunciado.
 
 Como `br-srv` vive en kit01, nftables también filtra **entre las dos VMs** (familia `bridge`). El único tráfico permitido entre ellas es el de formularios (comunidad01 → clinica01:5432) y la publicación de contenido (clinica01 → comunidad01:22). Con un switch físico de por medio, ese tráfico no pasaría por ningún firewall.
 
@@ -224,8 +228,8 @@ table inet filtro {
   chain forward {
     type filter hook forward priority 0; policy drop;
     ct state established,related accept
-    iifname "lan0.40" ether saddr @portal_ok ip  daddr 10.20.20.12           tcp dport { 80, 443 } accept
-    iifname "lan0.40" ether saddr @portal_ok ip6 daddr fd5a:fc7e:d716:20::12 tcp dport { 80, 443 } accept
+    iifname "br-com" ether saddr @portal_ok ip  daddr 10.20.20.12           tcp dport { 80, 443 } accept
+    iifname "br-com" ether saddr @portal_ok ip6 daddr fd5a:fc7e:d716:20::12 tcp dport { 80, 443 } accept
     log prefix "fw-drop " drop
   }
 }
@@ -256,7 +260,7 @@ El orden entre VMs se controla con el `autostart` de libvirt más un retardo. De
 |---|---|---|---|---|---|
 | Interna (VLAN 10) | `lan0.10` | 10.20.10.0/24 | 10.20.10.1 | Estática (red) + reservas (admin) + DHCPv4 | 10.20.10.100-199 (lease 8 h) |
 | Servidores | `br-srv` | 10.20.20.0/24 | 10.20.20.1 | Estática | - |
-| Comunidad (VLAN 40) | `lan0.40` | 10.20.40.0/24 | 10.20.40.1 | DHCPv4 | 10.20.40.100-250 (lease 1 h) |
+| Comunidad (VLAN 40) | `br-com` | 10.20.40.0/24 | 10.20.40.1 | DHCPv4 | 10.20.40.100-250 (lease 1 h) |
 | WAN | `wan0` | La del uplink (en el laboratorio, `192.168.160.0/24`) | El del uplink (en el laboratorio, `192.168.160.1`) | DHCP o fija según el sitio (en el laboratorio, fija en `192.168.160.69`) | - |
 | Parking (VLAN 999) | - | - | - | Sin L3 | - |
 
@@ -297,7 +301,7 @@ radvd anuncia el prefijo con el flag `A` y el flag `O`, sin RDNSS. Kea DHCPv6 re
 
 | Interfaz | Link-local | Uso |
 |---|---|---|
-| kit01 `lan0.10`, `lan0.40`, `br-srv` | `fe80::1` (fija) | Origen de los RA, gateway IPv6 de clientes (`default via fe80::1`) y servidor DHCPv6 (escucha en `ff02::1:2`, responde desde `fe80::1`) |
+| kit01 `lan0.10`, `br-com`, `br-srv` | `fe80::1` (fija) | Origen de los RA, gateway IPv6 de clientes (`default via fe80::1`) y servidor DHCPv6 (escucha en `ff02::1:2`, responde desde `fe80::1`) |
 | kit01 `wan0` | Automática (`fe80::/64`) | Sin uso en el kit. Se ignoran los RA que lleguen por la WAN |
 | clinica01, comunidad01 | Automática | Ruta por defecto estática `via fe80::1` en `br-srv` |
 | Clientes y sw01 | Automática | NDP y solicitudes DHCPv6 |
@@ -339,7 +343,10 @@ Zona autoritativa `salud.movil` en BIND9 (kit01). Las zonas inversas son `10.20.
 | kit01 (host) | `.1` en cada red, `.10` | Ubuntu Server 24.04 | nftables, Kea DHCPv4/v6, radvd, BIND9, Chrony, nginx (portal y monitoreo), Prometheus, Grafana, rsyslog, restic, NUT, NetBird, libvirt | - | 3 GB (reservados) | 40 GB |
 | clinica01 | `.11` | Ubuntu 24.04 + Docker | DHIS2 (heap de 2 GB) + PostgreSQL/PostGIS, consulta de formularios, Caddy; Samba AD DC con `archivos` y `contenido` | 4 | 7 GB | 40 GB + 120 GB de datos |
 | comunidad01 | `.12` | Ubuntu 24.04 + Docker | Caddy, Kiwix, Jellyfin (sin transcodificación), formularios | 2 | 2,5 GB | 20 GB + 120 GB de medios |
+| prueba01 | DHCP en la VLAN 40 | Ubuntu 24.04 (imagen cloud) | Cliente de prueba (`dig`, `curl`, `ping`) | 1 | 0,5 GB | 10 GB |
 | **Total** | | | | **6 vCPU en VMs** | **12,5 GB** | **≈ 340 GB** |
+
+`prueba01` solo se enciende durante las pruebas y no cuenta en los totales ni en los perfiles por misión.
 
 Criterios de las cifras.
 
@@ -493,7 +500,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | R-05 | Actualizaciones sin Internet | No se actualiza en campo. Se actualiza en base, en una ventana documentada en E3, con snapshot previo de cada VM. Imágenes Docker con versión fija, guardadas con `docker save` en el disco USB |
 | R-06 | La red Interna mezcla personal clínico y administración, así que el switch y el AP son alcanzables dentro de la VLAN y una IP de administración se puede suplantar | Servicios de gestión de sw01 limitados por dirección (`/ip service`), DHCP snooping, SSH solo desde las IPs de administración y NetBird, reservas por MAC y registro de accesos. Para crecer, se separa la VLAN de gestión (13.1) |
 | R-07 | La laptop del perfil "+1 equipo" puede no estar disponible | Solo aloja comunidad01, el servicio menos crítico (10.2). Se vuelve al perfil de referencia |
-| R-08 | Nombres de interfaz que cambian entre reinicios o instalaciones; adaptador USB-Ethernet de la laptop opcional sin soporte de VLAN | Fijar el nombre por MAC en netplan (`wan0`, `lan0`). Probar la laptop temprano (`ip link add link <if> name <if>.20 type vlan id 20`) |
+| R-08 | Adaptador USB-Ethernet de la laptop opcional sin soporte de VLAN; nombres de interfaz distintos si se cambia el hardware | Los nombres del kernel de kit01 se mantienen mientras no cambie el hardware (D-14) y las variables de Ansible guardan el nombre de cada rol. Probar la laptop temprano (`ip link add link <if> name <if>.20 type vlan id 20`) |
 | R-09 | Samba AD DC y Docker en la misma VM; Samba recomienda no usar el DC como servidor de archivos en instalaciones grandes | Para el tamaño del kit es aceptable. Se valida en el hito de servicios base. Si da problemas, AD pasa a su propia VM (+1,5 GB) |
 | R-10 | Material audiovisual con personas de la comunidad | Solo con consentimiento; sin datos de pacientes en los medios; se publica solo en la red local |
 | R-11 | NetBird depende de un servicio externo y de Internet | Solo se usa para desarrollo. Se puede desactivar en campo (`systemctl disable netbird`) sin afectar el kit |
@@ -538,11 +545,11 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 
 | Fecha | Hito | Tareas |
 |---|---|---|
-| **19 de octubre** | **Entrega 1: diseño** | Documento v0.9, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
+| **19 de octubre** | **Entrega 1: diseño** | Documento v0.10, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
 | 20-26 de octubre | Servicios base | kit01: netplan, nftables, Kea, radvd, BIND9, Chrony, NetBird. sw01 (CCR2004) y AP. clinica01 con Samba AD |
 | 27 de octubre - 2 de noviembre | Almacenamiento y aplicaciones | DHIS2, recursos SMB, comunidad01 (Kiwix, Jellyfin, formularios), TLS interno, flujo de contenido |
-| 3-6 de noviembre | Wi-Fi y seguridad | Portal cautivo, matriz de flujos v4/v6 definitiva (E4), filtrado entre VMs |
-| 7-9 de noviembre | Resiliencia | Backups y restauración, apagado ordenado, autostart, observabilidad, prueba sin Internet |
+| 3-6 de noviembre | Wi-Fi y seguridad | Portal cautivo, matriz de flujos v4/v6 definitiva (E4), filtrado entre VMs, primero con `prueba01` en remoto y después en una sesión presencial con Wi-Fi y celulares |
+| 7-9 de noviembre | Resiliencia | Backups y restauración (con la visita para conectar el disco USB), apagado ordenado, autostart, observabilidad, prueba sin Internet; el reinicio de P12 con alguien en el laboratorio |
 | **11 de noviembre** (o 23/25, Q-08) | **Entrega final** | Guías E2/E3, evidencias P1-P13, limpieza del repositorio, sustentación |
 
 ## 17. Historial de cambios
@@ -558,3 +565,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.7 | 2026-10-08 | Administración con un usuario compartido y SSH con contraseña, sin root directo, limitado por origen (D-18, 10.1, R-06); riesgo aceptado R-14. Repositorio `workspace` y flujo de trabajo por micro-tareas (sección 15) |
 | v0.8 | 2026-10-09 | Primera sesión de laboratorio. ether2 de sw01 queda híbrido porque la gestión del AP responde sin etiqueta (S-03, 5.2, 5.3); uplink del laboratorio con dirección fija y prefijo IPv6 anunciado que el kit no usa (S-04, D-11, 7.1); Q-09 sobre el papel del RB3011 |
 | v0.9 | 2026-10-10 | Interfaces de kit01 identificadas por nombre y MAC, porque los puertos del mini PC no tienen rótulo (5.1, 5.2 y diagrama físico) |
+| v0.10 | 2026-10-10 | Operación remota. Las NIC no se renombran (D-14, R-08); la WAN y NetBird no se modifican y el método de cambios remotos queda en D-23; la VLAN 40 pasa a ser el bridge `br-com` con la VM de prueba `prueba01` (D-24, 6, 7.1, 8.3, 10.1); las pruebas con Wi-Fi y el reinicio se agrupan en visitas puntuales (P12, calendario) |
