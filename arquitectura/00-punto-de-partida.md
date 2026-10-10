@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.13
+## Documento de arquitectura inicial (punto de partida) - v0.14
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -352,7 +352,7 @@ Zona autoritativa `salud.movil` en BIND9 (kit01). Las zonas inversas son `10.20.
 
 Criterios de las cifras.
 
-- **clinica01.** La guía de DHIS2 pide al menos 2 GB para una instancia pequeña, repartidos entre la JVM y PostgreSQL. Con 5-10 usuarios y Samba AD (≈ 0,5 GB) se asignan 7 GB. Se valida con una prueba de humo (R-03).
+- **clinica01.** La guía de DHIS2 pide al menos 2 GB para una instancia pequeña, repartidos entre la JVM y PostgreSQL. Con 5-10 usuarios y Samba AD (≈ 0,5 GB) se asignan 7 GB. La prueba de humo en clinica01 (R-03, DHIS2 2.42 con PostgreSQL 16) lo confirma. En reposo, DHIS2 y PostgreSQL usan 1,65 GB; con 5 usuarios registrando 2000 pacientes a la vez llegan a unos 2 GB, y la VM conserva más de 4 GB disponibles. El primer arranque tarda 57 s y un reinicio con datos 25 s.
 - **comunidad01.** Jellyfin consume poco si no transcodifica. Los videos se preparan antes en H.264/AAC a 480p (≈ 1 Mb/s, por la capacidad del AP; sección 13) y los audios en MP3, para que se reproduzcan directo.
 - **Disco.** qcow2 con aprovisionamiento delgado e independientes (sin archivo base compartido); solo ocupa lo que se escribe (≈ 80-120 GB al inicio). Viven en un LV propio de kit01 (`ubuntu-vg/vms`, 320 GiB), y el disco de datos de cada VM se monta en `/srv`. Los ZIM de salud e infantiles ocupan unos pocos GB; el resto del espacio es para audio y video.
 
@@ -498,7 +498,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 |---|---|---|
 | R-01 | kit01 es un punto único de falla, porque es el router y el hipervisor | Backups probados, apagado ordenado, reconstrucción con Ansible y restauración (P11). Segundo nodo como evolución (13.1) |
 | R-02 | sw01 es un router (CCR2004), y un error de configuración (una dirección en otra VLAN o el reenvío activado) lo haría enrutar entre VLAN y el tráfico se saltaría nftables | Reenvío IPv4 e IPv6 desactivado y una sola dirección (la de gestión), comprobados en cada cambio (`/ip settings print`, `/ip address print`); configuración exportada (`/export`) y versionada |
-| R-03 | DHIS2 consume mucha RAM | Heap limitado a 2 GB. Prueba de humo antes del hito de aplicaciones (`docker stats`, tiempo de arranque). Si no alcanza, perfil "+1 equipo" (10.4) |
+| R-03 | DHIS2 consume mucha RAM | Heap limitado a 2 GB y contenedores con límite de 6 GB. La prueba de humo en clinica01 (apps#1) mostró un pico de unos 2 GB con 5 usuarios a la vez, así que se mantiene el perfil de referencia. La generación de tablas analíticas se mide al instalar DHIS2; si no alcanza, perfil "+1 equipo" (10.4) |
 | R-04 | El portal cautivo es código propio y la detección de portal falla sin Internet | Lógica mínima (una página, un script y un set de nftables). BIND9 responde los dominios de detección con la IP del portal. Pruebas con Android, iOS y Windows |
 | R-05 | Actualizaciones sin Internet | No se actualiza en campo. Se actualiza en base, en una ventana documentada en E3, con snapshot previo de cada VM. Imágenes Docker con versión fija, guardadas con `docker save` en el disco USB |
 | R-06 | La red Interna mezcla personal clínico y administración, así que el switch y el AP son alcanzables dentro de la VLAN y una IP de administración se puede suplantar | Servicios de gestión de sw01 limitados por dirección (`/ip service`), DHCP snooping, SSH solo desde las IPs de administración y NetBird, reservas por MAC y registro de accesos. Para crecer, se separa la VLAN de gestión (13.1) |
@@ -548,7 +548,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 
 | Fecha | Hito | Tareas |
 |---|---|---|
-| **19 de octubre** | **Entrega 1: diseño** | Documento v0.13, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
+| **19 de octubre** | **Entrega 1: diseño** | Documento v0.14, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
 | 20-26 de octubre | Servicios base | kit01: netplan, nftables, Kea, radvd, BIND9, Chrony, NetBird. sw01 (CCR2004) y AP. clinica01 con Samba AD |
 | 27 de octubre - 2 de noviembre | Almacenamiento y aplicaciones | DHIS2, recursos SMB, comunidad01 (Kiwix, Jellyfin, formularios), TLS interno, flujo de contenido |
 | 3-6 de noviembre | Wi-Fi y seguridad | Portal cautivo, matriz de flujos v4/v6 definitiva (E4), filtrado entre VMs, primero con `prueba01` en remoto y después en una sesión presencial con Wi-Fi y celulares |
@@ -572,3 +572,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.11 | 2026-10-10 | `br-srv` con la interfaz virtual `srv-dummy0` como puerto, para que sus direcciones estén disponibles sin VMs (6.2). Alcance de `networkctl reload` en D-23 |
 | v0.12 | 2026-10-10 | NAT en la tabla `ip nat_kit` y convivencia con las tablas de iptables-nft de NetBird y libvirt (6.3); flujo F-24 de la Interna hacia Internet (11) |
 | v0.13 | 2026-10-10 | Arranque de las VMs con `autostart` de libvirt y el orden resuelto por las aplicaciones (6.5); eco de la red de servidores hacia su gateway (F-23); discos independientes en un LV propio y datos en `/srv` (10.1) |
+| v0.14 | 2026-10-10 | Resultado de la prueba de humo de DHIS2 en clinica01; se mantiene el perfil de referencia (10.1, R-03) |
