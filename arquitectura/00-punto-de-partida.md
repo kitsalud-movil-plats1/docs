@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.10
+## Documento de arquitectura inicial (punto de partida) - v0.11
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -210,7 +210,7 @@ kit01 es el `.1` (y `fe80::1`) de las tres redes internas, así que **todo el tr
 - **VM `clinica01`.** DHIS2 + PostgreSQL y la consulta de formularios (Docker); Samba AD DC con los recursos `archivos` y `contenido` (nativo).
 - **VM `comunidad01`.** Caddy, Kiwix, Jellyfin y la app de formularios (Docker).
 - **VM `prueba01`.** Cliente de prueba conectado a `br-com`, solo para validar en remoto la red de Comunidad (D-24).
-- **Interfaces.** `wan0` es `enp170s0` y `lan0` es `enp171s0`. La VLAN 10 es `lan0.10` y la VLAN 40 es el bridge `br-com`, con `lan0.40` como puerto, para poder conectar ahí la VM de prueba.
+- **Interfaces.** `wan0` es `enp170s0` y `lan0` es `enp171s0`. La VLAN 10 es `lan0.10` y la VLAN 40 es el bridge `br-com`, con `lan0.40` como puerto, para poder conectar ahí la VM de prueba. El único puerto de `br-srv` es la interfaz virtual `srv-dummy0`, que le da portadora para que sus direcciones (entre ellas `10.20.20.10` y `fd5a:fc7e:d716:20::10`) estén disponibles antes de que arranquen las VMs.
 
 Los servicios del host que usan los clientes (DNS, NTP y monitoreo) responden en una IP propia dentro de la red de servidores (`10.20.20.10`). Así, los clientes ven un "servidor de infraestructura" igual que en cualquier red, y si ese rol se moviera a una VM, la IP se iría con él.
 
@@ -545,7 +545,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 
 | Fecha | Hito | Tareas |
 |---|---|---|
-| **19 de octubre** | **Entrega 1: diseño** | Documento v0.10, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
+| **19 de octubre** | **Entrega 1: diseño** | Documento v0.11, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
 | 20-26 de octubre | Servicios base | kit01: netplan, nftables, Kea, radvd, BIND9, Chrony, NetBird. sw01 (CCR2004) y AP. clinica01 con Samba AD |
 | 27 de octubre - 2 de noviembre | Almacenamiento y aplicaciones | DHIS2, recursos SMB, comunidad01 (Kiwix, Jellyfin, formularios), TLS interno, flujo de contenido |
 | 3-6 de noviembre | Wi-Fi y seguridad | Portal cautivo, matriz de flujos v4/v6 definitiva (E4), filtrado entre VMs, primero con `prueba01` en remoto y después en una sesión presencial con Wi-Fi y celulares |
@@ -566,3 +566,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.8 | 2026-10-09 | Primera sesión de laboratorio. ether2 de sw01 queda híbrido porque la gestión del AP responde sin etiqueta (S-03, 5.2, 5.3); uplink del laboratorio con dirección fija y prefijo IPv6 anunciado que el kit no usa (S-04, D-11, 7.1); Q-09 sobre el papel del RB3011 |
 | v0.9 | 2026-10-10 | Interfaces de kit01 identificadas por nombre y MAC, porque los puertos del mini PC no tienen rótulo (5.1, 5.2 y diagrama físico) |
 | v0.10 | 2026-10-10 | Operación remota. Las NIC no se renombran (D-14, R-08); la WAN y NetBird no se modifican y el método de cambios remotos queda en D-23; la VLAN 40 pasa a ser el bridge `br-com` con la VM de prueba `prueba01` (D-24, 6, 7.1, 8.3, 10.1); las pruebas con Wi-Fi y el reinicio se agrupan en visitas puntuales (P12, calendario) |
+| v0.11 | 2026-10-10 | `br-srv` con la interfaz virtual `srv-dummy0` como puerto, para que sus direcciones estén disponibles sin VMs (6.2) |
