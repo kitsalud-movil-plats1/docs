@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.14
+## Documento de arquitectura inicial (punto de partida) - v0.15
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -320,7 +320,7 @@ La misma `fe80::1` en varias interfaces es válida, porque una link-local solo t
 
 ## 9. DNS y nombres de servicio
 
-Zona autoritativa `salud.movil` en BIND9 (kit01). Las zonas inversas son `10.20.in-addr.arpa` y `6.1.7.d.e.7.c.f.a.5.d.f.ip6.arpa`. La subzona `ad.salud.movil` se delega a Samba AD en clinica01. La recursión solo se permite a `10.20.0.0/16` y `fd5a:fc7e:d716::/48`. Los forwarders externos se usan solo cuando hay Internet; sin Internet, las zonas locales siguen respondiendo.
+Zona autoritativa `salud.movil` en BIND9 (kit01), que escucha solo en `10.20.20.10` y `fd5a:fc7e:d716:20::10`. Las zonas inversas son `20.10.in-addr.arpa` (la de `10.20.0.0/16`) y `6.1.7.d.e.7.c.f.a.5.d.f.ip6.arpa`, con un PTR por dirección. La subzona `ad.salud.movil` se delega a Samba AD en clinica01 cuando existe; hasta entonces `dc01.ad` es un registro normal de la zona. La recursión solo se permite a `10.20.0.0/16` y `fd5a:fc7e:d716::/48`. Con Internet se usan los reenviadores `1.1.1.1` y `9.9.9.9` (`forward first`, con DNSSEC validado), que no dependen del sitio; sin Internet, las zonas locales siguen respondiendo porque son autoritativas.
 
 | Nombre | Destino | A | AAAA |
 |---|---|---|---|
@@ -335,6 +335,7 @@ Zona autoritativa `salud.movil` en BIND9 (kit01). Las zonas inversas son `10.20.
 | `monitoreo.salud.movil` | kit01 (Grafana) | 10.20.20.10 | fd5a:fc7e:d716:20::10 |
 | `portal.salud.movil` | kit01 (portal cautivo) | 10.20.40.1 | fd5a:fc7e:d716:40::1 |
 | `kit01`, `sw01`, `ap01` `.salud.movil` | Gestión | 10.20.10.1 / .2 / .3 | fd5a:fc7e:d716:10::1 / ::2 / - |
+| `clinica01`, `comunidad01` `.salud.movil` | Nombre de host de cada VM | 10.20.20.11 / .12 | fd5a:fc7e:d716:20::11 / ::12 |
 
 ## 10. Servicios, recursos y perfiles
 
@@ -548,7 +549,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 
 | Fecha | Hito | Tareas |
 |---|---|---|
-| **19 de octubre** | **Entrega 1: diseño** | Documento v0.14, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
+| **19 de octubre** | **Entrega 1: diseño** | Documento v0.15, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
 | 20-26 de octubre | Servicios base | kit01: netplan, nftables, Kea, radvd, BIND9, Chrony, NetBird. sw01 (CCR2004) y AP. clinica01 con Samba AD |
 | 27 de octubre - 2 de noviembre | Almacenamiento y aplicaciones | DHIS2, recursos SMB, comunidad01 (Kiwix, Jellyfin, formularios), TLS interno, flujo de contenido |
 | 3-6 de noviembre | Wi-Fi y seguridad | Portal cautivo, matriz de flujos v4/v6 definitiva (E4), filtrado entre VMs, primero con `prueba01` en remoto y después en una sesión presencial con Wi-Fi y celulares |
@@ -573,3 +574,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.12 | 2026-10-10 | NAT en la tabla `ip nat_kit` y convivencia con las tablas de iptables-nft de NetBird y libvirt (6.3); flujo F-24 de la Interna hacia Internet (11) |
 | v0.13 | 2026-10-10 | Arranque de las VMs con `autostart` de libvirt y el orden resuelto por las aplicaciones (6.5); eco de la red de servidores hacia su gateway (F-23); discos independientes en un LV propio y datos en `/srv` (10.1) |
 | v0.14 | 2026-10-10 | Resultado de la prueba de humo de DHIS2 en clinica01; se mantiene el perfil de referencia (10.1, R-03) |
+| v0.15 | 2026-10-10 | DNS: inversa `20.10.in-addr.arpa`, escucha en la IP de servicios, reenviadores fijos con DNSSEC, `dc01.ad` hasta la delegación y nombres de host de las VMs (9) |
