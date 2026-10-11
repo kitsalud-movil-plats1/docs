@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.15
+## Documento de arquitectura inicial (punto de partida) - v0.16
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -33,7 +33,7 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 |---|---|---|---|
 | R1 | DHCPv4 y provisión IPv6 | Kea DHCPv4 con pools y reservas por MAC. radvd anuncia SLAAC con M=0, O=1 y Kea DHCPv6 stateless entrega DNS, dominio y NTP. Servidores con dirección estática | kit01 |
 | R2 | DNS interno dual-stack | BIND9 autoritativo para `salud.movil` (A, AAAA, PTR v4/v6), recursivo solo para las redes internas | kit01 |
-| R3 | NTP | Chrony como servidor (`ntp.salud.movil`). Con Internet se sincroniza con fuentes externas (`pool.ntp.org`); sin Internet sigue como referencia con `local stratum 10`. VMs, switch y AP sincronizan contra él | kit01 |
+| R3 | NTP | Chrony como servidor (`ntp.salud.movil`). Con Internet se sincroniza con fuentes externas (`pool.ntp.org`); sin Internet sigue como referencia con `local stratum 10`. Escucha solo en la IP de servicios (`.10` y `::10`). Las VMs y el switch sincronizan contra él; el AP no tiene ajustes de hora en su firmware | kit01 |
 | R4 | Firewall y segmentación | Dos VLAN 802.1Q + red de servidores virtual. **nftables** en una tabla `inet` (IPv4 e IPv6), denegar por defecto y registrar. NAT en una tabla aparte | kit01, sw01 |
 | R5 | Portal cautivo | Portal propio con nginx y un set de MAC en nftables con expiración. Cubre IPv4 **e IPv6** | kit01 |
 | R6 | Aplicación de pacientes | DHIS2 (Docker) + PostgreSQL, con cuentas locales | clinica01 |
@@ -434,7 +434,7 @@ La política por defecto es **denegar y registrar**. Todas las reglas aplican a 
 | F-13 | kit01 | clinica01 | 636 | Login LDAPS de Grafana contra AD |
 | F-14 | kit01 | clinica01, comunidad01 | 9100 | Scraping de `node_exporter` (las sondas blackbox salen de kit01) |
 | F-15 | clinica01, comunidad01 | kit01 `.10` | 514/tcp | Envío de logs (rsyslog) |
-| F-16 | sw01, ap01 | kit01 | sw01: 514/udp y 123/udp; ap01: 123/udp | Syslog y hora del switch; hora del AP (el AP no envía syslog) |
+| F-16 | sw01 | kit01 | 514/udp y 123/udp | Syslog y hora del switch. El AP no envía syslog ni tiene cliente NTP |
 | F-17 | clinica01, comunidad01 | Internet | 80, 443, **solo IPv4** | Actualizaciones de paquetes e imágenes, solo con Internet y en ventana de mantenimiento (R-05) |
 | F-18 | kit01 | Internet | 53, 123/udp, 443, NetBird | Forwarders DNS, NTP externo, actualizaciones y túnel de administración |
 | F-19 | Todas | Todas | ICMPv6 NDP/PMTU desde `fe80::/10` y ULA | Funcionamiento de IPv6 (RFC 4890) |
@@ -549,7 +549,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 
 | Fecha | Hito | Tareas |
 |---|---|---|
-| **19 de octubre** | **Entrega 1: diseño** | Documento v0.15, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
+| **19 de octubre** | **Entrega 1: diseño** | Documento v0.16, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
 | 20-26 de octubre | Servicios base | kit01: netplan, nftables, Kea, radvd, BIND9, Chrony, NetBird. sw01 (CCR2004) y AP. clinica01 con Samba AD |
 | 27 de octubre - 2 de noviembre | Almacenamiento y aplicaciones | DHIS2, recursos SMB, comunidad01 (Kiwix, Jellyfin, formularios), TLS interno, flujo de contenido |
 | 3-6 de noviembre | Wi-Fi y seguridad | Portal cautivo, matriz de flujos v4/v6 definitiva (E4), filtrado entre VMs, primero con `prueba01` en remoto y después en una sesión presencial con Wi-Fi y celulares |
@@ -575,3 +575,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.13 | 2026-10-10 | Arranque de las VMs con `autostart` de libvirt y el orden resuelto por las aplicaciones (6.5); eco de la red de servidores hacia su gateway (F-23); discos independientes en un LV propio y datos en `/srv` (10.1) |
 | v0.14 | 2026-10-10 | Resultado de la prueba de humo de DHIS2 en clinica01; se mantiene el perfil de referencia (10.1, R-03) |
 | v0.15 | 2026-10-10 | DNS: inversa `20.10.in-addr.arpa`, escucha en la IP de servicios, reenviadores fijos con DNSSEC, `dc01.ad` hasta la delegación y nombres de host de las VMs (9) |
+| v0.16 | 2026-10-11 | NTP en la IP de servicios; el AP queda fuera de los clientes NTP porque su firmware no tiene ajustes de hora (R3, F-16) |
