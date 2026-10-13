@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.16
+## Documento de arquitectura inicial (punto de partida) - v0.17
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -40,7 +40,7 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 | R7 | Portal de literatura | Kiwix (salud y contenido infantil) y Jellyfin (audio y video de salud y para la comunidad) | comunidad01 |
 | R8 | Formularios de prerregistro | App propia mínima y asistida. Los datos se guardan en PostgreSQL de clinica01 y los consulta solo el grupo AD `clinicos` | comunidad01 → clinica01 |
 | R9 | Almacenamiento compartido | SMB con autenticación AD, con los recursos `archivos` (documentos y exportaciones) y `contenido` (medios y ZIM que se publican en comunidad01) | clinica01 |
-| R10 | Identidad centralizada | Samba AD DC (`ad.salud.movil`). La usan SMB, Grafana y la consulta de formularios | clinica01 |
+| R10 | Identidad centralizada | Samba AD DC (`ad.salud.movil`, realm `AD.SALUD.MOVIL`, DC `dc01`). La usan SMB, Grafana y la consulta de formularios | clinica01 |
 | R11 | Backups y restauración | restic cifrado en un disco USB, en **modelo pull**. kit01 extrae los dumps de cada VM por SSH. Retención 7d/4s/3m | kit01, disco USB |
 | R12 | Registros y monitoreo | Prometheus (node y blackbox exporters para disponibilidad, puertos, CPU, memoria y disco) y Grafana. rsyslog centraliza en kit01 los eventos de DHCP (Kea), DNS (BIND9), firewall (`fw-drop`) y autenticación (Samba AD y SSH), además del syslog de sw01 | kit01 |
 
@@ -320,7 +320,7 @@ La misma `fe80::1` en varias interfaces es válida, porque una link-local solo t
 
 ## 9. DNS y nombres de servicio
 
-Zona autoritativa `salud.movil` en BIND9 (kit01), que escucha solo en `10.20.20.10` y `fd5a:fc7e:d716:20::10`. Las zonas inversas son `20.10.in-addr.arpa` (la de `10.20.0.0/16`) y `6.1.7.d.e.7.c.f.a.5.d.f.ip6.arpa`, con un PTR por dirección. La subzona `ad.salud.movil` se delega a Samba AD en clinica01 cuando existe; hasta entonces `dc01.ad` es un registro normal de la zona. La recursión solo se permite a `10.20.0.0/16` y `fd5a:fc7e:d716::/48`. Con Internet se usan los reenviadores `1.1.1.1` y `9.9.9.9` (`forward first`, con DNSSEC validado), que no dependen del sitio; sin Internet, las zonas locales siguen respondiendo porque son autoritativas.
+Zona autoritativa `salud.movil` en BIND9 (kit01), que escucha solo en `10.20.20.10` y `fd5a:fc7e:d716:20::10`. Las zonas inversas son `20.10.in-addr.arpa` (la de `10.20.0.0/16`) y `6.1.7.d.e.7.c.f.a.5.d.f.ip6.arpa`, con un PTR por dirección. La subzona `ad.salud.movil` está delegada al DNS interno de Samba AD en clinica01, con `dc01.ad` como glue. Sus consultas van siempre a clinica01 (la zona `salud.movil` no usa los reenviadores) y `salud.movil` queda fuera de la validación DNSSEC, porque `movil` no es un TLD real. La recursión solo se permite a `10.20.0.0/16` y `fd5a:fc7e:d716::/48`. Con Internet se usan los reenviadores `1.1.1.1` y `9.9.9.9` (`forward first`, con DNSSEC validado), que no dependen del sitio; sin Internet, las zonas locales siguen respondiendo porque son autoritativas.
 
 | Nombre | Destino | A | AAAA |
 |---|---|---|---|
@@ -443,6 +443,7 @@ La política por defecto es **denegar y registrar**. Todas las reglas aplican a 
 | F-22 | Interna | kit01, clinica01, comunidad01 | Eco ICMP/ICMPv6 | Diagnóstico y prueba extremo a extremo IPv4/IPv6 (P2) |
 | F-23 | Comunidad, Servidores | Su gateway (`10.20.40.1` o `10.20.20.1`, su `::1` y `fe80::1`) | Eco ICMP/ICMPv6 | El cliente o la VM verifica su propia conectividad (P1) |
 | F-24 | Interna | Internet | any, **solo IPv4** con NAT | Conectividad del personal clínico, cuando hay Internet |
+| F-25 | kit01 | clinica01 | 53 tcp/udp | BIND9 consulta la subzona delegada `ad.salud.movil` al DNS de Samba AD. Filtrado en clinica01 (ufw) |
 
 ## 12. Diagnóstico rápido
 
@@ -549,7 +550,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 
 | Fecha | Hito | Tareas |
 |---|---|---|
-| **19 de octubre** | **Entrega 1: diseño** | Documento v0.16, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
+| **19 de octubre** | **Entrega 1: diseño** | Documento v0.17, diagramas con los dispositivos, decisiones y sus razones (sección 4), restricciones, planeación (Kanban) y configuraciones base. Confirmar Q-07. Prueba de humo de DHIS2 (R-03) |
 | 20-26 de octubre | Servicios base | kit01: netplan, nftables, Kea, radvd, BIND9, Chrony, NetBird. sw01 (CCR2004) y AP. clinica01 con Samba AD |
 | 27 de octubre - 2 de noviembre | Almacenamiento y aplicaciones | DHIS2, recursos SMB, comunidad01 (Kiwix, Jellyfin, formularios), TLS interno, flujo de contenido |
 | 3-6 de noviembre | Wi-Fi y seguridad | Portal cautivo, matriz de flujos v4/v6 definitiva (E4), filtrado entre VMs, primero con `prueba01` en remoto y después en una sesión presencial con Wi-Fi y celulares |
@@ -576,3 +577,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.14 | 2026-10-10 | Resultado de la prueba de humo de DHIS2 en clinica01; se mantiene el perfil de referencia (10.1, R-03) |
 | v0.15 | 2026-10-10 | DNS: inversa `20.10.in-addr.arpa`, escucha en la IP de servicios, reenviadores fijos con DNSSEC, `dc01.ad` hasta la delegación y nombres de host de las VMs (9) |
 | v0.16 | 2026-10-11 | NTP en la IP de servicios; el AP queda fuera de los clientes NTP porque su firmware no tiene ajustes de hora (R3, F-16) |
+| v0.17 | 2026-10-13 | Samba AD con realm `AD.SALUD.MOVIL` (R10); `ad.salud.movil` delegada a clinica01, sin reenviadores ni validación DNSSEC para `salud.movil` (9); flujo de la delegación (F-25) |
