@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.17
+## Documento de arquitectura inicial (punto de partida) - v0.18
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -39,7 +39,7 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 | R6 | Aplicación de pacientes | DHIS2 (Docker) + PostgreSQL, con cuentas locales | clinica01 |
 | R7 | Portal de literatura | Kiwix (salud y contenido infantil) y Jellyfin (audio y video de salud y para la comunidad) | comunidad01 |
 | R8 | Formularios de prerregistro | App propia mínima y asistida. Los datos se guardan en PostgreSQL de clinica01 y los consulta solo el grupo AD `clinicos` | comunidad01 → clinica01 |
-| R9 | Almacenamiento compartido | SMB con autenticación AD, con los recursos `archivos` (documentos y exportaciones) y `contenido` (medios y ZIM que se publican en comunidad01) | clinica01 |
+| R9 | Almacenamiento compartido | SMB3 con autenticación AD (Kerberos o NTLMv2), con los recursos `archivos` (documentos y exportaciones, solo del grupo `clinicos` y con cifrado obligatorio) y `contenido` (medios y ZIM que se publican en comunidad01, con escritura de `clinicos` y `admins`). Los grupos y usuarios tienen gid y uid fijos (RFC2307), así un backup restaurado conserva sus dueños | clinica01 |
 | R10 | Identidad centralizada | Samba AD DC (`ad.salud.movil`, realm `AD.SALUD.MOVIL`, DC `dc01`). La usan SMB, Grafana y la consulta de formularios | clinica01 |
 | R11 | Backups y restauración | restic cifrado en un disco USB, en **modelo pull**. kit01 extrae los dumps de cada VM por SSH. Retención 7d/4s/3m | kit01, disco USB |
 | R12 | Registros y monitoreo | Prometheus (node y blackbox exporters para disponibilidad, puertos, CPU, memoria y disco) y Grafana. rsyslog centraliza en kit01 los eventos de DHCP (Kea), DNS (BIND9), firewall (`fw-drop`) y autenticación (Samba AD y SSH), además del syslog de sw01 | kit01 |
@@ -578,3 +578,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.15 | 2026-10-10 | DNS: inversa `20.10.in-addr.arpa`, escucha en la IP de servicios, reenviadores fijos con DNSSEC, `dc01.ad` hasta la delegación y nombres de host de las VMs (9) |
 | v0.16 | 2026-10-11 | NTP en la IP de servicios; el AP queda fuera de los clientes NTP porque su firmware no tiene ajustes de hora (R3, F-16) |
 | v0.17 | 2026-10-13 | Samba AD con realm `AD.SALUD.MOVIL` (R10); `ad.salud.movil` delegada a clinica01, sin reenviadores ni validación DNSSEC para `salud.movil` (9); flujo de la delegación (F-25) |
+| v0.18 | 2026-10-25 | Recursos SMB en SMB3, con permisos por grupo AD, cifrado obligatorio en `archivos` e IDs POSIX fijos (R9) |
