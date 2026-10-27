@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.19
+## Documento de arquitectura inicial (punto de partida) - v0.20
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -433,7 +433,7 @@ La política por defecto es **denegar y registrar**. Todas las reglas aplican a 
 | F-11 | comunidad01 | clinica01 | 5432 | Formularios. `pg_hba.conf` solo acepta a comunidad01, con un usuario de solo `INSERT`. Filtrado en el bridge |
 | F-12 | clinica01 | comunidad01 | 22 | Publicación de contenido (`rsync`, usuario restringido). Filtrado en el bridge |
 | F-13 | kit01 | clinica01 | 636 | Login LDAPS de Grafana contra AD |
-| F-14 | kit01 | clinica01, comunidad01 | 9100 | Scraping de `node_exporter` (las sondas blackbox salen de kit01) |
+| F-14 | kit01 | clinica01, comunidad01 | 9100; 443 y 445 en clinica01; 80 y 443 en comunidad01 | Scraping de `node_exporter` y sondas blackbox de Prometheus. El 5432 de clinica01 ya lo alcanza la sonda TCP y lo filtra `pg_hba.conf`. Filtrado en las VMs (ufw) |
 | F-15 | clinica01, comunidad01 | kit01 `.10` | 514/tcp | Envío de logs (rsyslog) |
 | F-16 | sw01 | kit01 | 514/udp y 123/udp | Syslog y hora del switch. El AP no envía syslog ni tiene cliente NTP |
 | F-17 | clinica01, comunidad01 | Internet | 80, 443, **solo IPv4** | Actualizaciones de paquetes e imágenes, solo con Internet y en ventana de mantenimiento (R-05) |
@@ -450,7 +450,7 @@ La política por defecto es **denegar y registrar**. Todas las reglas aplican a 
 
 Procedimiento que otro administrador puede ejecutar (se detalla en E3).
 
-1. En Grafana (`monitoreo.salud.movil`), sondas blackbox de DNS, HTTPS y puertos de cada servicio; CPU, memoria y disco de kit01 y las VMs.
+1. En Grafana (`monitoreo.salud.movil`), sondas blackbox de DNS, web, puertos y ping de cada servicio en IPv4 e IPv6; CPU, memoria, disco y unidades de systemd de kit01 y las VMs. Las alertas activas también se ven en Prometheus (`/alerts`, por un túnel SSH a `127.0.0.1:9090` en kit01).
 2. En kit01: `systemctl --failed`, `virsh list --all`, `journalctl -u kea-dhcp4-server -u named -u radvd`, `nft list ruleset`, `journalctl -k | grep fw-drop`.
 3. En la VM afectada (`ssh -J kit01`), `docker compose ps`, `docker compose logs`, `systemctl status samba-ad-dc`.
 
@@ -581,3 +581,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.17 | 2026-10-13 | Samba AD con realm `AD.SALUD.MOVIL` (R10); `ad.salud.movil` delegada a clinica01, sin reenviadores ni validación DNSSEC para `salud.movil` (9); flujo de la delegación (F-25) |
 | v0.18 | 2026-10-25 | Recursos SMB en SMB3, con permisos por grupo AD, cifrado obligatorio en `archivos` e IDs POSIX fijos (R9) |
 | v0.19 | 2026-10-25 | CA propia del kit con la raíz en kit01 y un intermedio por VM limitado a sus nombres, y la raíz publicada en `ca.salud.movil` (D-16, 9) |
+| v0.20 | 2026-10-27 | Prometheus en kit01 con node_exporter y sondas blackbox en IPv4 e IPv6, y F-14 con los puertos de las sondas (R12, 11) |
