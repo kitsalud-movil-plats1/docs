@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.21
+## Documento de arquitectura inicial (punto de partida) - v0.22
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -42,7 +42,7 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 | R9 | Almacenamiento compartido | SMB3 con autenticación AD (Kerberos o NTLMv2), con los recursos `archivos` (documentos y exportaciones, solo del grupo `clinicos` y con cifrado obligatorio) y `contenido` (medios y ZIM que se publican en comunidad01, con escritura de `clinicos` y `admins`). Los grupos y usuarios tienen gid y uid fijos (RFC2307), así un backup restaurado conserva sus dueños | clinica01 |
 | R10 | Identidad centralizada | Samba AD DC (`ad.salud.movil`, realm `AD.SALUD.MOVIL`, DC `dc01`). La usan SMB, Grafana y la consulta de formularios | clinica01 |
 | R11 | Backups y restauración | restic cifrado en un disco USB, en **modelo pull**. kit01 extrae los dumps de cada VM por SSH. Retención 7d/4s/3m | kit01, disco USB |
-| R12 | Registros y monitoreo | Prometheus (node y blackbox exporters para disponibilidad, puertos, CPU, memoria y disco) y Grafana. rsyslog centraliza en kit01 los eventos de DHCP (Kea), DNS (BIND9), firewall (`fw-drop`) y autenticación (Samba AD y SSH), además del syslog de sw01 | kit01 |
+| R12 | Registros y monitoreo | Prometheus (node y blackbox exporters para disponibilidad, puertos, CPU, memoria y disco) y Grafana. rsyslog centraliza en kit01 (`/var/log/kitsalud/`, una carpeta por equipo) los eventos de DHCP (Kea), DNS (BIND9), firewall (`fw-drop`) y autenticación (Samba AD y SSH), además del syslog de sw01 | kit01 |
 
 ### 2.2 Cómo se demostrarán las pruebas de aceptación
 
@@ -434,7 +434,7 @@ La política por defecto es **denegar y registrar**. Todas las reglas aplican a 
 | F-12 | clinica01 | comunidad01 | 22 | Publicación de contenido (`rsync`, usuario restringido). Filtrado en el bridge |
 | F-13 | kit01 | clinica01 | 636 | Login LDAPS de Grafana contra AD |
 | F-14 | kit01 | clinica01, comunidad01 | 9100; 443 y 445 en clinica01; 80 y 443 en comunidad01 | Scraping de `node_exporter` y sondas blackbox de Prometheus. El 5432 de clinica01 ya lo alcanza la sonda TCP y lo filtra `pg_hba.conf`; el 22 y el 636 los sondean por F-02 y F-13. Filtrado en las VMs (ufw) |
-| F-15 | clinica01, comunidad01 | kit01 `.10` | 514/tcp | Envío de logs (rsyslog) |
+| F-15 | clinica01, comunidad01 | kit01 `.10` | 514/tcp | Envío de logs (rsyslog), con cola en disco en cada VM. kit01 reconoce cada equipo por su IP de origen |
 | F-16 | sw01 | kit01 | 514/udp y 123/udp | Syslog y hora del switch. El AP no envía syslog ni tiene cliente NTP |
 | F-17 | clinica01, comunidad01 | Internet | 80, 443, **solo IPv4** | Actualizaciones de paquetes e imágenes, solo con Internet y en ventana de mantenimiento (R-05) |
 | F-18 | kit01 | Internet | 53, 123/udp, 443, NetBird | Forwarders DNS, NTP externo, actualizaciones y túnel de administración |
@@ -451,7 +451,7 @@ La política por defecto es **denegar y registrar**. Todas las reglas aplican a 
 Procedimiento que otro administrador puede ejecutar (se detalla en E3).
 
 1. En Grafana (`monitoreo.salud.movil`), sondas blackbox de DNS, web, puertos y ping de cada servicio en IPv4 e IPv6; CPU, memoria, disco y unidades de systemd de kit01 y las VMs. Las alertas activas también se ven en Prometheus (`/classic/alerts`, por un túnel SSH a `127.0.0.1:9090` en kit01).
-2. En kit01: `systemctl --failed`, `virsh list --all`, `journalctl -u kea-dhcp4-server -u named -u radvd`, `nft list ruleset`, `journalctl -k | grep fw-drop`.
+2. En kit01: `systemctl --failed`, `virsh list --all`, `journalctl -u kea-dhcp4-server -u named -u radvd`, `nft list ruleset` y los logs centralizados en `/var/log/kitsalud/<equipo>/` (`kit01/firewall.log` con los `fw-drop`, `kit01/dhcp.log`, `kit01/dns.log`, `clinica01/auth.log` con los intentos de SSH y de Samba AD, `sw01/syslog.log`).
 3. En la VM afectada (`ssh -J kit01`), `docker compose ps`, `docker compose logs`, `systemctl status samba-ad-dc`.
 
 ## 13. Dimensionamiento y energía
@@ -583,3 +583,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.19 | 2026-10-25 | CA propia del kit con la raíz en kit01 y un intermedio por VM limitado a sus nombres, y la raíz publicada en `ca.salud.movil` (D-16, 9) |
 | v0.20 | 2026-10-27 | Prometheus en kit01 con node_exporter y sondas blackbox en IPv4 e IPv6, y F-14 con los puertos de las sondas (R12, 11) |
 | v0.21 | 2026-10-27 | Grafana en kit01 detrás de nginx con login LDAPS contra Samba AD, y el certificado LDAPS de `dc01.ad` firmado por el intermedio de clinica01 (D-16, R10, R12) |
+| v0.22 | 2026-10-27 | Logs centralizados con rsyslog en kit01, por equipo en `/var/log/kitsalud/`, y su uso en el diagnóstico rápido (R12, F-15, 12) |
