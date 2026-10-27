@@ -433,7 +433,7 @@ La política por defecto es **denegar y registrar**. Todas las reglas aplican a 
 | F-11 | comunidad01 | clinica01 | 5432 | Formularios. `pg_hba.conf` solo acepta a comunidad01, con un usuario de solo `INSERT`. Filtrado en el bridge |
 | F-12 | clinica01 | comunidad01 | 22 | Publicación de contenido (`rsync`, usuario restringido). Filtrado en el bridge |
 | F-13 | kit01 | clinica01 | 636 | Login LDAPS de Grafana contra AD |
-| F-14 | kit01 | clinica01, comunidad01 | 9100; 443 y 445 en clinica01; 80 y 443 en comunidad01 | Scraping de `node_exporter` y sondas blackbox de Prometheus. El 5432 de clinica01 ya lo alcanza la sonda TCP y lo filtra `pg_hba.conf`. Filtrado en las VMs (ufw) |
+| F-14 | kit01 | clinica01, comunidad01 | 9100; 443 y 445 en clinica01; 80 y 443 en comunidad01 | Scraping de `node_exporter` y sondas blackbox de Prometheus. El 5432 de clinica01 ya lo alcanza la sonda TCP y lo filtra `pg_hba.conf`; el 22 y el 636 los sondean por F-02 y F-13. Filtrado en las VMs (ufw) |
 | F-15 | clinica01, comunidad01 | kit01 `.10` | 514/tcp | Envío de logs (rsyslog) |
 | F-16 | sw01 | kit01 | 514/udp y 123/udp | Syslog y hora del switch. El AP no envía syslog ni tiene cliente NTP |
 | F-17 | clinica01, comunidad01 | Internet | 80, 443, **solo IPv4** | Actualizaciones de paquetes e imágenes, solo con Internet y en ventana de mantenimiento (R-05) |
