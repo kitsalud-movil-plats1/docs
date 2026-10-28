@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.24
+## Documento de arquitectura inicial (punto de partida) - v0.25
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -397,7 +397,7 @@ Si DHIS2 necesita más memoria que la prevista (R-03), **comunidad01 se mueve a 
 | Kiwix (`biblioteca`) | Biblioteca médica en español (Wikipedia Médica), contenido enciclopédico para niños (Vikidia) y simulaciones educativas (PhET), descargados de la biblioteca de Kiwix | Archivos ZIM en el recurso `contenido` |
 | Jellyfin (`videos`) | Dos bibliotecas. **Salud.** Contenido médico general en audio y video (prevención, higiene, cuidado materno-infantil, primeros auxilios, cuándo consultar). **Comunidad.** Material educativo y para niños y grabaciones de reuniones comunitarias | Archivos de audio y video en el recurso `contenido` |
 
-**Flujo de publicación.** El personal sube el material al recurso SMB `contenido` de clinica01, con su usuario de AD. Un timer en clinica01 lo copia con `rsync` sobre SSH a comunidad01, con un usuario que solo puede escribir en la carpeta de medios. El flujo va siempre de clínica a comunidad, nunca al revés. La comunidad ve el contenido sin cuenta, con un usuario de Jellyfin de solo lectura; la administración de Jellyfin solo es accesible desde la red Interna.
+**Flujo de publicación.** El personal sube el material al recurso SMB `contenido` de clinica01, con su usuario de AD. Un timer en clinica01 lo copia con `rsync` sobre SSH a comunidad01, con un usuario que solo puede escribir en la carpeta de medios. El flujo va siempre de clínica a comunidad, nunca al revés. La comunidad ve el contenido sin contraseña, con el usuario `comunidad` de Jellyfin, que solo reproduce y nunca transcodifica. La administración de Jellyfin solo es accesible desde la red Interna y por NetBird a través de kit01: Jellyfin trata esas redes como locales y la cuenta `admin` no tiene acceso remoto, así que desde la Comunidad no puede entrar.
 
 ### 10.6 Respaldo (resumen; detalle en E5)
 
@@ -586,3 +586,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.22 | 2026-10-27 | Logs centralizados con rsyslog en kit01, por equipo en `/var/log/kitsalud/`, y su uso en el diagnóstico rápido (R12, F-15, 12) |
 | v0.23 | 2026-10-27 | Consulta de prerregistros en clinica01 con login LDAPS contra Samba AD para el grupo `clinicos` y HTTPS con la CA del kit (R8, D-07, D-16) |
 | v0.24 | 2026-10-28 | Dashboard "Brigada de salud" en DHIS2 con indicadores de programa y el motivo principal en la consulta (R6), y resultado de las tablas analíticas (R-03) |
+| v0.25 | 2026-10-28 | Jellyfin en comunidad01 con el usuario `comunidad` sin contraseña ni transcodificación y la administración solo desde la Interna y NetBird (10.5) |
