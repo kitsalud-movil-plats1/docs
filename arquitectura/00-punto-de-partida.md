@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.23
+## Documento de arquitectura inicial (punto de partida) - v0.24
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -36,7 +36,7 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 | R3 | NTP | Chrony como servidor (`ntp.salud.movil`). Con Internet se sincroniza con fuentes externas (`pool.ntp.org`); sin Internet sigue como referencia con `local stratum 10`. Escucha solo en la IP de servicios (`.10` y `::10`). Las VMs y el switch sincronizan contra él; el AP no tiene ajustes de hora en su firmware | kit01 |
 | R4 | Firewall y segmentación | Dos VLAN 802.1Q + red de servidores virtual. **nftables** en una tabla `inet` (IPv4 e IPv6), denegar por defecto y registrar. NAT en una tabla aparte | kit01, sw01 |
 | R5 | Portal cautivo | Portal propio con nginx y un set de MAC en nftables con expiración. Cubre IPv4 **e IPv6** | kit01 |
-| R6 | Aplicación de pacientes | DHIS2 (Docker) + PostgreSQL, con cuentas locales | clinica01 |
+| R6 | Aplicación de pacientes | DHIS2 (Docker) + PostgreSQL, con cuentas locales y el dashboard "Brigada de salud" (atenciones, fiebre, motivos, sexo y edad), que se actualiza cada 30 minutos | clinica01 |
 | R7 | Portal de literatura | Kiwix (salud y contenido infantil) y Jellyfin (audio y video de salud y para la comunidad) | comunidad01 |
 | R8 | Formularios de prerregistro | App propia mínima y asistida. Los datos se guardan en PostgreSQL de clinica01 y los consulta solo el grupo AD `clinicos`, en `consultas.salud.movil` con login LDAPS | comunidad01 → clinica01 |
 | R9 | Almacenamiento compartido | SMB3 con autenticación AD (Kerberos o NTLMv2), con los recursos `archivos` (documentos y exportaciones, solo del grupo `clinicos` y con cifrado obligatorio) y `contenido` (medios y ZIM que se publican en comunidad01, con escritura de `clinicos` y `admins`). Los grupos y usuarios tienen gid y uid fijos (RFC2307), así un backup restaurado conserva sus dueños | clinica01 |
@@ -501,7 +501,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 |---|---|---|
 | R-01 | kit01 es un punto único de falla, porque es el router y el hipervisor | Backups probados, apagado ordenado, reconstrucción con Ansible y restauración (P11). Segundo nodo como evolución (13.1) |
 | R-02 | sw01 es un router (CCR2004), y un error de configuración (una dirección en otra VLAN o el reenvío activado) lo haría enrutar entre VLAN y el tráfico se saltaría nftables | Reenvío IPv4 e IPv6 desactivado y una sola dirección (la de gestión), comprobados en cada cambio (`/ip settings print`, `/ip address print`); configuración exportada (`/export`) y versionada |
-| R-03 | DHIS2 consume mucha RAM | Heap limitado a 2 GB y contenedores con límite de 6 GB. La prueba de humo en clinica01 (apps#1) mostró un pico de unos 2 GB con 5 usuarios a la vez, así que se mantiene el perfil de referencia. La generación de tablas analíticas se mide al instalar DHIS2; si no alcanza, perfil "+1 equipo" (10.4) |
+| R-03 | DHIS2 consume mucha RAM | Heap limitado a 2 GB y contenedores con límite de 6 GB. La prueba de humo en clinica01 (apps#1) mostró un pico de unos 2 GB con 5 usuarios a la vez, así que se mantiene el perfil de referencia. Las tablas analíticas, con unos 220 pacientes y 320 consultas, se generan en 5 s con un pico de 1,9 GB en DHIS2, dentro de su límite. Si con más datos no alcanza, perfil "+1 equipo" (10.4) |
 | R-04 | El portal cautivo es código propio y la detección de portal falla sin Internet | Lógica mínima (una página, un script y un set de nftables). BIND9 responde los dominios de detección con la IP del portal. Pruebas con Android, iOS y Windows |
 | R-05 | Actualizaciones sin Internet | No se actualiza en campo. Se actualiza en base, en una ventana documentada en E3, con snapshot previo de cada VM. Imágenes Docker con versión fija, guardadas con `docker save` en el disco USB |
 | R-06 | La red Interna mezcla personal clínico y administración, así que el switch y el AP son alcanzables dentro de la VLAN y una IP de administración se puede suplantar | Servicios de gestión de sw01 limitados por dirección (`/ip service`), DHCP snooping, SSH solo desde las IPs de administración y NetBird, reservas por MAC y registro de accesos. Para crecer, se separa la VLAN de gestión (13.1) |
@@ -585,3 +585,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.21 | 2026-10-27 | Grafana en kit01 detrás de nginx con login LDAPS contra Samba AD, y el certificado LDAPS de `dc01.ad` firmado por el intermedio de clinica01 (D-16, R10, R12) |
 | v0.22 | 2026-10-27 | Logs centralizados con rsyslog en kit01, por equipo en `/var/log/kitsalud/`, y su uso en el diagnóstico rápido (R12, F-15, 12) |
 | v0.23 | 2026-10-27 | Consulta de prerregistros en clinica01 con login LDAPS contra Samba AD para el grupo `clinicos` y HTTPS con la CA del kit (R8, D-07, D-16) |
+| v0.24 | 2026-10-28 | Dashboard "Brigada de salud" en DHIS2 con indicadores de programa y el motivo principal en la consulta (R6), y resultado de las tablas analíticas (R-03) |
