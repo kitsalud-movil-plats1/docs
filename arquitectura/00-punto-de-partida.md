@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.25
+## Documento de arquitectura inicial (punto de partida) - v0.26
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -394,10 +394,10 @@ Si DHIS2 necesita más memoria que la prevista (R-03), **comunidad01 se mueve a 
 
 | Servicio | Contenido | Cómo se actualiza |
 |---|---|---|
-| Kiwix (`biblioteca`) | Biblioteca médica en español (Wikipedia Médica), contenido enciclopédico para niños (Vikidia) y simulaciones educativas (PhET), descargados de la biblioteca de Kiwix | Archivos ZIM en el recurso `contenido` |
-| Jellyfin (`videos`) | Dos bibliotecas. **Salud.** Contenido médico general en audio y video (prevención, higiene, cuidado materno-infantil, primeros auxilios, cuándo consultar). **Comunidad.** Material educativo y para niños y grabaciones de reuniones comunitarias | Archivos de audio y video en el recurso `contenido` |
+| Kiwix (`biblioteca`) | Biblioteca médica en español (Wikipedia Médica), contenido enciclopédico para niños (Vikidia) y simulaciones educativas (PhET), descargados de la biblioteca de Kiwix | Archivos ZIM en la carpeta `zim` del recurso `contenido` |
+| Jellyfin (`videos`) | Dos bibliotecas. **Salud.** Contenido médico general en audio y video (prevención, higiene, cuidado materno-infantil, primeros auxilios, cuándo consultar). **Comunidad.** Material educativo y para niños y grabaciones de reuniones comunitarias | Archivos de audio y video en las carpetas `salud` y `comunidad` del recurso `contenido` |
 
-**Flujo de publicación.** El personal sube el material al recurso SMB `contenido` de clinica01, con su usuario de AD. Un timer en clinica01 lo copia con `rsync` sobre SSH a comunidad01, con un usuario que solo puede escribir en la carpeta de medios. El flujo va siempre de clínica a comunidad, nunca al revés. La comunidad ve el contenido sin contraseña, con el usuario `comunidad` de Jellyfin, que solo reproduce y nunca transcodifica. La administración de Jellyfin solo es accesible desde la red Interna y por NetBird a través de kit01: Jellyfin trata esas redes como locales y la cuenta `admin` no tiene acceso remoto, así que desde la Comunidad no puede entrar.
+**Flujo de publicación.** El personal sube el material al recurso SMB `contenido` de clinica01 con su usuario de AD, en `zim`, `salud` o `comunidad`. Cada 10 minutos, un timer de clinica01 lo copia con `rsync` sobre SSH a la carpeta de medios de comunidad01 (`/srv/medios`), y lo que se borra del recurso también se borra allá. En clinica01 lo ejecuta un usuario local que solo lee el recurso, y un archivo modificado hace menos de 2 minutos espera a la siguiente pasada, por si todavía se está subiendo. En comunidad01 la llave solo se acepta desde clinica01 y solo ejecuta `rsync` en modo demonio, con módulos de solo escritura. Con ella no se abre una shell, no se lee ningún archivo y no se escribe fuera de la carpeta de medios. El flujo va siempre de clínica a comunidad, y comunidad01 no tiene llaves SSH ni credenciales SMB hacia clinica01. Kiwix se reinicia solo cuando cambian los ZIM, y Jellyfin agrega o quita los archivos con su monitor de cambios. Los ZIM de la biblioteca los descarga Ansible en `contenido/zim`. Los audios y videos de la lista los descarga y prepara Ansible directamente en comunidad01, y la publicación nunca los sobrescribe ni los borra. Lo que suba el personal ya viene en H.264/AAC de 480p o en MP3 (10.1). La comunidad ve el contenido sin contraseña, con el usuario `comunidad` de Jellyfin, que solo reproduce y nunca transcodifica. La administración de Jellyfin solo es accesible desde la red Interna y por NetBird a través de kit01: Jellyfin trata esas redes como locales y la cuenta `admin` no tiene acceso remoto, así que desde la Comunidad no puede entrar.
 
 ### 10.6 Respaldo (resumen; detalle en E5)
 
@@ -408,7 +408,7 @@ Si DHIS2 necesita más memoria que la prevista (R-03), **comunidad01 se mueve a 
 | Recursos `archivos` y `contenido` | clinica01 | `rsync` pull hacia kit01 | Diaria |
 | Configuraciones (`/etc`, Compose, `.env`) | kit01, VMs | `rsync` pull | Diaria y antes de cada cambio |
 
-kit01 junta todo en un área temporal y ejecuta `restic backup` hacia el disco USB. El repositorio está cifrado y su clave vive en un archivo que solo lee root, desplegado desde `ansible-vault`. El disco se monta solo durante la ventana de backup. La retención es de 7 diarios, 4 semanales y 3 mensuales (`restic forget --prune`). Las imágenes de VM no se respaldan, porque se reconstruyen con Ansible y luego se restauran los datos. Los medios de comunidad01 tampoco, porque son una copia de `contenido`.
+kit01 junta todo en un área temporal y ejecuta `restic backup` hacia el disco USB. El repositorio está cifrado y su clave vive en un archivo que solo lee root, desplegado desde `ansible-vault`. El disco se monta solo durante la ventana de backup. La retención es de 7 diarios, 4 semanales y 3 mensuales (`restic forget --prune`). Las imágenes de VM no se respaldan, porque se reconstruyen con Ansible y luego se restauran los datos. Los medios de comunidad01 tampoco, porque son una copia de `contenido` o los vuelve a descargar Ansible.
 
 ### 10.7 Acceso remoto (desarrollo)
 
@@ -587,3 +587,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.23 | 2026-10-27 | Consulta de prerregistros en clinica01 con login LDAPS contra Samba AD para el grupo `clinicos` y HTTPS con la CA del kit (R8, D-07, D-16) |
 | v0.24 | 2026-10-28 | Dashboard "Brigada de salud" en DHIS2 con indicadores de programa y el motivo principal en la consulta (R6), y resultado de las tablas analíticas (R-03) |
 | v0.25 | 2026-10-28 | Jellyfin en comunidad01 con el usuario `comunidad` sin contraseña ni transcodificación y la administración solo desde la Interna y NetBird (10.5) |
+| v0.26 | 2026-10-29 | Flujo de publicación de contenido de clinica01 a comunidad01 con `rsync` en modo demonio de solo escritura, y los ZIM de la biblioteca en el recurso `contenido` (10.5, 10.6, F-12) |
