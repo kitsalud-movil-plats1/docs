@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.26
+## Documento de arquitectura inicial (punto de partida) - v0.27
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -239,9 +239,11 @@ table inet filtro {
 
 ### 6.4 Portal cautivo
 
-1. Un cliente nuevo de la VLAN 40 solo alcanza DHCPv4, DHCPv6/NDP, DNS (`10.20.20.10`) y la página `portal.salud.movil` en kit01. Cualquier petición HTTP se redirige al portal.
-2. El cliente acepta las condiciones. Un script agrega su MAC al set `portal_ok` por 8 horas.
+1. Un cliente nuevo de la VLAN 40 solo alcanza DHCPv4, DHCPv6/NDP, DNS (`10.20.20.10`) y la página `portal.salud.movil` en kit01, que se sirve solo por HTTP en `10.20.40.1` y `fd5a:fc7e:d716:40::1`. Una cadena `nat` de prerouting manda a esas direcciones cualquier petición HTTP del cliente, y nginx la lleva al portal. El HTTPS se rechaza con RST, para que el navegador no se quede esperando.
+2. El cliente acepta las condiciones. Un servicio de kit01 busca la MAC del cliente en la tabla de vecinos de `br-com`, a partir de su IPv4 o su IPv6, y la agrega al set `portal_ok` por 8 horas. Aceptar otra vez renueva el plazo.
 3. Ya autorizado, el cliente llega a comunidad01 (80/443) por IPv4 e IPv6 y, si hay Internet, sale por IPv4 con NAT. No hay salida a Internet por IPv6 (la red es ULA). Nunca llega a la red Interna, a clinica01 ni a los servicios de gestión.
+
+El set, la redirección y las reglas que lo usan están en la tabla `inet filtro`, porque un set solo se usa dentro de su tabla. Así el portal falla cerrado, porque sin el set nadie de la Comunidad pasa de kit01. El set arranca vacío, así que después de un reinicio cada cliente acepta otra vez. Aplicar el firewall conserva las MAC autorizadas con el tiempo que les queda.
 
 Sin Internet, los sistemas operativos no pueden comprobar la conectividad y a veces no abren el portal solos. Para eso, BIND9 responde los dominios de detección de portal (`connectivitycheck.gstatic.com`, `captive.apple.com`, `www.msftconnecttest.com`) con la IP del portal (R-04). La página del portal también sirve de **inicio con íconos** hacia biblioteca, videos y registro.
 
@@ -427,7 +429,7 @@ La política por defecto es **denegar y registrar**. Todas las reglas aplican a 
 | F-05 | Interna | clinica01 | 443, 445 | DHIS2, consulta de formularios, recursos SMB |
 | F-06 | Interna | clinica01 | 88, 389, 464, 636, 135, 49152-65535 | Solo si se unen equipos al dominio (Q-03) |
 | F-07 | Interna | comunidad01 | 80, 443 | Biblioteca, videos, registro y administración de Jellyfin |
-| F-08 | Comunidad (sin autorizar) | kit01 | 80, 443 (portal) | Página del portal cautivo |
+| F-08 | Comunidad (sin autorizar) | kit01 | 80 (portal) | Página del portal cautivo, solo por HTTP. El HTTP hacia otros destinos se redirige aquí y el HTTPS se rechaza con RST |
 | F-09 | Comunidad (autorizada) | comunidad01 | 80, 443 | Biblioteca, videos y registro. **Única excepción** de la comunidad hacia la red de servidores |
 | F-10 | Comunidad (autorizada) | Internet | any, **solo IPv4** con NAT | Conectividad comunitaria, cuando hay Internet |
 | F-11 | comunidad01 | clinica01 | 5432 | Formularios. `pg_hba.conf` solo acepta a comunidad01, con un usuario de solo `INSERT`. Filtrado en el bridge |
@@ -588,3 +590,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.24 | 2026-10-28 | Dashboard "Brigada de salud" en DHIS2 con indicadores de programa y el motivo principal en la consulta (R6), y resultado de las tablas analíticas (R-03) |
 | v0.25 | 2026-10-28 | Jellyfin en comunidad01 con el usuario `comunidad` sin contraseña ni transcodificación y la administración solo desde la Interna y NetBird (10.5) |
 | v0.26 | 2026-10-29 | Flujo de publicación de contenido de clinica01 a comunidad01 con `rsync` en modo demonio de solo escritura, y los ZIM de la biblioteca en el recurso `contenido` (10.5, 10.6, F-12) |
+| v0.27 | 2026-10-29 | Portal cautivo solo por HTTP, con la redirección y el set `portal_ok` en `inet filtro` y la MAC tomada de la tabla de vecinos (6.4, F-08) |
