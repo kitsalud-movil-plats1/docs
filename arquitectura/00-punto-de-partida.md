@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.29
+## Documento de arquitectura inicial (punto de partida) - v0.30
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -245,7 +245,7 @@ table inet filtro {
 
 El set, la redirección y las reglas que lo usan están en la tabla `inet filtro`, porque un set solo se usa dentro de su tabla. Así el portal falla cerrado, porque sin el set nadie de la Comunidad pasa de kit01. El set arranca vacío, así que después de un reinicio cada cliente acepta otra vez. Aplicar el firewall conserva las MAC autorizadas con el tiempo que les queda.
 
-Sin Internet, los sistemas operativos no pueden comprobar la conectividad y a veces no abren el portal solos. Para eso, BIND9 responde los dominios de detección de portal (`connectivitycheck.gstatic.com`, `captive.apple.com`, `www.msftconnecttest.com`) con la IP del portal (R-04). La página del portal también sirve de **inicio con íconos** hacia biblioteca, videos y registro.
+Sin Internet, los sistemas operativos no pueden comprobar la conectividad y a veces no abren el portal solos. Basta con abrir en el navegador una dirección local por HTTP, como `http://portal.salud.movil` o `http://biblioteca.salud.movil`, y la redirección lleva al portal (R-04). La página del portal también sirve de **inicio con íconos** hacia biblioteca, videos y registro.
 
 ### 6.5 Dependencias entre servicios (orden de arranque)
 
@@ -504,7 +504,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | R-01 | kit01 es un punto único de falla, porque es el router y el hipervisor | Backups probados, apagado ordenado, reconstrucción con Ansible y restauración (P11). Segundo nodo como evolución (13.1) |
 | R-02 | sw01 es un router (CCR2004), y un error de configuración (una dirección en otra VLAN o el reenvío activado) lo haría enrutar entre VLAN y el tráfico se saltaría nftables | Reenvío IPv4 e IPv6 desactivado y una sola dirección (la de gestión), comprobados en cada cambio (`/ip settings print`, `/ip address print`); configuración exportada (`/export`) y versionada |
 | R-03 | DHIS2 consume mucha RAM | Heap limitado a 2 GB y contenedores con límite de 6 GB. La prueba de humo en clinica01 (apps#1) mostró un pico de unos 2 GB con 5 usuarios a la vez, así que se mantiene el perfil de referencia. Las tablas analíticas, con unos 220 pacientes y 320 consultas, se generan en 5 s con un pico de 1,9 GB en DHIS2, dentro de su límite. Si con más datos no alcanza, perfil "+1 equipo" (10.4) |
-| R-04 | El portal cautivo es código propio y la detección de portal falla sin Internet | Lógica mínima (una página, un script y un set de nftables). BIND9 responde los dominios de detección con la IP del portal. Pruebas con Android, iOS y Windows |
+| R-04 | El portal cautivo es código propio y la detección de portal falla sin Internet | Lógica mínima (una página, un script y un set de nftables). Sin Internet, el cliente abre una dirección local por HTTP y llega al portal. Pruebas con celulares en la visita |
 | R-05 | Actualizaciones sin Internet | No se actualiza en campo. Se actualiza en base, en una ventana documentada en E3, con snapshot previo de cada VM. Imágenes Docker con versión fija, guardadas con `docker save` en el disco USB |
 | R-06 | La red Interna mezcla personal clínico y administración, así que el switch y el AP son alcanzables dentro de la VLAN y una IP de administración se puede suplantar | Servicios de gestión de sw01 limitados por dirección (`/ip service`), DHCP snooping, RA multicast descartados en los puertos de acceso (los unicast no se pueden filtrar en sw01), SSH solo desde las IPs de administración y NetBird, reservas por MAC y registro de accesos. Para crecer, se separa la VLAN de gestión (13.1) |
 | R-07 | La laptop del perfil "+1 equipo" puede no estar disponible | Solo aloja comunidad01, el servicio menos crítico (10.2). Se vuelve al perfil de referencia |
@@ -521,7 +521,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | Q-04 | ¿El SSID clínico usará 802.1X? | **Cerrada.** No. WPA2-PSK con AES (el AP no soporta WPA3) |
 | Q-05 | ¿TLS para invitados? | **Cerrada.** TLS mixto (D-16) |
 | Q-06 | ¿Acceso del docente a los repositorios? | Los repositorios son públicos. Se refuerza la regla de cero secretos (D-17) |
-| Q-07 | ¿Qué laptop puede ser el "+1 equipo" (RAM, Ethernet, Linux)? | Inventariar en el hito de diseño |
+| Q-07 | ¿Qué laptop puede ser el "+1 equipo" (RAM, Ethernet, Linux)? | **Cerrada.** No hace falta, porque la prueba de humo de DHIS2 (R-03) mostró que basta el perfil de referencia. El perfil "+1 equipo" (10.4) queda como evolución de diseño |
 | Q-08 | ¿Entrega final el 11 de noviembre o el 23/25 de noviembre? | Confirmar con el docente; el calendario (16) asume el 11 de noviembre |
 | Q-09 | ¿El uplink del laboratorio (`192.168.160.0/24`) pasa por el RB3011 o es la red del laboratorio directa? | Confirmar en la próxima sesión; define si el RB3011 forma parte del montaje de pruebas |
 
@@ -593,3 +593,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.27 | 2026-10-29 | Portal cautivo solo por HTTP, con la redirección y el set `portal_ok` en `inet filtro` y la MAC tomada de la tabla de vecinos (6.4, F-08) |
 | v0.28 | 2026-10-29 | Matriz de flujos completa, con la salida de kit01 a Internet (F-18) y el filtro entre las VMs en una tabla `bridge` con conntrack (11, 6.3) |
 | v0.29 | 2026-10-29 | DHCP snooping y RA multicast descartados en los puertos de acceso de sw01, con esos puertos por la CPU (5.2, 8.4, R-06) |
+| v0.30 | 2026-10-29 | Q-07 cerrada (no hace falta el "+1 equipo") y el portal sin Internet se abre desde una dirección local por HTTP, sin respuestas especiales en BIND9 (6.4, R-04) |
