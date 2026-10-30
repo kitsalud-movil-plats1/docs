@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.28
+## Documento de arquitectura inicial (punto de partida) - v0.29
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -163,7 +163,7 @@ El uplink no pasa por sw01 y va directo a `wan0` (`enp170s0`, MAC `78:55:36:09:0
 
 - Los servicios de gestión de RouterOS (SSH y Winbox) solo aceptan a kit01 y a las IPs de administración; telnet, FTP, web y API se desactivan.
 - **DHCP snooping** en el bridge, con ether1 como único puerto de confianza, así que ningún otro puerto puede responder como servidor DHCPv4.
-- RouterOS no tiene RA Guard como función. Se evalúa bloquear con reglas del bridge los RA que entren por puertos distintos de ether1; si no se pueden distinguir del resto de ICMPv6, queda como riesgo (R-06).
+- **RA desde los puertos de acceso.** RouterOS no tiene RA Guard y el filtro del bridge no distingue el tipo de ICMPv6, así que una regla descarta todo el IPv6 hacia `ff02::1` (donde van los RA) que entre por ether2 y ether4-ether8. El chip de sw01 no acepta reglas de switch y, con conmutación por hardware, el filtro del bridge no ve el multicast, por eso esos puertos pasan por la CPU (`hw=no`); ether1 sigue por hardware. Un RA unicast no se filtra (R-06).
 
 ### 5.3 SSID
 
@@ -315,7 +315,7 @@ La misma `fe80::1` en varias interfaces es válida, porque una link-local solo t
 ### 8.4 Seguridad IPv6
 
 - Las reglas son **equivalentes en v4 y v6**. Cada política tiene su par en la misma tabla `inet` (6.3).
-- Se permite el ICMPv6 imprescindible (NDP, RS/RA, Packet Too Big, Time Exceeded, Parameter Problem; RFC 4890) desde `fe80::/10` y desde la ULA. Solo kit01 emite RA (desde `fe80::1`); el AP aísla a los clientes inalámbricos entre sí y en sw01 se evalúa bloquear los RA de los demás puertos (sección 5.2, R-06).
+- Se permite el ICMPv6 imprescindible (NDP, RS/RA, Packet Too Big, Time Exceeded, Parameter Problem; RFC 4890) desde `fe80::/10` y desde la ULA. Solo kit01 emite RA (desde `fe80::1`); el AP aísla a los clientes inalámbricos entre sí y sw01 descarta los RA multicast que entran por los puertos de acceso (sección 5.2, R-06).
 - DHCPv6: entrada `udp/547` desde `fe80::/10` hacia kit01, en las redes Interna y Comunidad.
 - El eco ICMP/ICMPv6 se permite desde la red Interna hacia kit01 y los servidores, y desde la Comunidad solo hacia su gateway. Así se puede demostrar la conectividad extremo a extremo y diagnosticar sin exponer los servidores a la comunidad.
 - El portal cautivo autoriza por MAC, así que aplica igual a IPv4 e IPv6 (D-22).
@@ -506,7 +506,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | R-03 | DHIS2 consume mucha RAM | Heap limitado a 2 GB y contenedores con límite de 6 GB. La prueba de humo en clinica01 (apps#1) mostró un pico de unos 2 GB con 5 usuarios a la vez, así que se mantiene el perfil de referencia. Las tablas analíticas, con unos 220 pacientes y 320 consultas, se generan en 5 s con un pico de 1,9 GB en DHIS2, dentro de su límite. Si con más datos no alcanza, perfil "+1 equipo" (10.4) |
 | R-04 | El portal cautivo es código propio y la detección de portal falla sin Internet | Lógica mínima (una página, un script y un set de nftables). BIND9 responde los dominios de detección con la IP del portal. Pruebas con Android, iOS y Windows |
 | R-05 | Actualizaciones sin Internet | No se actualiza en campo. Se actualiza en base, en una ventana documentada en E3, con snapshot previo de cada VM. Imágenes Docker con versión fija, guardadas con `docker save` en el disco USB |
-| R-06 | La red Interna mezcla personal clínico y administración, así que el switch y el AP son alcanzables dentro de la VLAN y una IP de administración se puede suplantar | Servicios de gestión de sw01 limitados por dirección (`/ip service`), DHCP snooping, SSH solo desde las IPs de administración y NetBird, reservas por MAC y registro de accesos. Para crecer, se separa la VLAN de gestión (13.1) |
+| R-06 | La red Interna mezcla personal clínico y administración, así que el switch y el AP son alcanzables dentro de la VLAN y una IP de administración se puede suplantar | Servicios de gestión de sw01 limitados por dirección (`/ip service`), DHCP snooping, RA multicast descartados en los puertos de acceso (los unicast no se pueden filtrar en sw01), SSH solo desde las IPs de administración y NetBird, reservas por MAC y registro de accesos. Para crecer, se separa la VLAN de gestión (13.1) |
 | R-07 | La laptop del perfil "+1 equipo" puede no estar disponible | Solo aloja comunidad01, el servicio menos crítico (10.2). Se vuelve al perfil de referencia |
 | R-08 | Adaptador USB-Ethernet de la laptop opcional sin soporte de VLAN; nombres de interfaz distintos si se cambia el hardware | Los nombres del kernel de kit01 se mantienen mientras no cambie el hardware (D-14) y las variables de Ansible guardan el nombre de cada rol. Probar la laptop temprano (`ip link add link <if> name <if>.20 type vlan id 20`) |
 | R-09 | Samba AD DC y Docker en la misma VM; Samba recomienda no usar el DC como servidor de archivos en instalaciones grandes | Para el tamaño del kit es aceptable. Se valida en el hito de servicios base. Si da problemas, AD pasa a su propia VM (+1,5 GB) |
@@ -592,3 +592,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.26 | 2026-10-29 | Flujo de publicación de contenido de clinica01 a comunidad01 con `rsync` en modo demonio de solo escritura, y los ZIM de la biblioteca en el recurso `contenido` (10.5, 10.6, F-12) |
 | v0.27 | 2026-10-29 | Portal cautivo solo por HTTP, con la redirección y el set `portal_ok` en `inet filtro` y la MAC tomada de la tabla de vecinos (6.4, F-08) |
 | v0.28 | 2026-10-29 | Matriz de flujos completa, con la salida de kit01 a Internet (F-18) y el filtro entre las VMs en una tabla `bridge` con conntrack (11, 6.3) |
+| v0.29 | 2026-10-29 | DHCP snooping y RA multicast descartados en los puertos de acceso de sw01, con esos puertos por la CPU (5.2, 8.4, R-06) |
