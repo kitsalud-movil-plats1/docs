@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.27
+## Documento de arquitectura inicial (punto de partida) - v0.28
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -432,14 +432,14 @@ La política por defecto es **denegar y registrar**. Todas las reglas aplican a 
 | F-08 | Comunidad (sin autorizar) | kit01 | 80 (portal) | Página del portal cautivo, solo por HTTP. El HTTP hacia otros destinos se redirige aquí y el HTTPS se rechaza con RST |
 | F-09 | Comunidad (autorizada) | comunidad01 | 80, 443 | Biblioteca, videos y registro. **Única excepción** de la comunidad hacia la red de servidores |
 | F-10 | Comunidad (autorizada) | Internet | any, **solo IPv4** con NAT | Conectividad comunitaria, cuando hay Internet |
-| F-11 | comunidad01 | clinica01 | 5432 | Formularios. `pg_hba.conf` solo acepta a comunidad01, con un usuario de solo `INSERT`. Filtrado en el bridge |
-| F-12 | clinica01 | comunidad01 | 22 | Publicación de contenido (`rsync`, usuario restringido). Filtrado en el bridge |
+| F-11 | comunidad01 | clinica01 | 5432 | Formularios. `pg_hba.conf` solo acepta a comunidad01, con un usuario de solo `INSERT`. Filtrado en el bridge (tabla `bridge`, con conntrack) |
+| F-12 | clinica01 | comunidad01 | 22 | Publicación de contenido (`rsync`, usuario restringido). Filtrado en el bridge (tabla `bridge`, con conntrack) |
 | F-13 | kit01 | clinica01 | 636 | Login LDAPS de Grafana contra AD |
 | F-14 | kit01 | clinica01, comunidad01 | 9100; 443 y 445 en clinica01; 80 y 443 en comunidad01 | Scraping de `node_exporter` y sondas blackbox de Prometheus. El 5432 de clinica01 ya lo alcanza la sonda TCP y lo filtra `pg_hba.conf`; el 22 y el 636 los sondean por F-02 y F-13. Filtrado en las VMs (ufw) |
 | F-15 | clinica01, comunidad01 | kit01 `.10` | 514/tcp | Envío de logs (rsyslog), con cola en disco en cada VM. kit01 reconoce cada equipo por su IP de origen |
 | F-16 | sw01 | kit01 | 514/udp y 123/udp | Syslog y hora del switch. El AP no envía syslog ni tiene cliente NTP |
 | F-17 | clinica01, comunidad01 | Internet | 80, 443, **solo IPv4** | Actualizaciones de paquetes e imágenes, solo con Internet y en ventana de mantenimiento (R-05) |
-| F-18 | kit01 | Internet | 53, 123/udp, 443, NetBird | Forwarders DNS, NTP externo, actualizaciones y túnel de administración |
+| F-18 | kit01 | Internet | 53 y 80 tcp, 443, udp, ICMP | Forwarders DNS, NTP externo, actualizaciones (apt por el 80 y el 443) y túnel de administración. NetBird usa WireGuard, STUN e ICE por UDP con puertos variables, por eso se deja todo el UDP. Lo demás queda bloqueado y registrado |
 | F-19 | Todas | Todas | ICMPv6 NDP/PMTU desde `fe80::/10` y ULA | Funcionamiento de IPv6 (RFC 4890) |
 | F-20 | Comunidad | Interna, clinica01, gestión de kit01 (22, `monitoreo`) | any | **Bloqueado y registrado** (P3/P10) |
 | F-21 | Interna (no admin) | kit01 22, VMs 22 | any | **Bloqueado y registrado**. SSH solo desde admin |
@@ -591,3 +591,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.25 | 2026-10-28 | Jellyfin en comunidad01 con el usuario `comunidad` sin contraseña ni transcodificación y la administración solo desde la Interna y NetBird (10.5) |
 | v0.26 | 2026-10-29 | Flujo de publicación de contenido de clinica01 a comunidad01 con `rsync` en modo demonio de solo escritura, y los ZIM de la biblioteca en el recurso `contenido` (10.5, 10.6, F-12) |
 | v0.27 | 2026-10-29 | Portal cautivo solo por HTTP, con la redirección y el set `portal_ok` en `inet filtro` y la MAC tomada de la tabla de vecinos (6.4, F-08) |
+| v0.28 | 2026-10-29 | Matriz de flujos completa, con la salida de kit01 a Internet (F-18) y el filtro entre las VMs en una tabla `bridge` con conntrack (11, 6.3) |
