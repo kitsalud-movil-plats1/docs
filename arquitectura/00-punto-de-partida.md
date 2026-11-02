@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.30
+## Documento de arquitectura inicial (punto de partida) - v0.31
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -41,7 +41,7 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 | R8 | Formularios de prerregistro | App propia mínima y asistida. Los datos se guardan en PostgreSQL de clinica01 y los consulta solo el grupo AD `clinicos`, en `consultas.salud.movil` con login LDAPS | comunidad01 → clinica01 |
 | R9 | Almacenamiento compartido | SMB3 con autenticación AD (Kerberos o NTLMv2), con los recursos `archivos` (documentos y exportaciones, solo del grupo `clinicos` y con cifrado obligatorio) y `contenido` (medios y ZIM que se publican en comunidad01, con escritura de `clinicos` y `admins`). Los grupos y usuarios tienen gid y uid fijos (RFC2307), así un backup restaurado conserva sus dueños | clinica01 |
 | R10 | Identidad centralizada | Samba AD DC (`ad.salud.movil`, realm `AD.SALUD.MOVIL`, DC `dc01`). La usan SMB, Grafana y la consulta de formularios | clinica01 |
-| R11 | Backups y restauración | restic cifrado en un disco USB, en **modelo pull**. kit01 extrae los dumps de cada VM por SSH. Retención 7d/4s/3m | kit01, disco USB |
+| R11 | Backups y restauración | restic cifrado en un disco USB, en **modelo pull**. kit01 extrae los dumps de cada VM por SSH una vez por semana. Retención de 4 semanales y 3 mensuales | kit01, disco USB |
 | R12 | Registros y monitoreo | Prometheus (node y blackbox exporters para disponibilidad, puertos, CPU, memoria y disco) y Grafana. rsyslog centraliza en kit01 (`/var/log/kitsalud/`, una carpeta por equipo) los eventos de DHCP (Kea), DNS (BIND9), firewall (`fw-drop`) y autenticación (Samba AD y SSH), además del syslog de sw01 | kit01 |
 
 ### 2.2 Cómo se demostrarán las pruebas de aceptación
@@ -369,7 +369,7 @@ Todas las VMs llevan `node_exporter`, rsyslog con reenvío a kit01, `chrony` apu
 | 1 - Núcleo de red | Firewall, DHCP, DNS, NTP, portal | kit01 | No hay red y nadie obtiene dirección ni nombres. Por eso vive en el host y no depende de las VMs |
 | 2 - Clínico | DHIS2, consulta de formularios, Samba AD, SMB | clinica01 | No se registran pacientes. La comunidad sigue con biblioteca y videos |
 | 3 - Comunitario | Biblioteca, videos, registro | comunidad01 | La atención clínica sigue; el prerregistro se hace directamente en DHIS2 |
-| 4 - Soporte | Monitoreo, backups, NetBird | kit01 | No afecta la atención; se pierde visibilidad o el respaldo del día |
+| 4 - Soporte | Monitoreo, backups, NetBird | kit01 | No afecta la atención; se pierde visibilidad o el respaldo de la semana |
 
 ### 10.3 Perfiles por tipo de misión
 
@@ -405,12 +405,12 @@ Si DHIS2 necesita más memoria que la prevista (R-03), **comunidad01 se mueve a 
 
 | Qué | Origen | Método | Frecuencia |
 |---|---|---|---|
-| BD de DHIS2 y de formularios | clinica01 | `pg_dump` ejecutado por SSH desde kit01 (usuario `backup` con comando forzado) | Diaria |
-| Dominio Samba AD | clinica01 | `samba-tool domain backup offline` | Diaria |
-| Recursos `archivos` y `contenido` | clinica01 | `rsync` pull hacia kit01 | Diaria |
-| Configuraciones (`/etc`, Compose, `.env`) | kit01, VMs | `rsync` pull | Diaria y antes de cada cambio |
+| BD de DHIS2 y de formularios | clinica01 | `pg_dump` ejecutado por SSH desde kit01 (usuario `backup` con comando forzado) | Semanal |
+| Dominio Samba AD | clinica01 | `samba-tool domain backup offline` | Semanal |
+| Recursos `archivos` y `contenido` | clinica01 | `rsync` pull hacia kit01 | Semanal |
+| Configuraciones (`/etc`, Compose, `.env`) | kit01, VMs | `rsync` pull | Semanal y antes de cada cambio |
 
-kit01 junta todo en un área temporal y ejecuta `restic backup` hacia el disco USB. El repositorio está cifrado y su clave vive en un archivo que solo lee root, desplegado desde `ansible-vault`. El disco se monta solo durante la ventana de backup. La retención es de 7 diarios, 4 semanales y 3 mensuales (`restic forget --prune`). Las imágenes de VM no se respaldan, porque se reconstruyen con Ansible y luego se restauran los datos. Los medios de comunidad01 tampoco, porque son una copia de `contenido` o los vuelve a descargar Ansible.
+La copia corre el domingo de madrugada. En cada VM la llave de kit01 solo entra desde kit01 y solo ejecuta un comando forzado, que acepta `pg_dump` de las bases de la lista, el backup del dominio y `rsync` en modo demonio con módulos de solo lectura. kit01 junta todo en un área temporal y ejecuta `restic backup` hacia el disco USB, con un snapshot por tipo (configuraciones, recursos, bases y dominio). El repositorio está cifrado y su clave vive en un archivo que solo lee root, desplegado desde `ansible-vault`. El disco se monta por UUID solo durante la ventana de backup, y si no tiene repositorio la primera copia lo crea. La retención es de 4 semanales y 3 mensuales (`restic forget --prune`). Las imágenes de VM no se respaldan, porque se reconstruyen con Ansible y luego se restauran los datos. Los medios de comunidad01 tampoco, porque son una copia de `contenido` o los vuelve a descargar Ansible.
 
 ### 10.7 Acceso remoto (desarrollo)
 
@@ -594,3 +594,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.28 | 2026-10-29 | Matriz de flujos completa, con la salida de kit01 a Internet (F-18) y el filtro entre las VMs en una tabla `bridge` con conntrack (11, 6.3) |
 | v0.29 | 2026-10-29 | DHCP snooping y RA multicast descartados en los puertos de acceso de sw01, con esos puertos por la CPU (5.2, 8.4, R-06) |
 | v0.30 | 2026-10-29 | Q-07 cerrada (no hace falta el "+1 equipo") y el portal sin Internet se abre desde una dirección local por HTTP, sin respuestas especiales en BIND9 (6.4, R-04) |
+| v0.31 | 2026-10-30 | Backups semanales con retención de 4 semanales y 3 mensuales, comando forzado en las VMs y un snapshot por tipo (R11, 10.2, 10.6) |
