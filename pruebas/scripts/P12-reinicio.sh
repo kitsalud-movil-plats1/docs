@@ -92,7 +92,7 @@ if [ "$1" = vms ]; then
   estado
   seccion "Reinicio de clinica01 y comunidad01"
   (cd "$ANSIBLE_DIR" && ansible kit01 -b -m copy -a "src=$MEDIR dest=/run/p12-vms.sh mode=0700" >/dev/null)
-  R=$(remoto kit01 "/run/p12-vms.sh; e=\$?; rm -f /run/p12-vms.sh; exit \$e")
+  R=$(remoto kit01 "bash /run/p12-vms.sh; e=\$?; rm -f /run/p12-vms.sh; exit \$e")
   echo "$R" | sed 's/^/    /'
   for f in ipv4 ipv6; do
     T=$(echo "$R" | sed -n "s/^$f en verde a los \([0-9]*\) s$/\1/p")
