@@ -9,7 +9,7 @@ Todo lo esencial vive en el kit, como DNS (BIND9 autoritativo de `salud.movil`),
 
 ## Qué necesitas
 
-Estar en el sitio, con un celular en la Comunidad y un PC en la Clínica. **Al desconectar la WAN se cae NetBird**, así que quien esté en remoto pierde el acceso hasta reconectar. Es normal.
+Para la prueba con el cable, estar en el sitio, con un celular en la Comunidad y un PC en la Clínica. En remoto se usa la variante de abajo. **Al desconectar la WAN se cae NetBird**, así que quien esté en remoto pierde el acceso hasta reconectar. Es normal.
 
 ## Paso a paso
 
@@ -29,6 +29,18 @@ Se ejecuta en un cliente de la Comunidad o de la Clínica, con la WAN desconecta
 ```
 
 Revisa que lo externo falla, que los nombres del kit resuelven A y AAAA y que los servicios de esa red responden en IPv4 e IPv6 (en la Clínica también el 445 de `archivos`). Cada línea sale como `[ OK ]` o `[FALLA]` y todo queda en `salidas/P09-<fecha>.txt`, que sirve de evidencia. Los comandos de abajo son los que usa el script, para ejecutarlos a mano o explicarlos.
+
+## Variante remota, sin desconectar el cable
+
+Se ejecuta en la máquina de control (Ansible del kit, por NetBird), desde `docs/pruebas/`, cuando no hay nadie en el laboratorio.
+
+```bash
+./scripts/P09-sin-internet-remoto.sh
+```
+
+Desconectar el cable corta NetBird, así que el script corta Internet con una tabla de nftables temporal en kit01, que se borra sola a los 15 minutos aunque el script no termine. La tabla descarta todo lo que el kit reenvía hacia la WAN (las VMs y los clientes de la Interna y la Comunidad se quedan sin Internet) y, en kit01, el DNS hacia afuera (reenviadores y raíz), el NTP y el HTTP de `apt`. Deja pasar solo lo que NetBird necesita (su túnel UDP, su HTTPS y el DNS del sitio).
+
+Durante el corte comprueba que lo externo falla, que los nombres del kit resuelven A y AAAA, que Chrony sigue sirviendo la hora, que DHIS2 y la consulta responden por HTTPS en IPv4 e IPv6, que sw01 (red Interna) llega a la biblioteca, que `ana.rojas` abre `archivos` por SMB y que una VM de la Comunidad (`prueba01`) ve el portal, lo acepta, abre la biblioteca, los videos y el registro en IPv4 e IPv6 y envía un prerregistro. Al final borra la tabla, el prerregistro de prueba y apaga `prueba01`. La salida queda en `salidas/P09-<fecha>.txt`.
 
 ## Comandos de verificación
 
