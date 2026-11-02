@@ -20,14 +20,16 @@ SSH a kit01 por NetBird y Grafana (`https://monitoreo.salud.movil` por NetBird, 
 5. Explicar el impacto.
 6. Restaurar con `sudo systemctl start named` y ver que todo vuelve a verde.
 
-**Falla 2 (opcional), PostgreSQL caído.** En clinica01, `docker stop dhis2-db-1`. Se ponen en rojo DHIS2 y la sonda TCP del 5432, y los formularios no guardan. Restaurar con `docker start dhis2-db-1`.
+**Falla 2, PostgreSQL caído.** En clinica01, `docker stop dhis2-db-1`. Se ponen en rojo DHIS2 y la sonda TCP del 5432, y los formularios no guardan. Restaurar con `docker start dhis2-db-1`.
+
+**Falla 3, una VM apagada.** En kit01, `virsh shutdown comunidad01`. Se ponen en rojo la biblioteca, los videos, el registro, el ping y las métricas de comunidad01. Se localiza con `virsh list --all` y las últimas líneas de su log central (`/var/log/kitsalud/comunidad01/syslog.log`). Restaurar con `virsh start comunidad01`; los servicios vuelven solos en menos de un minuto.
 
 ## Con el script
 
 Se ejecuta en la máquina de control (Ansible del kit, por NetBird), desde `docs/pruebas/`.
 
 ```bash
-./scripts/P13-diagnostico.sh [dns|postgres]
+./scripts/P13-diagnostico.sh [dns|postgres|vm]
 ```
 
 Muestra las alertas de antes, induce la falla (pide confirmación), espera 75 s, junta las alertas nuevas, el síntoma, la causa (`systemctl`, `journalctl`, `ss` o `docker`) y el log central, restaura y comprueba que las alertas se apagan. Mientras corre, abrir **Estado del kit** para la captura. Cada línea sale como `[ OK ]` o `[FALLA]` y todo queda en `salidas/P13-<fecha>.txt`, que sirve de evidencia. Los comandos de abajo son los que usa el script, para ejecutarlos a mano o explicarlos.
