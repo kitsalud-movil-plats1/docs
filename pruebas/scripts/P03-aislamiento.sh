@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # P3 - Aislamiento. Se ejecuta en un cliente de la Comunidad que ya aceptó el
-# portal. Intenta llegar a lo clínico y a la administración en IPv4 e IPv6;
-# todo debe quedar bloqueado (F-20). Con la IP de otro cliente del mismo SSID
-# como argumento, revisa también el aislamiento del AP.
+# portal. Intenta llegar a lo clínico y a la administración en IPv4 e IPv6,
+# también a la gestión del AP y del switch; todo debe quedar bloqueado. Con la
+# IP de otro cliente del mismo SSID como argumento, revisa también el
+# aislamiento del AP.
 #   ./P03-aislamiento.sh [IP de otro cliente de la Comunidad]
 source "$(dirname "$0")/comun.sh"
 iniciar P03 "Aislamiento"
@@ -33,14 +34,21 @@ for f in 4 6; do
   bloqueado_tcp $f "ns1.$DOMINIO" 22 "SSH de kit01"
   bloqueado_tcp $f "portal.$DOMINIO" 22 "SSH de kit01 por su IP de la Comunidad"
 done
-seccion "Interna"
-if hace_ping 4 10.20.10.1; then mal "La Interna responde al ping"; else bien "La Interna (10.20.10.1) no responde"; fi
+seccion "Interna y gestión de los equipos de red"
+if hace_ping 4 10.20.10.1; then mal "IPv4 la Interna responde al ping"; else bien "IPv4 la Interna (10.20.10.1) no responde"; fi
+c=$(codigo_http 4 http://10.20.10.3/ -m 5)
+if [ "$c" = 000 ]; then bien "IPv4 bloqueado: gestión del AP (http://10.20.10.3)"; else mal "IPv4 la gestión del AP responde $c"; fi
+bloqueado_tcp 4 10.20.10.2 22 "SSH del switch"
+if [ $TIENE6 = 1 ]; then
+  if hace_ping 6 fd5a:fc7e:d716:10::1; then mal "IPv6 la Interna responde al ping"; else bien "IPv6 la Interna (fd5a:fc7e:d716:10::1) no responde"; fi
+  bloqueado_tcp 6 fd5a:fc7e:d716:10::2 22 "SSH del switch"
+fi
 
 if [ -n "$1" ]; then
   seccion "Aislamiento entre clientes del AP"
   if hace_ping 4 "$1"; then mal "El cliente $1 responde; revisar AP Isolation"; else bien "El cliente $1 no responde (AP Isolation)"; fi
 fi
 
-nota "En kit01 los intentos quedan en /var/log/kitsalud/kit01/firewall.log con el prefijo fw-drop F-20"
+nota "En kit01 los intentos quedan en /var/log/kitsalud/kit01/firewall.log con el prefijo fw-drop"
 nota "Origen de esta prueba: $(ipv4_de "$(interfaz)") $(ipv6_globales_de "$(interfaz)" | head -1)"
 terminar

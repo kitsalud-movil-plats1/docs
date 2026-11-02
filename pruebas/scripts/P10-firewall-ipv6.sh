@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # P10 - Firewall IPv6. Se ejecuta en un cliente de la Comunidad con IPv6 global
-# y el portal aceptado. Por IPv6 debe llegar a comunidad01 (F-09) y no a
-# clinica01 ni a la administración de kit01 (F-20); se repite en IPv4 para
+# y el portal aceptado. Por IPv6 debe llegar a comunidad01 y no a clinica01
+# ni a la administración de kit01; se repite en IPv4 para
 # comparar.
 #   ./P10-firewall-ipv6.sh
 source "$(dirname "$0")/comun.sh"
@@ -34,5 +34,5 @@ for f in 6 4; do
 done
 
 nota "Origen IPv6: $(ipv6_globales_de "$(interfaz)" | head -1)"
-nota "En kit01: grep SRC=fd5a:fc7e:d716:0040 /var/log/kitsalud/kit01/firewall.log | tail (fw-drop F-20)"
+nota "En kit01: grep SRC=fd5a:fc7e:d716:0040 /var/log/kitsalud/kit01/firewall.log | tail (prefijo fw-drop)"
 terminar

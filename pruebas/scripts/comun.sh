@@ -10,6 +10,9 @@ SO=$(uname -s)
 DIR_PRUEBAS=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 # Ansible del kit (platform/ansible), para las pruebas que se hacen en remoto
 ANSIBLE_DIR=${ANSIBLE_DIR:-$DIR_PRUEBAS/../../platform/ansible}
+# Sin esto Ansible escribe cada comando en el syslog del equipo, con las claves
+# del vault que algunas pruebas le pasan
+export ANSIBLE_NO_TARGET_SYSLOG=True
 TMP_PRUEBAS=$(mktemp -d "${TMPDIR:-/tmp}/kitsalud-prueba.XXXXXX")
 trap 'rm -rf "$TMP_PRUEBAS"' EXIT
 BIEN=0
@@ -147,7 +150,9 @@ codigo_http() {
 # Abre una conexión TCP en 5 s. tcp_abre 4|6 <nombre o IP> <puerto>
 tcp_abre() {
   local ip=$2
+  # Una IPv6 tiene letras (a-f) pero no es un nombre
   case $ip in
+    *:*) ;;
     *[a-z]*) ip=$(resolver "$2" "$([ "$1" = 4 ] && echo A || echo AAAA)" | head -1) ;;
   esac
   [ -n "$ip" ] || return 1
@@ -183,11 +188,12 @@ exige_portal() {
   fi
 }
 
-# Avisa si un nombre del kit está en /etc/hosts
+# Avisa si un nombre del kit está en /etc/hosts. La línea 127.0.1.1 es el
+# nombre del propio equipo en Debian y Ubuntu, y no cuenta
 revisar_hosts() {
-  if grep -q -E "^[^#].*\.$DOMINIO" /etc/hosts 2>/dev/null; then
+  if grep -v '^127\.0\.1\.1[[:space:]]' /etc/hosts 2>/dev/null | grep -q -E "^[^#].*\.$DOMINIO"; then
     mal "/etc/hosts tiene nombres de $DOMINIO; comentarlos antes de probar"
-    grep -E "^[^#].*\.$DOMINIO" /etc/hosts | sed 's/^/          /'
+    grep -v '^127\.0\.1\.1[[:space:]]' /etc/hosts | grep -E "^[^#].*\.$DOMINIO" | sed 's/^/          /'
   fi
 }
 
@@ -205,4 +211,20 @@ exige_ansible() {
     echo "Esta prueba usa el Ansible del kit (platform/ansible) desde la máquina de control." >&2
     exit 2
   fi
+}
+
+# Ejecuta comandos de RouterOS en sw01 (red Interna) por el salto de kit01, con
+# la clave del vault. Los retornos de carro del avance de /tool fetch pasan a
+# líneas. en_sw01 <comandos>
+en_sw01() {
+  (cd "$ANSIBLE_DIR" && SSHPASS=$(ansible-vault view inventarios/kit/group_vars/all/vault.yml | python3 -c "import sys,yaml; print(yaml.safe_load(sys.stdin)['vault_sw01_password'])") \
+    sshpass -e ssh -n -o StrictHostKeyChecking=accept-new \
+    -o ProxyCommand="sshpass -f $HOME/.config/kitsalud/ssh-pass ssh -W %h:%p kitsalud@$KIT01_NETBIRD" \
+    admin@10.20.10.2 "$1" 2>&1) | sed 's/\r$//' | tr '\r' '\n'
+}
+
+# Estado final de un /tool fetch por HTTP desde sw01. sw01_fetch <url> <host>
+sw01_fetch() {
+  en_sw01 "/tool fetch url=\"$1\" http-header-field=\"Host: $2\" check-certificate=no keep-result=no duration=8s" |
+    grep -oE 'status: [a-z ]+|failure: .*' | tail -1
 }
