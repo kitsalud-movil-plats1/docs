@@ -13,13 +13,13 @@ SSH a kit01 (NetBird) y a clinica01 a través de kit01. El archivo `prueba-p11.t
 
 ## Paso a paso
 
-1. Hacer una copia ahora, para que el archivo esté en el último snapshot.
-2. Anotar el contenido y el dueño del archivo, y borrarlo de `archivos`.
-3. Comprobar que ya no está, también desde el explorador de archivos.
-4. Montar el disco y restaurar el archivo desde el snapshot `recursos`.
-5. Devolverlo a `archivos` con sus dueños y ACL.
-6. Comprobar que volvió y que `ana.rojas` lo abre por SMB.
-7. Opcional, lo mismo con una tabla de prueba de PostgreSQL desde el snapshot `bd`.
+1. Anotar el dueño, los permisos, la ACL y el sha256 del archivo, y guardar una copia en `/root/p11` de clinica01 por si algo falla.
+2. Crear una tabla de prueba en `prerregistro` y anotar sus filas y su md5.
+3. Hacer una copia ahora, para que el archivo y la tabla estén en el último snapshot.
+4. Borrar el archivo de `archivos` y la tabla, y comprobar que ya no están, también por SMB con `ana.rojas`.
+5. Montar el disco, restaurar el archivo desde el snapshot `recursos` y sacar el dump de `prerregistro` del snapshot `bd`.
+6. Devolver el archivo a `archivos` con su dueño y ACL, y la tabla con `pg_restore`, midiendo el tiempo.
+7. Comprobar que volvieron iguales y que `ana.rojas` abre el archivo por SMB.
 
 ## Con el script
 
@@ -29,7 +29,7 @@ Se ejecuta en la máquina de control (Ansible del kit, por NetBird), desde `docs
 ./scripts/P11-restauracion.sh [archivo]
 ```
 
-Hace una copia, anota dueño, permisos y sha256 del archivo, lo borra (pide confirmación), lo restaura con restic desde el disco USB, lo devuelve a `archivos` y compara que quedó igual. Cada línea sale como `[ OK ]` o `[FALLA]` y todo queda en `salidas/P11-<fecha>.txt`, que sirve de evidencia. Los comandos de abajo son los que usa el script, para ejecutarlos a mano o explicarlos.
+Sigue el paso a paso de arriba. Pide confirmación antes de borrar y, si todo sale bien, borra al final la tabla de prueba y la copia de `/root/p11`; con alguna falla las deja para devolver el archivo a mano. La clave de `ana.rojas` la toma del vault. Cada línea sale como `[ OK ]` o `[FALLA]` y todo queda en `salidas/P11-<fecha>.txt`, que sirve de evidencia. Los comandos de abajo son los que usa el script, para ejecutarlos a mano o explicarlos.
 
 ## Comandos
 
@@ -75,7 +75,7 @@ ls -ln /srv/samba/archivos/ && cat /srv/samba/archivos/prueba-p11.txt
 | `restic restore ... --include ... --target /tmp/p11` | Extrae solo ese archivo en una carpeta aparte, sin pisar nada |
 | `ls -ln` | Muestra los dueños numéricos; `10101:10001` es `ana.rojas` y `clinicos` (RFC2307) |
 
-**Tabla de PostgreSQL (opcional).** En clinica01, crear una tabla de prueba (`docker exec dhis2-db-1 psql -U dhis -d prerregistro -c "create table p11 (x int); insert into p11 values (1);"`), copiar, borrarla (`drop table p11`) y restaurarla con `restic dump latest --tag bd /var/lib/kitsalud/backup/clinica01/postgres/prerregistro.dump > /tmp/pr.dump`, copiar a clinica01 y `docker exec -i dhis2-db-1 pg_restore -U dhis -d prerregistro -t p11 < /tmp/pr.dump`.
+**Tabla de PostgreSQL.** En clinica01 se crea una tabla de prueba con 1000 filas (`docker exec dhis2-db-1 psql -U dhis -d prerregistro -c "create table p11_prueba as select n, md5(n::text) as texto from generate_series(1, 1000) n"`), se copia y se borra (`drop table p11_prueba`). Para restaurarla, en kit01 con el disco montado `restic dump latest --tag bd /var/lib/kitsalud/backup/clinica01/postgres/prerregistro.dump > /tmp/p11/prerregistro.dump`, se copia a clinica01 y `docker exec -i dhis2-db-1 pg_restore -U dhis -d prerregistro -t p11_prueba < prerregistro.dump`. Se compara `select count(*), md5(string_agg(texto, ',' order by n)) from p11_prueba` antes y después.
 
 **macOS.** El script funciona igual con Ansible y `sshpass` instalados (`brew install ansible` y `brew install hudochenkov/sshpass/sshpass`).
 
@@ -86,4 +86,4 @@ ls -ln /srv/samba/archivos/ && cat /srv/samba/archivos/prueba-p11.txt
 
 ## Evidencia
 
-Salida del `ls` antes y después de borrar, de `restic snapshots` y `restic restore`, y del `ls -ln` final con el dueño correcto. Captura del archivo abierto otra vez por SMB con `ana.rojas`.
+La salida del script (`salidas/P11-<fecha>.txt`), con el estado del archivo y de la tabla antes de borrar, `restic snapshots` y `restic restore`, las comprobaciones de dueño, ACL, sha256, SMB y filas, y el tiempo de la restauración.
