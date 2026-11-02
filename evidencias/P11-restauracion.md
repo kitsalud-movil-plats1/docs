@@ -4,11 +4,11 @@
 
 ## Qué se prueba
 
-Se elimina o modifica un recurso y se recupera desde un backup o snapshot (P11). Se borran un archivo del recurso `archivos` y una tabla de prueba de la base `prerregistro` en clinica01, y se recuperan con restic desde el disco USB de kit01 (R11, D-10, sección 10.6).
+Se elimina o modifica un recurso y se recupera desde un backup o snapshot. Se borran un archivo del recurso `archivos` y una tabla de prueba de la base `prerregistro` en clinica01, y se recuperan con restic desde el disco USB de kit01.
 
 ## Comandos y salida
 
-Se ejecutó `./scripts/P11-restauracion.sh` desde `docs/pruebas/` en la máquina de control. La salida completa es la siguiente.
+Se ejecutó el script de la prueba (`./scripts/P11-restauracion.sh`) en la máquina de control. La salida completa es la siguiente.
 
 ```
 == P11 - Restauración
@@ -80,7 +80,7 @@ Registro de la copia en kit01 (`journalctl -u backup.service`), con los cuatro s
 
 ### IPv4 e IPv6
 
-La extracción salió por IPv6 hacia las dos VMs, que es la primera dirección que prueba `backup-kit`. Si IPv6 no responde, pasa a IPv4; ese cambio se probó en el laboratorio virtual (PR platform#45). La restauración trabaja con archivos y no depende de la familia.
+La extracción salió por IPv6 hacia las dos VMs, que es la primera dirección que prueba `backup-kit`. Si IPv6 no responde, pasa a IPv4; ese cambio se probó en el laboratorio virtual. La restauración trabaja con archivos y no depende de la familia.
 
 ## Interpretación
 
