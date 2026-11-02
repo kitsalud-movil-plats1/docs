@@ -6,6 +6,8 @@ Documentación del **Kit móvil de atención primaria en salud** (Plataformas I,
 |---|---|
 | `arquitectura/00-punto-de-partida.md` (+ `.pdf`) | Documento inicial con decisiones, supuestos, topología, plan IPv4/IPv6, DNS y flujos |
 | `diagramas/` | Diagramas lógico y físico, con la fuente editable en draw.io (`*.drawio`) y el PNG que usa el PDF |
+| `respaldo/` | Plan de respaldo y restauración (E5) |
+| `evidencias/` | Evidencias de las pruebas P1-P13 con su salida e interpretación (E6) |
 | `decisiones/` | Registros de decisiones (ADR) posteriores a v0.1 |
 | `sustentacion/` | Material de la sustentación (E8) |
 | `tools/` | Generación de PDF y diagramas |
