@@ -10,6 +10,9 @@ SO=$(uname -s)
 DIR_PRUEBAS=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 # Ansible del kit (platform/ansible), para las pruebas que se hacen en remoto
 ANSIBLE_DIR=${ANSIBLE_DIR:-$DIR_PRUEBAS/../../platform/ansible}
+# Sin esto Ansible escribe cada comando en el syslog del equipo, con las claves
+# del vault que algunas pruebas le pasan
+export ANSIBLE_NO_TARGET_SYSLOG=True
 TMP_PRUEBAS=$(mktemp -d "${TMPDIR:-/tmp}/kitsalud-prueba.XXXXXX")
 trap 'rm -rf "$TMP_PRUEBAS"' EXIT
 BIEN=0
