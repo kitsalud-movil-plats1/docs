@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.32
+## Documento de arquitectura inicial (punto de partida) - v0.33
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -476,8 +476,9 @@ Procedimiento que otro administrador puede ejecutar (se detalla en E3).
 **Alimentación segura (implementación lógica).** No se cuenta con UPS física, así que el diseño la trata como un componente lógico.
 
 - **Dimensionamiento de referencia.** Una UPS de 1000 VA/600 W tiene unos 200 Wh nominales, de los que se aprovecha cerca del 60 % (≈ 120 Wh). Con la carga típica de unos 47 W daría una **autonomía estimada de 2 a 2,5 horas**; con la carga pico, algo más de una hora. En la jornada comunitaria, con clinica01 apagada, el mini PC consume menos y la autonomía aumenta.
-- **Simulación.** En kit01, NUT usa el driver `dummy-ups` con un archivo de estado. Al cambiar el estado a `OB` (en batería) y luego a `LB` (batería baja), se simulan el corte y la batería baja.
-- **Apagado ordenado.** `upsmon` ejecuta el script de apagado en el orden comunidad01 → clinica01 (con espera a que PostgreSQL y Samba cierren) → kit01.
+- **Simulación.** En kit01, NUT usa el driver `dummy-ups` con un archivo de estado, que se cambia con `kit-ups ob` (en batería) y `kit-ups lb` (batería baja). En cada arranque el estado vuelve a `OL`, así kit01 no se vuelve a apagar al encender.
+- **Apagado ordenado.** `upsmon` ejecuta el script de apagado en el orden comunidad01 → clinica01 (con espera a que PostgreSQL y Samba cierren) → kit01. Cada VM tiene 180 s para cerrar; si no termina, se fuerza para que kit01 alcance a apagarse con batería.
+- **Simulacro.** Con un archivo de simulacro reciente, el script apaga las VMs en orden pero no kit01, y la UPS vuelve a `OL`. Así se prueba en el kit sin que nadie tenga que ir a encenderlo.
 - **Paso a hardware real.** Con una UPS USB solo se cambia el driver (p. ej. `usbhid-ups`); el procedimiento no cambia.
 
 ### 13.1 Qué cambiaría con más usuarios
@@ -599,3 +600,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.30 | 2026-10-29 | Q-07 cerrada (no hace falta el "+1 equipo") y el portal sin Internet se abre desde una dirección local por HTTP, sin respuestas especiales en BIND9 (6.4, R-04) |
 | v0.31 | 2026-10-30 | Backups semanales con retención de 4 semanales y 3 mensuales, comando forzado en las VMs y un snapshot por tipo (R11, 10.2, 10.6) |
 | v0.32 | 2026-11-02 | Plan de respaldo (E5) con objetivos de recuperación y copia manual al cerrar cada misión (10.6), y riesgo de la copia única (R-15) |
+| v0.33 | 2026-11-02 | UPS lógica con `kit-ups`, vuelta a `OL` en cada arranque, espera de 180 s por VM y simulacro sin apagar kit01 (13) |
