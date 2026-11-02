@@ -147,7 +147,9 @@ codigo_http() {
 # Abre una conexión TCP en 5 s. tcp_abre 4|6 <nombre o IP> <puerto>
 tcp_abre() {
   local ip=$2
+  # Una IPv6 tiene letras (a-f) pero no es un nombre
   case $ip in
+    *:*) ;;
     *[a-z]*) ip=$(resolver "$2" "$([ "$1" = 4 ] && echo A || echo AAAA)" | head -1) ;;
   esac
   [ -n "$ip" ] || return 1
