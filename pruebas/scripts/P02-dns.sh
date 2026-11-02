@@ -1,13 +1,43 @@
 #!/usr/bin/env bash
-# P2 - DNS. Se ejecuta en un cliente de la Interna (Clínica). Revisa los
-# registros A y AAAA de los servicios, la delegación del dominio AD, las zonas
-# inversas, el ping por nombre y el acceso HTTP por nombre en las dos familias.
-#   ./P02-dns.sh
+# P2 - DNS. Se ejecuta en un cliente de la Interna (Clínica) o de la Comunidad.
+# Revisa los registros A y AAAA de los servicios, la delegación del dominio AD,
+# las zonas inversas y el acceso HTTP por nombre en las dos familias; desde la
+# Interna, también el ping por nombre. Con --sw01 se ejecuta desde la máquina
+# de control y hace las consultas, el ping y el HTTP desde sw01, que está en la
+# Interna.
+#   ./P02-dns.sh [--sw01]
 source "$(dirname "$0")/comun.sh"
 iniciar P02 "DNS"
 
+if [ "$1" = --sw01 ]; then
+  exige_ansible
+  nota "Desde sw01 (10.20.10.2, red Interna), por el salto de kit01"
+  seccion "Consultas al DNS del kit desde sw01"
+  # sw01 no tiene servidor DNS propio y RouterOS 7.13 solo pide registros A;
+  # se pregunta al DNS del kit por IPv4 y por IPv6
+  for srv in 10.20.20.10 fd5a:fc7e:d716:20::10; do
+    while read -r nombre v4; do
+      comprobar "A $nombre.$DOMINIO preguntando a $srv" "$v4" "$(en_sw01 ":put [:resolve $nombre.$DOMINIO server=$srv]" | tail -1)"
+    done <<EOF
+biblioteca 10.20.20.12
+pacientes 10.20.20.11
+archivos 10.20.20.11
+monitoreo 10.20.20.10
+EOF
+  done
+  seccion "Por nombre desde sw01"
+  IP4=$(en_sw01 ":put [:resolve biblioteca.$DOMINIO server=10.20.20.10]" | tail -1)
+  IP6=$(remoto kit01 "dig +short AAAA biblioteca.$DOMINIO @fd5a:fc7e:d716:20::10" | tail -1)
+  nota "biblioteca.$DOMINIO es $IP4 y $IP6 (el AAAA lo da el DNS del kit)"
+  comprobar "ping IPv4 a biblioteca.$DOMINIO ($IP4), respuestas" 3 "$(en_sw01 ":put [/ping $IP4 count=3]" | tail -1)"
+  comprobar "ping IPv6 a biblioteca.$DOMINIO ($IP6), respuestas" 3 "$(en_sw01 ":put [/ping $IP6 count=3]" | tail -1)"
+  comprobar "HTTP IPv4 a http://biblioteca.$DOMINIO" "status: finished" "$(sw01_fetch "http://$IP4/" "biblioteca.$DOMINIO")"
+  comprobar "HTTP IPv6 a http://biblioteca.$DOMINIO" "status: finished" "$(sw01_fetch "http://[$IP6]/" "biblioteca.$DOMINIO")"
+  terminar
+  exit
+fi
+
 revisar_hosts
-[ "$(red_actual)" = interna ] || nota "El ping por nombre (F-22) solo se permite desde la Interna; aquí puede fallar"
 
 seccion "Registros A y AAAA"
 # nombre ipv4 ipv6
@@ -41,9 +71,14 @@ else
 fi
 
 seccion "Extremo a extremo por nombre"
-if hace_ping 4 biblioteca.$DOMINIO; then bien "ping IPv4 a biblioteca.$DOMINIO"; else mal "ping IPv4 a biblioteca.$DOMINIO"; fi
-if exige_ipv6; then
-  if hace_ping 6 biblioteca.$DOMINIO; then bien "ping IPv6 a biblioteca.$DOMINIO"; else mal "ping IPv6 a biblioteca.$DOMINIO"; fi
+# El eco hacia las VMs solo se permite desde la Interna
+if [ "$(red_actual)" = interna ]; then
+  if hace_ping 4 biblioteca.$DOMINIO; then bien "ping IPv4 a biblioteca.$DOMINIO"; else mal "ping IPv4 a biblioteca.$DOMINIO"; fi
+  if exige_ipv6; then
+    if hace_ping 6 biblioteca.$DOMINIO; then bien "ping IPv6 a biblioteca.$DOMINIO"; else mal "ping IPv6 a biblioteca.$DOMINIO"; fi
+  fi
+else
+  nota "El ping a las VMs solo se permite desde la Interna; se omite (P02-dns.sh --sw01 lo hace desde sw01)"
 fi
 comprobar "HTTP IPv4 a http://biblioteca.$DOMINIO" 200 "$(codigo_http 4 http://biblioteca.$DOMINIO/)"
 comprobar "HTTP IPv6 a http://biblioteca.$DOMINIO" 200 "$(codigo_http 6 http://biblioteca.$DOMINIO/)"

@@ -47,15 +47,6 @@ en() {  # en "descripción" "valor1 valor2" obtenido
   if echo " $2 " | grep -q " $3 "; then bien "$1 ($3)"; else mal "$1 (esperado $2, obtenido ${3:-nada})"; fi
 }
 
-# sw01 (RouterOS) por el salto de kit01; muestra el estado final del fetch
-sw01() {  # sw01 <url> <host>
-  (cd "$ANSIBLE_DIR" && SSHPASS=$(ansible-vault view inventarios/kit/group_vars/all/vault.yml | python3 -c "import sys,yaml; print(yaml.safe_load(sys.stdin)['vault_sw01_password'])") \
-    sshpass -e ssh -o StrictHostKeyChecking=accept-new \
-    -o ProxyCommand="sshpass -f $HOME/.config/kitsalud/ssh-pass ssh -W %h:%p kitsalud@$KIT01_NETBIRD" \
-    admin@10.20.10.2 "/tool fetch url=\"$1\" http-header-field=\"Host: $2\" check-certificate=no keep-result=no duration=8s" 2>&1) |
-    tr '\r' '\n' | grep -oE 'status: [a-z ]+|failure: .*' | tail -1
-}
-
 seccion "1. Antes del corte"
 ROJAS="curl -s 127.0.0.1:9090/api/v1/query --data-urlencode 'query=(probe_success == 0) or (up == 0)' | python3 -c 'import json,sys; print(len(json.load(sys.stdin)[\"data\"][\"result\"]))'"
 comprobar "Sondas en rojo" 0 "$(remoto kit01 "$ROJAS")"
@@ -96,7 +87,7 @@ for ip in 10.20.20.11 "[fd5a:fc7e:d716:20::11]"; do
 done
 # Desde sw01, que está en la red Interna, la biblioteca por HTTP
 for f in 10.20.20.12 "[fd5a:fc7e:d716:20::12]"; do
-  comprobar "sw01 (Interna) llega a la biblioteca por $f" "status: finished" "$(sw01 "http://$f/" "biblioteca.$DOMINIO")"
+  comprobar "sw01 (Interna) llega a la biblioteca por $f" "status: finished" "$(sw01_fetch "http://$f/" "biblioteca.$DOMINIO")"
 done
 SMB=$(remoto clinica01 "export PASSWD='{{ vault_samba_usuarios_password }}'; smbclient //archivos.$DOMINIO/archivos -U ana.rojas -m SMB3 -c ls >/dev/null 2>&1 && echo abre || echo falla")
 comprobar "Recurso archivos por SMB con ana.rojas" abre "$SMB"

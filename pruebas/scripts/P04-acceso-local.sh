@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # P4 - Acceso público local. Se ejecuta en el mismo cliente de la Comunidad de
 # P3, con el portal aceptado. Revisa que la biblioteca, los videos, el registro
-# y la CA responden en IPv4 e IPv6 (F-09), y el registro con el certificado del
-# kit. El prerregistro se llena desde el navegador.
-#   ./P04-acceso-local.sh
+# y la CA responden en IPv4 e IPv6, y el registro con el certificado del kit.
+# Con --enviar manda además un prerregistro de prueba por IPv4 y otro por IPv6
+# (lo mismo que llenar el formulario) y muestra sus códigos.
+#   ./P04-acceso-local.sh [--enviar]
 source "$(dirname "$0")/comun.sh"
 iniciar P04 "Acceso público local"
 
@@ -33,5 +34,17 @@ done
 seccion "Certificado de registro"
 curl -s -m 8 --cacert "$RAIZ" -v -o /dev/null "https://registro.$DOMINIO/" 2>&1 | grep -E "subject:|issuer:|SSL certificate verify" | sed 's/^\* */    /'
 
-nota "Falta a mano: llenar un prerregistro en https://registro.$DOMINIO, anotar el código y verlo desde la Clínica en https://consultas.$DOMINIO"
+if [ "$1" = --enviar ]; then
+  for f in 4 6; do
+    [ $f = 6 ] && [ $TIENE6 = 0 ] && continue
+    seccion "Prerregistro por IPv$f"
+    CODIGO=$(curl -$f -s -m 10 --cacert "$RAIZ" -d nombres=Prueba -d apellidos="P4 IPv$f" -d tipo_documento=NINGUNO \
+      -d motivo=CONTROL -d autoriza_datos=si "https://registro.$DOMINIO/" |
+      grep -oE 'class="codigo"[^>]*>[A-Z0-9]{4}' | grep -oE '[A-Z0-9]{4}$')
+    if [ -n "$CODIGO" ]; then bien "IPv$f prerregistro enviado, código $CODIGO"; else mal "IPv$f el prerregistro no devolvió código"; fi
+  done
+  nota "Los códigos se buscan desde la Clínica en https://consultas.$DOMINIO"
+else
+  nota "Falta a mano: llenar un prerregistro en https://registro.$DOMINIO, anotar el código y verlo desde la Clínica en https://consultas.$DOMINIO"
+fi
 terminar

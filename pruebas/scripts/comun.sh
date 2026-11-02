@@ -209,3 +209,19 @@ exige_ansible() {
     exit 2
   fi
 }
+
+# Ejecuta comandos de RouterOS en sw01 (red Interna) por el salto de kit01, con
+# la clave del vault. Los retornos de carro del avance de /tool fetch pasan a
+# líneas. en_sw01 <comandos>
+en_sw01() {
+  (cd "$ANSIBLE_DIR" && SSHPASS=$(ansible-vault view inventarios/kit/group_vars/all/vault.yml | python3 -c "import sys,yaml; print(yaml.safe_load(sys.stdin)['vault_sw01_password'])") \
+    sshpass -e ssh -n -o StrictHostKeyChecking=accept-new \
+    -o ProxyCommand="sshpass -f $HOME/.config/kitsalud/ssh-pass ssh -W %h:%p kitsalud@$KIT01_NETBIRD" \
+    admin@10.20.10.2 "$1" 2>&1) | sed 's/\r$//' | tr '\r' '\n'
+}
+
+# Estado final de un /tool fetch por HTTP desde sw01. sw01_fetch <url> <host>
+sw01_fetch() {
+  en_sw01 "/tool fetch url=\"$1\" http-header-field=\"Host: $2\" check-certificate=no keep-result=no duration=8s" |
+    grep -oE 'status: [a-z ]+|failure: .*' | tail -1
+}
