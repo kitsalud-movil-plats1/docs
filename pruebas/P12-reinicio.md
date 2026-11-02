@@ -3,39 +3,52 @@
 ## Qué se prueba
 
 **Enunciado.** Se reinicia un equipo y los servicios críticos se activan sin intervención manual.
-**Presentación.** kit01 se reinicia y todo vuelve solo.
 
-kit01 es el router, el firewall y el hipervisor. Al arrancar levantan solos nftables, la red, Kea, radvd, BIND9, Chrony, nginx, el portal, Prometheus, Grafana, rsyslog y NetBird; libvirt arranca las VMs con `autostart`, y Docker los contenedores con `restart: unless-stopped`. El reinicio también activa el kernel 6.8.0-146.
+Se prueba en remoto reiniciando las dos VMs a la vez, que tienen todos los servicios de aplicación. Al arrancar, Docker levanta los contenedores con `restart: unless-stopped` y el orden lo resuelven las aplicaciones (healthchecks, `depends_on` y reintentos). Samba AD arranca con systemd. kit01 sigue encendido, así que el acceso remoto no corre riesgo.
 
-## Qué necesitas
+kit01 es el router, el firewall y el hipervisor. Al arrancar levantan solos nftables, la red, Kea, radvd, BIND9, Chrony, nginx, el portal, Prometheus, Grafana, rsyslog y NetBird, y libvirt arranca las VMs con `autostart`. Su reinicio se muestra en la sustentación si hay tiempo para esperar que vuelva, y también activa el kernel 6.8.0-147.
 
-**Alguien en el sitio** por si kit01 no vuelve (D-23). Se hace una sola vez y al final de la visita.
+## Reinicio de las VMs (en remoto)
 
-## Paso a paso
+Desde `docs/pruebas/`, en la máquina de control.
+
+```bash
+./scripts/P12-reinicio.sh vms
+```
+
+El script revisa el estado, reinicia `clinica01` y `comunidad01` con `virsh reboot` y sigue en Prometheus, cada 2 segundos, la caída y la vuelta de las sondas de IPv4, las de IPv6 y los exporters de las VMs. Una familia cuenta como recuperada cuando se vio en rojo y vuelve a tener todas sus sondas en verde. El tiempo total va desde el reinicio hasta que no queda nada en rojo. Después espera 30 s y revisa otra vez el estado completo. Cada línea sale como `[ OK ]` o `[FALLA]` y todo queda en `salidas/P12-<fecha>.txt`.
+
+Al final se comprueba la matriz de flujos desde `platform/ansible`.
+
+```bash
+ansible-playbook playbooks/verificar-flujos.yml
+```
+
+## Reinicio de kit01 (en la sustentación)
+
+Con alguien en el sitio por si kit01 no vuelve. Se hace una sola vez y al final.
 
 1. Anotar el estado antes (comandos de abajo) y la hora.
-2. Reiniciar kit01 desde remoto: `ssh kitsalud@100.90.225.113 sudo reboot`.
+2. Reiniciar kit01 desde remoto con `ssh kitsalud@100.90.225.113 sudo reboot`.
 3. Esperar 3-5 minutos. sw01 y el AP siguen encendidos.
 4. Cuando NetBird responda (`ping 100.90.225.113`), revisar el estado después.
 5. En el sitio, conectar un celular a la Comunidad. El portal vuelve a salir, porque las autorizaciones no sobreviven al reinicio, y después abren la biblioteca y los videos.
-6. Si en 10 minutos no responde, en el sitio revisar la luz de kit01; mantener el botón 5 s, soltar y encender.
+6. Si en 10 minutos no responde, en el sitio revisar la luz de kit01, mantener el botón 5 s, soltar y encender.
 
-## Con el script
-
-Se ejecuta en la máquina de control (Ansible del kit, por NetBird), con alguien en el sitio, desde `docs/pruebas/`.
+Con el script, desde la máquina de control.
 
 ```bash
 ./scripts/P12-reinicio.sh estado
 ./scripts/P12-reinicio.sh reiniciar
 ```
 
-`estado` revisa unidades fallidas (por nombre), los servicios críticos de kit01, las VMs, los contenedores y Samba AD. `reiniciar` hace lo mismo, reinicia kit01 (pide confirmación), mide cuánto tarda en volver y revisa otra vez. Cada línea sale como `[ OK ]` o `[FALLA]` y todo queda en `salidas/P12-<fecha>.txt`, que sirve de evidencia. Los comandos de abajo son los que usa el script, para ejecutarlos a mano o explicarlos.
+`estado` revisa unidades fallidas (por nombre), los servicios críticos de kit01, las VMs, los contenedores, Samba AD y las sondas en rojo. `reiniciar` hace lo mismo, reinicia kit01 (pide confirmación), mide cuánto tarda en volver y revisa otra vez. Los comandos de abajo son los que usa el script, para ejecutarlos a mano o explicarlos.
 
 ## Comandos de verificación
 
 | Dónde | Comando | Qué muestra | Esperado después |
 |---|---|---|---|
-| kit01 | `uptime` y `uname -r` | Que reinició y con qué kernel | Minutos encendido; `6.8.0-146-generic` |
+| kit01 | `uptime` y `uname -r` | Que reinició y con qué kernel | Minutos encendido; `6.8.0-147-generic` |
 | kit01 | `systemctl --failed` | Unidades que fallaron al arrancar | `0 loaded units listed` |
 | kit01 | `systemctl is-active nftables kea-dhcp4-server kea-dhcp6-server radvd named chrony nginx kitsalud-portal prometheus grafana-server rsyslog netbird libvirtd` | Los servicios críticos de kit01 | `active` en todos |
 | kit01 | `sudo nft list ruleset \| grep -c chain` | Que el firewall cargó | El mismo número que antes |
@@ -50,7 +63,7 @@ Se ejecuta en la máquina de control (Ansible del kit, por NetBird), con alguien
 
 **macOS.** Igual que P11, con Ansible y `sshpass` instalados.
 
-**Antes del reinicio (2026-10-30).** `systemd-networkd-wait-online.service` está fallida desde el arranque del 9 de octubre: al arrancar se acabó el tiempo de espera de las interfaces. Las interfaces están bien (`networkctl list`, todas `configured`). Si vuelve a fallar después de P12, retrasa el arranque unos 2 minutos y hay que revisar las condiciones de espera que genera netplan.
+**La espera de la red.** `systemd-networkd-wait-online.service` figura fallida desde el arranque del 9 de octubre, anterior a la red actual del kit, porque al arrancar se acabó el tiempo de espera de las interfaces. Las interfaces están bien (`networkctl list`, todas `configured`) y el script lo muestra como nota hasta que kit01 se reinicie. Si vuelve a fallar después de reiniciar kit01, retrasa el arranque unos 2 minutos y hay que revisar las condiciones de espera que genera netplan.
 
 ## Si algo falla
 
@@ -59,4 +72,4 @@ Se ejecuta en la máquina de control (Ansible del kit, por NetBird), con alguien
 
 ## Evidencia
 
-Salida de `uptime`, `uname -r`, `systemctl --failed`, `virsh list` y `docker ps` antes y después, con la hora; captura de **Estado del kit** en verde; el tiempo que tardó en volver.
+La salida del script, con la hora de arranque de cada VM antes y después, el tiempo hasta que vuelven las sondas de cada familia y el estado completo después, y la matriz de flujos. En la sustentación, además, la captura de **Estado del kit** en verde.

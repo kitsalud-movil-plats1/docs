@@ -15,7 +15,7 @@ Una guía por prueba, con el criterio del enunciado (sección 8), lo que se dijo
 | [P9](P09-sin-internet.md) | Sin la WAN todo lo local sigue | Sitio | Pendiente |
 | [P10](P10-firewall-ipv6.md) | Por IPv6 se llega a comunidad01 y no a clinica01 | Sitio (otro PC) o prueba01 | Verificado con prueba01; falta un cliente real |
 | [P11](P11-restauracion.md) | Se borra un archivo y se recupera del disco USB | Remoto | `prueba-p11.txt` listo en `archivos`; primera copia hecha |
-| [P12](P12-reinicio.md) | kit01 se reinicia y todo vuelve solo | Sitio (alguien presente) | Pendiente, al final |
+| [P12](P12-reinicio.md) | Un equipo se reinicia y todo vuelve solo | Remoto (las VMs) y sitio (kit01) | Aprobada en remoto el 2026-11-02 reiniciando las dos VMs, todo en verde a los 44 s; kit01 en la sustentación |
 | [P13](P13-diagnostico.md) | Una falla inducida aparece en Grafana y en los logs | Remoto | Pendiente de evidencia |
 
 ## Scripts
@@ -32,7 +32,7 @@ cd docs/pruebas
 ./scripts/P01-cliente.sh          # por ejemplo
 ```
 
-Los que cambian algo (P11 borra y restaura un archivo, P12 reinicia kit01, P13 detiene un servicio) piden confirmación antes. Los que necesitan contraseñas (P6, P7) las piden y no las guardan.
+Los que cambian algo (P11 borra y restaura un archivo, P12 con `reiniciar` reinicia kit01, P13 detiene un servicio) piden confirmación antes. P12 con `vms` reinicia las dos VMs sin preguntar. Los que necesitan contraseñas (P6, P7) las piden y no las guardan.
 
 **Orden sugerido en el sitio.** P1, P5, P4, P3 y P10 en la Comunidad; P6 y P7 en la Clínica; P9; P12 al final. P2, P8, P11 y P13 se pueden hacer en remoto.
 
