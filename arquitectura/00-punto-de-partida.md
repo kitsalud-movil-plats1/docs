@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.31
+## Documento de arquitectura inicial (punto de partida) - v0.32
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -412,6 +412,8 @@ Si DHIS2 necesita más memoria que la prevista (R-03), **comunidad01 se mueve a 
 
 La copia corre el domingo de madrugada. En cada VM la llave de kit01 solo entra desde kit01 y solo ejecuta un comando forzado, que acepta `pg_dump` de las bases de la lista, el backup del dominio y `rsync` en modo demonio con módulos de solo lectura. kit01 junta todo en un área temporal y ejecuta `restic backup` hacia el disco USB, con un snapshot por tipo (configuraciones, recursos, bases y dominio). El repositorio está cifrado y su clave vive en un archivo que solo lee root, desplegado desde `ansible-vault`. El disco se monta por UUID solo durante la ventana de backup, y si no tiene repositorio la primera copia lo crea. La retención es de 4 semanales y 3 mensuales (`restic forget --prune`). Las imágenes de VM no se respaldan, porque se reconstruyen con Ansible y luego se restauran los datos. Los medios de comunidad01 tampoco, porque son una copia de `contenido` o los vuelve a descargar Ansible.
 
+Además de la copia semanal, se hace una copia manual antes de cada cambio y al cerrar cada misión, así que se pierde como máximo una semana de datos. Los objetivos de recuperación, los procedimientos de restauración por escenario y las pruebas hechas están en el plan de respaldo, `respaldo/plan-respaldo.md` (E5).
+
 ### 10.7 Acceso remoto (desarrollo)
 
 NetBird corre solo en kit01 (interfaz `wt0`, red `100.64.0.0/10`, que no se solapa con `10.20.0.0/16`). En nftables, `wt0` es una zona más que solo admite SSH a kit01 y HTTPS a `monitoreo`. A las VMs, al switch y al AP se llega con `ssh -J kit01`. La clave de registro de NetBird nunca se versiona. NetBird queda fuera de la operación en campo, porque sin Internet no está disponible y el kit no lo necesita.
@@ -515,6 +517,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | R-12 | Por alcance académico, el AP conserva su contraseña de fábrica. Además se gestiona solo por HTTP e IPv4 y, según su manual, cualquier cliente inalámbrico puede llegar a su página de gestión | Riesgo aceptado. Servidor DHCP propio, WPS y SNMP desactivados y "Allow remote access" apagado, así que la gestión solo responde desde la VLAN 10. La gestión se usa solo durante el mantenimiento. En un despliegue real se cambiaría la contraseña y se guardaría en `ansible-vault`. Evolución hacia un AP con VLAN de gestión propia |
 | R-13 | El AP es de 2,4 GHz, 802.11n y con puerto de 100 Mb/s, así que con muchos celulares y video, el Wi-Fi se satura antes que cualquier otro componente | Videos a 480p, aislamiento de clientes y canal automático (valor de fábrica), que se revisa en cada lugar. Prueba de carga con 10-20 celulares. Evolución hacia un AP de doble banda con puerto gigabit (13.1) |
 | R-14 | Un solo usuario de administración compartido (kit01, VMs, sw01 y AP) deja sin trazabilidad por persona, y el enunciado recomienda cuentas individuales | Riesgo aceptado por el tamaño del grupo y el alcance académico. Las contraseñas (las del grupo y las de fábrica de sw01 y del AP) se mantienen y se registran en `ansible-vault`, nunca en los repositorios. Sin acceso directo de root; SSH solo desde las IPs de administración y NetBird; registro de accesos centralizado con la IP de origen. Evolución hacia cuentas individuales con llave SSH |
+| R-15 | Hay una sola copia de respaldo y viaja con el kit, así que un robo, un incendio o un golpe se llevan los datos y el respaldo a la vez | Riesgo aceptado por el alcance. El repositorio está cifrado y kit01 lo monta solo durante la copia. Un segundo disco que se rota y se queda en la base (regla 3-2-1) queda como evolución (E5) |
 | Q-01 | ¿El mini PC tiene dos NIC? | **Cerrada.** Sí (Beelink EQi12, dos NIC de 1 GbE). Se usa D-14 (WAN directa por `wan0`) |
 | Q-02 | ¿Qué AP hay disponible? | **Cerrada.** TP-Link TL-WA801ND v3, con Multi-SSID y VLAN (sección 5.3) |
 | Q-03 | ¿Se unirá un cliente Windows al dominio? | Si es así, habilitar F-06 |
@@ -595,3 +598,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.29 | 2026-10-29 | DHCP snooping y RA multicast descartados en los puertos de acceso de sw01, con esos puertos por la CPU (5.2, 8.4, R-06) |
 | v0.30 | 2026-10-29 | Q-07 cerrada (no hace falta el "+1 equipo") y el portal sin Internet se abre desde una dirección local por HTTP, sin respuestas especiales en BIND9 (6.4, R-04) |
 | v0.31 | 2026-10-30 | Backups semanales con retención de 4 semanales y 3 mensuales, comando forzado en las VMs y un snapshot por tipo (R11, 10.2, 10.6) |
+| v0.32 | 2026-11-02 | Plan de respaldo (E5) con objetivos de recuperación y copia manual al cerrar cada misión (10.6), y riesgo de la copia única (R-15) |
