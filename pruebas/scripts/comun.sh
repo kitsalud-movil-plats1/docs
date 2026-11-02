@@ -183,11 +183,12 @@ exige_portal() {
   fi
 }
 
-# Avisa si un nombre del kit está en /etc/hosts
+# Avisa si un nombre del kit está en /etc/hosts. La línea 127.0.1.1 es el
+# nombre del propio equipo en Debian y Ubuntu, y no cuenta
 revisar_hosts() {
-  if grep -q -E "^[^#].*\.$DOMINIO" /etc/hosts 2>/dev/null; then
+  if grep -v '^127\.0\.1\.1[[:space:]]' /etc/hosts 2>/dev/null | grep -q -E "^[^#].*\.$DOMINIO"; then
     mal "/etc/hosts tiene nombres de $DOMINIO; comentarlos antes de probar"
-    grep -E "^[^#].*\.$DOMINIO" /etc/hosts | sed 's/^/          /'
+    grep -v '^127\.0\.1\.1[[:space:]]' /etc/hosts | grep -E "^[^#].*\.$DOMINIO" | sed 's/^/          /'
   fi
 }
 
