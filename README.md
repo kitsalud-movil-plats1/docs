@@ -9,6 +9,7 @@ Documentación del **Kit móvil de atención primaria en salud** (Plataformas I,
 | `respaldo/` | Plan de respaldo y restauración (E5) |
 | `evidencias/` | Evidencias de las pruebas P1-P13 con su salida e interpretación (E6) |
 | `decisiones/` | Registros de decisiones (ADR) posteriores a v0.1 |
+| `pruebas/` | Guías de las pruebas de aceptación P1-P13, con un script por prueba (Linux y macOS) que guarda su salida como evidencia |
 | `sustentacion/` | Material de la sustentación (E8) |
 | `tools/` | Generación de PDF y diagramas |
 
