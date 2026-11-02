@@ -1,6 +1,6 @@
-# Plan de respaldo y restauración (E5)
+# Plan de respaldo y restauración
 
-Este plan describe qué se respalda en el kit, cómo, cada cuánto, dónde queda y cómo se recupera cada cosa. Completa la sección 10.6 del documento de arquitectura (R11, D-10). La implementación está en `platform/backups/` (roles `backups` y `backup_origen`), y las pruebas de restauración en `docs/pruebas/P11-restauracion.md` y `docs/evidencias/P11-restauracion.md`.
+Este plan describe qué se respalda en el kit, cómo, cada cuánto, dónde queda y cómo se recupera cada cosa. kit01, el mini PC que hace de router e hipervisor, extrae una vez por semana los datos de sus dos máquinas virtuales (clinica01, con los datos clínicos y el dominio, y comunidad01, con los servicios para la comunidad) y los guarda cifrados con restic en un disco USB. Lo instalan los roles de Ansible `backups` (en kit01) y `backup_origen` (en las VMs).
 
 ## 1. Objetivos de recuperación
 
@@ -14,9 +14,9 @@ sudo systemctl start backup.service    # en kit01, unos 15 s
 
 | Escenario | Tiempo de recuperación | Base |
 |---|---|---|
-| Un archivo de `archivos` o `contenido` | Unos 70 s | Medido en P11 (68 s con el archivo y una tabla, desde la máquina de control por NetBird) |
-| Una tabla de `prerregistro` | Unos 70 s | Medido en P11 |
-| La base `dhis2` completa | Menos de 5 min | Medido. Sacar el dump del disco tarda 2,1 s y `pg_restore` 7,7 s (333 tablas, 45 893 filas). A eso se suma copiar el dump a clinica01 y reiniciar DHIS2 (25 s con datos, apps#1) |
+| Un archivo de `archivos` o `contenido` | Unos 70 s | Medido en la prueba de restauración (68 s con el archivo y una tabla, desde la máquina de control por NetBird) |
+| Una tabla de `prerregistro` | Unos 70 s | Medido en la prueba de restauración |
+| La base `dhis2` completa | Menos de 5 min | Medido. Sacar el dump del disco tarda 2,1 s y `pg_restore` 7,7 s (333 tablas, 45 893 filas). A eso se suma copiar el dump a clinica01 y reiniciar DHIS2, que con datos arranca en unos 25 s |
 | El dominio de Samba AD | De 15 a 30 min | Estimado. La restauración offline tarda 2,5 s (medido); el resto es ponerlo en servicio (sección 5.4) |
 | Una configuración | Unos minutos | Estimado |
 | Una VM | De 1 a 2 h, en la base y con Internet | Estimado. Se reconstruye con Ansible y después se restauran los datos |
@@ -46,7 +46,7 @@ kit01 junta todo en un área temporal y hace un snapshot de restic por tipo, con
 
 ## 3. Método y frecuencia
 
-El modelo es pull (D-10). kit01 entra a cada VM por SSH con el usuario `backup`, cuya llave solo se acepta desde las direcciones de kit01 en `br-srv` (F-02) y solo ejecuta `backup-extraer`. Ese comando solo acepta `ping`, `rsync` en modo demonio con módulos de solo lectura y, en clinica01, los dumps de PostgreSQL y el backup del dominio. Las VMs no tienen la clave del repositorio ni llaves hacia kit01, así que una VM comprometida no puede leer ni borrar las copias.
+kit01 extrae los datos de las VMs, que nunca los envían por su cuenta. kit01 entra a cada VM por SSH con el usuario `backup`, cuya llave solo se acepta desde las direcciones de kit01 en la red de servidores y solo ejecuta `backup-extraer`. Ese comando solo acepta `ping`, `rsync` en modo demonio con módulos de solo lectura y, en clinica01, los dumps de PostgreSQL y el backup del dominio. Las VMs no tienen la clave del repositorio ni llaves hacia kit01, así que una VM comprometida no puede leer ni borrar las copias.
 
 | Elemento | Valor |
 |---|---|
@@ -63,9 +63,9 @@ El modelo es pull (D-10). kit01 entra a cada VM por SSH con el usuario `backup`,
 
 **Destino.** Un disco USB 3.0 de 500 GB (Seagate, ext4 con etiqueta `kitbackup`), conectado a kit01. Se monta por UUID en `/mnt/backup` solo durante la copia, con `noatime,nodev,nosuid,noexec`, y no está en `fstab`. El repositorio de restic ocupa unos 850 MiB (2026-11-02). Casi todo son los ZIM de `contenido`, que no se comprimen. Cada copia sin cambios en los recursos agrega unos 5 MiB, así que el disco alcanza para años con la retención de arriba.
 
-**Cifrado y clave.** restic cifra el repositorio (AES-256 y Poly1305). La clave está en `/etc/kitsalud/backup/restic.clave` de kit01 (`400`, root) y sale de `vault_restic_password` en el vault de `platform/ansible`. El vault está cifrado en el repositorio y su contraseña solo está en las máquinas de control (`~/.config/kitsalud/vault-pass`). Sin la clave las copias no se pueden leer, así que la contraseña del vault se guarda además fuera de los equipos del kit.
+**Cifrado y clave.** restic cifra el repositorio (AES-256 y Poly1305). La clave está en `/etc/kitsalud/backup/restic.clave` de kit01 (`400`, root) y sale de `vault_restic_password` en el vault de Ansible del kit. El vault está cifrado en el repositorio y su contraseña solo está en las máquinas de control (`~/.config/kitsalud/vault-pass`). Sin la clave las copias no se pueden leer, así que la contraseña del vault se guarda además fuera de los equipos del kit.
 
-**Custodia.** El disco viaja con el kit. Hay una sola copia y está en el mismo lugar que los datos (riesgo R-15 del documento de arquitectura).
+**Custodia.** El disco viaja con el kit. Hay una sola copia y está en el mismo lugar que los datos, así que un robo, un incendio o un golpe se llevan los dos. Es un riesgo aceptado por el alcance del proyecto.
 
 ## 5. Procedimientos de restauración
 
@@ -89,7 +89,7 @@ restic ls latest --tag recursos | grep <nombre>
 restic restore latest --tag recursos --include $S/clinica01/archivos/<ruta> --target /tmp/r
 ```
 
-En clinica01 se copia a `/srv/samba/archivos/` con su dueño y permisos (`sudo cp -a` y, si hace falta, `chown`). El archivo nuevo hereda la ACL por defecto del recurso, así que queda igual que antes (P11). Para una versión anterior se usa el ID de un snapshot de `restic snapshots --tag recursos` en lugar de `latest`.
+En clinica01 se copia a `/srv/samba/archivos/` con su dueño y permisos (`sudo cp -a` y, si hace falta, `chown`). El archivo nuevo hereda la ACL por defecto del recurso, así que queda igual que antes (comprobado en la prueba de restauración). Para una versión anterior se usa el ID de un snapshot de `restic snapshots --tag recursos` en lugar de `latest`.
 
 ### 5.2 Una tabla o una base
 
@@ -97,7 +97,7 @@ En clinica01 se copia a `/srv/samba/archivos/` con su dueño y permisos (`sudo c
 restic dump latest --tag bd $S/clinica01/postgres/<base>.dump > /tmp/<base>.dump
 ```
 
-En clinica01, una tabla con `docker exec -i dhis2-db-1 pg_restore -U dhis -d <base> -t <tabla> < <base>.dump` (P11). La base completa de `dhis2` se restaura con DHIS2 detenido, para que no escriba durante la carga.
+En clinica01, una tabla con `docker exec -i dhis2-db-1 pg_restore -U dhis -d <base> -t <tabla> < <base>.dump`. La base completa de `dhis2` se restaura con DHIS2 detenido, para que no escriba durante la carga.
 
 ```bash
 cd /srv/dhis2 && docker compose stop core
@@ -148,12 +148,12 @@ Necesita Internet para los paquetes y las imágenes Docker, así que se hace en 
 
 ### 5.6 kit01 completo
 
-1. Instalar Ubuntu Server 24.04 con los nombres de interfaz del kernel (D-14) y NetBird.
-2. Aplicar los playbooks de `platform/ansible` en el orden de la guía de despliegue (E2).
+1. Instalar Ubuntu Server 24.04, conservando los nombres de interfaz que da el kernel (`enp170s0` para la WAN y `enp171s0` hacia el switch), y NetBird.
+2. Aplicar los playbooks de Ansible del kit, primero la base de kit01 y su red, después los servicios de red, las VMs y sus aplicaciones.
 3. Montar el disco de backups en el kit nuevo. Con la misma clave del vault, `backup-kit` reconoce el repositorio y sigue usándolo.
 4. Restaurar la raíz de la CA (`/etc/kitsalud/ca`) desde el snapshot `config`, para que los certificados emitidos sigan siendo válidos, y después las VMs (5.5).
 
-Si kit01 no está, el repositorio se puede leer desde cualquier Linux con restic 0.16 o superior, el disco y la clave (`ansible-vault view` del vault de `platform/ansible`).
+Si kit01 no está, el repositorio se puede leer desde cualquier Linux con restic 0.16 o superior, el disco y la clave (`ansible-vault view` del vault de Ansible del kit).
 
 ### 5.7 Disco dañado o clave perdida
 
@@ -166,7 +166,7 @@ Si kit01 no está, el repositorio se puede leer desde cualquier Linux con restic
 |---|---|---|
 | Integridad del repositorio | En cada copia | `restic check` en el log de `backup.service` |
 | Que la copia corrió | Cada semana | **Estado del kit** sin `UnidadFallida` en kit01, y `systemctl list-timers backup.timer` |
-| Restauración de un archivo y una tabla | Cada mes y después de cambiar los roles de backups | `docs/pruebas/scripts/P11-restauracion.sh` |
+| Restauración de un archivo y una tabla | Cada mes y después de cambiar los roles de backups | Script de la prueba de restauración (`P11-restauracion.sh`), que borra un archivo y una tabla de prueba y los recupera |
 | Restauración de una base completa y del dominio | Antes de cada salida a campo | `dhis2` en una base temporal (`createdb` y `pg_restore -d <temporal>`, 5.2) y el dominio con `--targetdir` en un directorio temporal (5.4); se comparan con lo vivo y se borran |
 
 ## 7. Pruebas hechas
@@ -174,12 +174,12 @@ Si kit01 no está, el repositorio se puede leer desde cualquier Linux con restic
 | Fecha | Prueba | Resultado |
 |---|---|---|
 | 2026-11-01 | Copia programada con el disco real | Cuatro snapshots, `restic check` sin errores. Contenido comparado con lo vivo (filas de DHIS2, recursos y ZIM) |
-| 2026-11-02 | P11, archivo de `archivos` y tabla de `prerregistro` | Aprobada, 16 de 16, en 68 s. Archivo con su dueño de AD y su ACL, abierto por SMB con `ana.rojas`; tabla con las mismas 1000 filas y el mismo md5 (`docs/evidencias/P11-restauracion.md`) |
+| 2026-11-02 | Prueba de restauración, archivo de `archivos` y tabla de `prerregistro` | Aprobada, 16 de 16, en 68 s. Archivo con su dueño de AD y su ACL, abierto por SMB con `ana.rojas`; tabla con las mismas 1000 filas y el mismo md5 |
 | 2026-11-02 | Base `dhis2` completa en la base temporal `dhis2_restauracion` | Las 333 tablas con el mismo número de filas que la base viva (45 893 en total) y las mismas extensiones (PostGIS 3.5.2). `pg_restore` en 7,7 s. La base temporal se borró |
 | 2026-11-02 | Dominio restaurado en un directorio temporal de clinica01 | Mismos usuarios, grupos y miembros de `clinicos` que el DC vivo, en 2,5 s. El DC en uso no cambió (`dbcheck` sin errores, `kinit` y sondas LDAPS en verde). Con `--newservername=dc01` falla (sección 5.4) |
 
 ## 8. Límites conocidos
 
-- Una sola copia, en el mismo lugar que el kit (R-15). La evolución es un segundo disco que se rota y se queda en la base.
+- Una sola copia, en el mismo lugar que el kit. La evolución es un segundo disco que se rota y se queda en la base.
 - Lo que cambia entre dos copias se pierde si falla el SSD de kit01 antes de la siguiente. La copia manual al cerrar cada misión reduce esa ventana.
 - La reconstrucción de una VM o de kit01 necesita Internet, así que en campo solo se restauran datos sobre equipos que funcionan.
