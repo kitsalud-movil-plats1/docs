@@ -2,21 +2,23 @@
 
 Una guía por prueba, con el criterio del enunciado (sección 8), lo que se dijo en la presentación (diapositiva 38), el paso a paso, los comandos de verificación con su explicación, el resultado esperado y qué guardar como evidencia (E6, `plantillas/evidencia.md`).
 
-| Prueba | Qué demuestra | Dónde | Estado al 2026-10-30 |
+| Prueba | Qué demuestra | Dónde | Estado al 2026-11-02 |
 |---|---|---|---|
-| [P1](P01-cliente.md) | Un cliente de la Comunidad recibe IPv4, IPv6, DNS y gateway | Sitio (celular o PC) | IPv4 y portal bien en iPhone y laptop; IPv6 en iPhone; la laptop de Melo no recibe IPv6 por Wi-Fi (usar otro PC) |
-| [P2](P02-dns.md) | Los servicios responden por nombre, A y AAAA, sin escribir IP | Sitio (Interna) o remoto | Pendiente de evidencia |
-| [P3](P03-aislamiento.md) | La Comunidad no llega a pacientes ni al SSH de kit01 | Sitio (Comunidad) | `curl -4` a pacientes bloqueado; falta IPv6 y el log |
-| [P4](P04-acceso-local.md) | Biblioteca, videos y registro después del portal | Sitio (Comunidad) | Biblioteca por IPv4 bien; falta videos y registro |
-| [P5](P05-portal.md) | Un cliente nuevo ve el portal, también sin Internet | Sitio (Comunidad) | Bien en iPhone; Fedora necesita abrir el portal a mano; falta sin Internet (con P9) |
-| [P6](P06-clinica.md) | Un usuario del personal registra y consulta un paciente | Sitio (Clínica) | Pendiente |
-| [P7](P07-identidad.md) | Un usuario del dominio entra a `archivos` y a Grafana | Sitio y NetBird | `archivos` con `ana.rojas` bien (SMB 3.1.1 cifrado); falta Grafana |
-| [P8](P08-tiempo.md) | Los equipos toman la hora de kit01 | Remoto y una estación | Pendiente de evidencia |
-| [P9](P09-sin-internet.md) | Sin la WAN todo lo local sigue | Sitio | Pendiente |
-| [P10](P10-firewall-ipv6.md) | Por IPv6 se llega a comunidad01 y no a clinica01 | Sitio (otro PC) o prueba01 | Verificado con prueba01; falta un cliente real |
-| [P11](P11-restauracion.md) | Se borra un archivo y se recupera del disco USB | Remoto | `prueba-p11.txt` listo en `archivos`; primera copia hecha |
-| [P12](P12-reinicio.md) | Un equipo se reinicia y todo vuelve solo | Remoto (las VMs) y sitio (kit01) | Aprobada en remoto el 2026-11-02 reiniciando las dos VMs, todo en verde a los 44 s; kit01 en la sustentación |
-| [P13](P13-diagnostico.md) | Una falla inducida aparece en Grafana y en los logs | Remoto | Pendiente de evidencia |
+| [P1](P01-cliente.md) | Un cliente de la Comunidad recibe IPv4, IPv6, DNS y gateway | `prueba01`; sitio con celulares | Aprobada en remoto (9 de 9); celulares en cada SSID en la sustentación |
+| [P2](P02-dns.md) | Los servicios responden por nombre, A y AAAA, sin escribir IP | `prueba01` y sw01; sitio con un PC de la Interna | Aprobada en remoto (27 y 12) |
+| [P3](P03-aislamiento.md) | La Comunidad no llega a lo clínico ni a la administración | `prueba01` y el registro de kit01 | Aprobada en remoto (17 de 17), con la gestión del AP y del switch; aislamiento entre dos celulares en la sustentación |
+| [P4](P04-acceso-local.md) | Biblioteca, videos y registro después del portal | `prueba01` | Aprobada en remoto (10 de 10), con un prerregistro por familia |
+| [P5](P05-portal.md) | Un cliente nuevo ve el portal | `prueba01`; sitio con un celular | Aprobada en remoto (8 de 8) |
+| [P6](P06-clinica.md) | Un usuario del personal registra y consulta un paciente | sw01 y kit01 (`--remoto`); sitio con un PC de la Interna | Aprobada en remoto (16 de 16) |
+| [P7](P07-identidad.md) | Un usuario del dominio entra a `archivos` y a Grafana | sw01, clinica01 y NetBird | Aprobada en remoto (8 y 2); montar `archivos` desde un PC en la sustentación |
+| [P8](P08-tiempo.md) | Los equipos toman la hora de kit01 | Remoto | Aprobada (9 de 9) |
+| [P9](P09-sin-internet.md) | Sin la WAN todo lo local sigue | Corte simulado en remoto; sitio con el cable | Aprobada en remoto (40 de 40); con el cable en la sustentación |
+| [P10](P10-firewall-ipv6.md) | Por IPv6 se llega a comunidad01 y no a clinica01 | `prueba01` | Aprobada en remoto (10 de 10) |
+| [P11](P11-restauracion.md) | Se borra un archivo y se recupera del disco USB | Remoto | Aprobada (16 de 16) |
+| [P12](P12-reinicio.md) | Un equipo se reinicia y todo vuelve solo | Remoto (las VMs) y sitio (kit01) | Aprobada en remoto reiniciando las dos VMs, todo en verde a los 44 s; kit01 en la sustentación |
+| [P13](P13-diagnostico.md) | Una falla inducida aparece en Grafana y en los logs | Remoto | Aprobada (tres fallas) |
+
+Las evidencias están en `docs/evidencias/`, con un índice de las trece.
 
 ## Scripts
 
@@ -25,16 +27,21 @@ Cada prueba tiene su script en [`scripts/`](scripts/), para no escribir los coma
 | Dónde se ejecuta | Pruebas | Qué necesita |
 |---|---|---|
 | En el cliente, conectado al Wi-Fi del kit | P1, P2, P3, P4, P5, P6, P7 (`smb`), P9, P10 | `bash`, `curl` y `ping`; `dig` opcional (en macOS ya viene); `smbclient` en Linux para P7 |
-| En la máquina de control, por NetBird | P7 (`grafana`), P8, P11, P12, P13 | El Ansible del kit (`platform/ansible`, con `~/.config/kitsalud/vault-pass` y `ssh-pass`); en macOS, `brew install ansible` y `sshpass` |
+| En `prueba01`, desde la máquina de control | Los mismos scripts de cliente de la Comunidad (P1, P2, P3, P4, P5, P10) | `./scripts/en-prueba01.sh <script> [argumentos]` |
+| En la máquina de control, por NetBird | P2 (`--sw01`), P6 (`--remoto`), P7 (`grafana`, `smb-remoto`), P8, P9 (remoto), P11, P12, P13 | El Ansible del kit (`platform/ansible`, con `~/.config/kitsalud/vault-pass` y `ssh-pass`); en macOS, `brew install ansible` y `sshpass` |
 
 ```bash
 cd docs/pruebas
-./scripts/P01-cliente.sh          # por ejemplo
+./scripts/P01-cliente.sh                          # en un cliente del kit
+./scripts/en-prueba01.sh P05-portal.sh --aceptar  # en prueba01, como cliente de la Comunidad
+./scripts/en-prueba01.sh --apagar                 # al terminar, sin portal y apagada
 ```
+
+**En remoto.** `en-prueba01.sh` enciende `prueba01` (la VM de kit01 en la red Comunidad), copia `scripts/` y ejecuta ahí el script; la salida queda también en `salidas/` de la máquina de control. `--sin-portal` le quita la autorización del portal para repetir P5 como cliente nuevo. Para la red Interna se usa sw01: P2 con `--sw01` (DNS, ping y HTTP), P6 con `--remoto` (sw01 abre el 443 de clinica01 y el registro del paciente se hace desde kit01 con la raíz del kit) y P7 con `smb-remoto` (sw01 abre el 445 y los usuarios prueban `archivos` en clinica01). Los modos remotos toman las claves del vault y las pasan sin que queden en el syslog de los equipos (`ANSIBLE_NO_TARGET_SYSLOG`).
 
 Los que cambian algo (P11 borra y restaura un archivo, P12 con `reiniciar` reinicia kit01, P13 detiene un servicio) piden confirmación antes. P12 con `vms` reinicia las dos VMs sin preguntar. Los que necesitan contraseñas (P6, P7) las piden y no las guardan.
 
-**Orden sugerido en el sitio.** P1, P5, P4, P3 y P10 en la Comunidad; P6 y P7 en la Clínica; P9; P12 al final. P2, P8, P11 y P13 se pueden hacer en remoto.
+**Orden sugerido.** En remoto, P5 (`--sin-portal` antes), P1, P4, P3 y P10 en `prueba01`; P2 en `prueba01` y con `--sw01`; P6, P7, P8 y P12; al final `en-prueba01.sh --apagar`. En el sitio, P1, P5, P4, P3 y P10 con celulares en la Comunidad; P6 y P7 con un PC en la Clínica; P9 con el cable; el reinicio de kit01 al final.
 
 **Datos que se usan en todas.**
 
