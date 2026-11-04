@@ -7,17 +7,17 @@ El kit está hecho para trabajar sin Internet. Todos los servicios que usa la br
 | Sigue funcionando | Deja de funcionar |
 |---|---|
 | Direcciones para los equipos (DHCP en IPv4 y anuncios de IPv6) | Navegar por Internet desde la Interna y la Comunidad |
-| Los nombres de `salud.movil` y del dominio en el DNS del kit | Los nombres de Internet (el DNS responde `SERVFAIL`) |
+| Los nombres de `salud.movil` y del dominio en el DNS del kit | Los nombres de Internet. A la Comunidad el DNS le responde la IP del portal y a la Interna `SERVFAIL` |
 | La hora, que kit01 sigue entregando a todos los equipos | La sincronización de kit01 con servidores de hora externos |
 | Historia clínica (DHIS2), consulta de prerregistros y archivos compartidos | La administración remota por NetBird |
 | Biblioteca, videos y formulario de prerregistro | Actualizaciones de paquetes y de imágenes de las aplicaciones |
-| Portal cautivo de la Comunidad | La detección automática del portal en algunos celulares |
+| Portal cautivo de la Comunidad, que el celular abre solo | Las páginas externas con `https://` |
 | Inicio de sesión con las cuentas del dominio y de DHIS2 | |
 | Monitoreo (Grafana), logs centralizados y copias de respaldo | |
 
 **Hora.** kit01 conserva la última referencia que tenía. Si el corte se alarga, pasa a estrato 10 y sigue sirviendo la hora a los equipos, que se mantienen sincronizados entre sí. La hora del kit se puede alejar poco a poco de la hora real. Todos los equipos siguen con la misma hora, que es lo que necesitan el dominio y los registros clínicos.
 
-**Portal cautivo.** Sin Internet, algunos celulares no abren solos la página del portal. Se abre en el navegador una dirección local por HTTP, por ejemplo `http://biblioteca.salud.movil`, y el kit lleva al portal. Las direcciones con `https://` no muestran el portal.
+**Portal cautivo.** Menos de un minuto después de que se corta Internet, kit01 pasa a modo sin Internet y el DNS responde a la Comunidad cualquier nombre externo con la dirección del portal. Así el celular abre el portal solo, y cualquier dirección que se escriba por HTTP termina en él, con las condiciones o con el menú si ya aceptó. Las direcciones con `https://` no muestran el portal. Cuando vuelve Internet, en menos de un minuto todo resuelve normalmente.
 
 ## Cómo saber si el kit tiene Internet
 
@@ -27,6 +27,7 @@ Se revisa en kit01.
 ip route show default                       # default via <gateway del sitio> dev enp170s0
 ping -c 3 1.1.1.1                           # 0% packet loss con Internet
 dig +short @10.20.20.10 example.org         # direcciones con Internet; vacío o SERVFAIL sin Internet
+cat /run/kit-internet/modo                  # con o sin
 chronyc tracking | grep -E "Stratum|Leap"   # Leap status Normal en los dos casos
 ```
 
@@ -36,6 +37,7 @@ chronyc tracking | grep -E "Stratum|Leap"   # Leap status Normal en los dos caso
 | `ping -c 3 1.1.1.1` | `0% packet loss` | `100% packet loss` o `Network is unreachable` |
 | `dig @10.20.20.10 example.org` | Direcciones IPv4 | `SERVFAIL` o sin respuesta |
 | `dig +short @10.20.20.10 pacientes.salud.movil` | `10.20.20.11` | `10.20.20.11` |
+| `cat /run/kit-internet/modo` | `con` | `sin`, menos de un minuto después del corte. `journalctl -t kit-internet` muestra cada cambio |
 | `chronyc tracking` | Estrato 2 o 3 | El último estrato que tenía, y 10 si el corte se alarga |
 
 El tablero de monitoreo no se pone en rojo por falta de Internet, porque todo lo que vigila está dentro del kit. Si el cable de la WAN está conectado y aun así no hay Internet, se revisa que el enlace esté arriba (`ip link show enp170s0` tiene que decir `UP`) y que la dirección de la WAN corresponda a la red del sitio (`ip addr show enp170s0`).
