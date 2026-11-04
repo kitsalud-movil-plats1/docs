@@ -20,7 +20,9 @@ Esta guía lleva el kit desde equipos recién sacados de la caja hasta todos sus
 
 ## Las fases del despliegue
 
-PENDIENTE diagrama de fases
+El despliegue tiene siete fases. Las tres primeras se hacen una vez a mano, en la consola o el navegador de cada equipo, y las otras cuatro las hace Ansible desde la máquina de control.
+
+<div class="diagrama"><img src="../diagramas/despliegue-fases.png" alt="Fases del despliegue del kit"></div>
 
 ## El kit en pocas palabras
 

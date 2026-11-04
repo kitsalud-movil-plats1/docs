@@ -2,7 +2,7 @@
 
 Esta parte explica qué arranca primero cuando se enciende el kit y de qué depende cada servicio. Al encender no hay que hacer nada a mano. El orden lo resuelven systemd en cada equipo, el arranque automático de libvirt para las VMs y los reintentos de las propias aplicaciones.
 
-PENDIENTE diagrama de dependencias
+<div class="diagrama"><img src="../diagramas/dependencias-arranque.png" alt="Dependencias entre los servicios al arrancar"></div>
 
 ## Secuencia al encender
 
