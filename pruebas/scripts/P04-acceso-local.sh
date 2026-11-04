@@ -38,7 +38,7 @@ if [ "$1" = --enviar ]; then
   for f in 4 6; do
     [ $f = 6 ] && [ $TIENE6 = 0 ] && continue
     seccion "Prerregistro por IPv$f"
-    CODIGO=$(curl -$f -s -m 10 --cacert "$RAIZ" -d nombres=Prueba -d apellidos="P4 IPv$f" -d tipo_documento=NINGUNO \
+    CODIGO=$(curl -$f -s -m 10 --cacert "$RAIZ" -d nombres=Prueba -d apellidos="P4 IPv$f" -d tipo_documento=CC -d numero_documento=9900000$f \
       -d motivo=CONTROL -d autoriza_datos=si "https://registro.$DOMINIO/" |
       grep -oE 'class="codigo"[^>]*>[A-Z0-9]{4}' | grep -oE '[A-Z0-9]{4}$')
     if [ -n "$CODIGO" ]; then bien "IPv$f prerregistro enviado, código $CODIGO"; else mal "IPv$f el prerregistro no devolvió código"; fi
