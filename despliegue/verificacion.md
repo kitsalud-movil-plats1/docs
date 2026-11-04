@@ -14,7 +14,7 @@ done
 
 Los roles de las aplicaciones y de Grafana (`clinica01.yml`, `comunidad01.yml` y `monitoreo.yml`) consultan las API de DHIS2, Jellyfin y Grafana para decidir qué cambiar, y en `--check` esas consultas no se hacen, así que se detienen con `object of type 'dict' has no attribute`. Esos tres se comprueban con una ejecución normal, que también tiene que terminar en `changed=0`.
 
-**Resultado en el kit (4 de noviembre de 2026).** Los 14 playbooks de la lista terminaron en `changed=0` en los tres equipos, es decir, el kit está exactamente como lo dejan los repositorios.
+**Resultado en el kit.** Los 14 playbooks de la lista terminaron en `changed=0` en los tres equipos, es decir, el kit está exactamente como lo dejan los repositorios.
 
 ## 2. Todos los servicios en verde
 
@@ -24,7 +24,7 @@ Prometheus prueba cada servicio por IPv4 y por IPv6. Ninguna sonda debe estar en
 ansible kit01 -m shell -a "curl -s -G --data-urlencode 'query=probe_success == 0 or up == 0' http://127.0.0.1:9090/api/v1/query"
 ```
 
-Responde `"result":[]`. En el navegador, `https://monitoreo.salud.movil` muestra el panel **Estado del kit** con **Problemas ahora** en 0. El 2026-11-04 había 44 objetivos, 39 de ellos sondas, todos en verde.
+Responde `"result":[]`. En el navegador, `https://monitoreo.salud.movil` muestra el panel **Estado del kit** con **Problemas ahora** en 0. En el kit hay 44 objetivos, 39 de ellos sondas.
 
 ## 3. Los flujos del firewall
 
@@ -76,7 +76,7 @@ done
 FIN
 ```
 
-Cada línea termina en `200` o en `302`, que es la redirección a la página de inicio de sesión del servicio. El 2026-11-04 respondieron así las 14.
+Cada línea termina en `200` o en `302`, que es la redirección a la página de inicio de sesión del servicio. En el kit respondieron así las 14.
 
 ## Errores comunes del despliegue
 
