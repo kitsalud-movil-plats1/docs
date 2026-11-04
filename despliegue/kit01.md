@@ -89,6 +89,20 @@ Todos se ejecutan desde `kitsalud/platform/ansible`, en este orden y uno por vez
 | 9 | `ansible-playbook playbooks/ca.yml` | Raíz de la CA del kit y el certificado de `monitoreo` | Firma los intermedios de las VMs y los certificados de sus servicios |
 | 10 | `ansible-playbook playbooks/nut.yml` | UPS lógica y el apagado ordenado `kit-apagado` | Apaga las VMs en orden cuando existan |
 
+### Si se reinstala un kit01 que ya tenía copias (antes del paso 9)
+
+`ca.yml` crea una raíz nueva si no encuentra la anterior, y con una raíz nueva dejan de valer los certificados que ya tienen los equipos de la brigada. Por eso, en un kit01 reinstalado, la raíz se recupera del disco de copias antes del paso 9. restic pide la clave del repositorio, que está en el vault como `vault_restic_password`.
+
+```bash
+sudo apt-get install -y restic
+sudo mkdir -p /mnt/backup && sudo mount UUID=<backup_disco_uuid> /mnt/backup
+sudo restic -r /mnt/backup/restic restore latest --tag config --include /etc/kitsalud/ca --target /
+sudo umount /mnt/backup
+sudo ls -l /etc/kitsalud/ca/raiz.key                  # -rw------- root root
+```
+
+Después `ca.yml` encuentra la raíz y solo revisa los certificados. En un kit nuevo este paso no hace falta.
+
 ### El firewall y la red (paso 3)
 
 Este paso es el único que puede cortar el acceso a kit01, así que se hace con cuidado. El playbook acepta siempre NetBird y SSH, compara lo nuevo con lo activo y solo recarga si cambia. Cuando recarga, programa la vuelta a la configuración anterior a los pocos minutos y solo la cancela si vuelve a entrar y NetBird sigue conectado.
