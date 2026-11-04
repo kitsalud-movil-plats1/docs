@@ -1,10 +1,16 @@
-# Plan de respaldo y restauración
+<img src="../assets/logo-icesi.png" alt="Universidad Icesi" class="logo" width="160">
+
+# Kit móvil de atención primaria en salud
+
+## Plan de respaldo y restauración
+
+**Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
 Este plan describe qué se respalda en el kit, cómo, cada cuánto, dónde queda y cómo se recupera cada cosa. kit01, el mini PC que hace de router e hipervisor, extrae una vez por semana los datos de sus dos máquinas virtuales (clinica01, con los datos clínicos y el dominio, y comunidad01, con los servicios para la comunidad) y los guarda cifrados con restic en un disco USB. Lo instalan los roles de Ansible `backups` (en kit01) y `backup_origen` (en las VMs).
 
 ## 1. Objetivos de recuperación
 
-**RPO.** Se pierde como máximo una semana de datos, porque la copia corre el domingo a las 4:00. La ventana se acorta con una copia manual, que se hace antes de cada cambio de configuración (10.6) y al cerrar cada misión.
+**RPO.** Se pierde como máximo una semana de datos, porque la copia corre el domingo a las 4:00. La ventana se acorta con una copia manual, que se hace antes de cada cambio de configuración y al cerrar cada misión.
 
 ```bash
 sudo systemctl start backup.service    # en kit01, unos 15 s
@@ -45,6 +51,8 @@ kit01 junta todo en un área temporal y hace un snapshot de restic por tipo, con
 | La clave del repositorio | Va en el vault de Ansible (sección 4) y nunca en el disco |
 
 ## 3. Método y frecuencia
+
+<div class="diagrama"><img src="../diagramas/flujo-respaldo.png" alt="Flujo del respaldo semanal"></div>
 
 kit01 extrae los datos de las VMs, que nunca los envían por su cuenta. kit01 entra a cada VM por SSH con el usuario `backup`, cuya llave solo se acepta desde las direcciones de kit01 en la red de servidores y solo ejecuta `backup-extraer`. Ese comando solo acepta `ping`, `rsync` en modo demonio con módulos de solo lectura y, en clinica01, los dumps de PostgreSQL y el backup del dominio. Las VMs no tienen la clave del repositorio ni llaves hacia kit01, así que una VM comprometida no puede leer ni borrar las copias.
 

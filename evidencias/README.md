@@ -1,9 +1,17 @@
-# Evidencias de las pruebas P1-P13
+<img src="../assets/logo-icesi.png" alt="Universidad Icesi" class="logo" width="160">
+
+# Kit móvil de atención primaria en salud
+
+## Evidencias de las pruebas P1-P13
+
+**Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
 Resultados de las trece pruebas de aceptación del kit, cada una con los comandos, la salida real y su interpretación, en IPv4 y en IPv6. Todas se hicieron en el kit real, en remoto por el acceso de administración (NetBird), con dos equipos que hacen de clientes.
 
 - **`prueba01`** es una máquina virtual de kit01 conectada al puente de la red Comunidad (VLAN 40), la misma red que el SSID abierto `SaludMovil-Comunidad`. Recibe su configuración por DHCPv4 y por los anuncios de IPv6, igual que un celular, y pasa por el portal cautivo.
 - **sw01**, el switch del kit, tiene su gestión en la red Interna (VLAN 10), la misma red que el SSID `SaludMovil-Clinica`. Hace las pruebas de la red Interna que RouterOS permite (DNS, ping, conexiones TCP y HTTP).
+
+<div class="diagrama"><img src="../diagramas/montaje-pruebas.png" alt="Cómo se montaron las pruebas en remoto"></div>
 
 Lo que solo se ve en el sitio (celulares en cada SSID, el aislamiento entre dos clientes Wi-Fi, un PC de la red Interna, el cable de Internet desconectado y el reinicio de kit01) se demuestra en vivo en la sustentación con los mismos scripts.
 

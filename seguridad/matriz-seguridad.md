@@ -1,4 +1,10 @@
-# Matriz de seguridad del kit de salud
+<img src="../assets/logo-icesi.png" alt="Universidad Icesi" class="logo" width="160">
+
+# Kit móvil de atención primaria en salud
+
+## Matriz de seguridad
+
+**Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
 Este documento reúne las reglas de firewall del kit, los flujos de red permitidos y bloqueados, los puertos de cada equipo, la forma de administrar el kit en remoto, la política de credenciales y la protección de las copias de respaldo. Todo lo que aparece aquí es lo que está aplicado en los equipos, revisado el 2 de noviembre de 2026.
 
@@ -26,6 +32,10 @@ Las direcciones de administración son `10.20.10.10` a `10.20.10.29`, reservadas
 - **Los bloqueos importantes se cuentan aparte.** Lo que la comunidad intenta hacia la red clínica, el SSH desde equipos que no son de administración y la salida no permitida de kit01 a Internet tienen su propia cadena, con contador y prefijo en el log.
 
 ## 3. Flujos permitidos y bloqueados
+
+El diagrama resume quién llega a qué. Todo pasa por el firewall de kit01, y la tabla que sigue tiene cada flujo con sus puertos.
+
+<div class="diagrama"><img src="../diagramas/flujos-firewall.png" alt="Flujos permitidos y bloqueados entre las redes del kit"></div>
 
 | # | Origen | Destino | Puertos | Familias | Qué permite o por qué se bloquea | Dónde se filtra |
 |---|---|---|---|---|---|---|
@@ -132,7 +142,7 @@ Hacia dentro del kit y por NetBird la salida no se filtra, porque kit01 es quien
 
 ### 4.5 Cadenas de bloqueo (6 reglas)
 
-Cada bloqueo importante tiene su cadena, con dos reglas. La primera registra con su prefijo (`fw-drop F-18`, `fw-drop F-20` o `fw-drop F-21`) y la segunda descarta. Así, en el log central se puede contar cada tipo de intento por separado.
+Cada bloqueo importante tiene su cadena, con dos reglas. La primera registra con un prefijo propio y la segunda descarta. `fw-drop F-18` marca la salida no permitida de kit01 hacia Internet, `fw-drop F-20` lo que la comunidad intenta hacia la red clínica o la gestión del kit y `fw-drop F-21` el SSH desde equipos sin dirección de administración. Así, en el log central se puede contar cada tipo de intento por separado.
 
 ### 4.6 Entre las dos VMs (tabla `bridge filtro_vms`, 12 reglas)
 
@@ -198,7 +208,7 @@ PostgreSQL (5432) corre en Docker, que publica el puerto con sus propias reglas 
 
 - Un SSID por red, cada uno en su VLAN, con aislamiento entre clientes inalámbricos.
 - Su servidor DHCP está apagado; las direcciones las entrega kit01.
-- Se administra por HTTP en `10.20.10.3`, solo por IPv4, con la contraseña de fábrica (riesgo aceptado, sección 11).
+- Se administra por HTTP en `10.20.10.3`, solo por IPv4, con la contraseña de fábrica, que es un riesgo aceptado del proyecto.
 
 ## 7. Puertos en escucha
 
@@ -287,7 +297,7 @@ PostgreSQL (5432) corre en Docker, que publica el puerto con sus propias reglas 
 | Una sola copia de respaldo, que viaja con el kit | Hay un solo disco | Copia cifrada y desmontada. La mejora es un segundo disco que se rota y queda en la base |
 | PostgreSQL sin TLS entre las VMs | El tráfico no sale de kit01; va por el bridge interno | Tabla `bridge` y usuario de solo `INSERT` |
 | kit01 puede sacar cualquier UDP hacia Internet | NetBird negocia el túnel por UDP con puertos variables | Solo kit01; las VMs solo salen por TCP 80 y 443 |
-| El filtro de RA de sw01 corre en la CPU | El chip del switch no acepta esa regla | Afecta el rendimiento, no la protección |
+| El filtro de RA de sw01 corre en la CPU | El chip del switch no acepta esa regla | Solo afecta el rendimiento del switch |
 | `sshd` con `X11Forwarding yes` y `MaxAuthTries 6` (valores de fábrica de Ubuntu) | Hallazgo de esta revisión | SSH solo desde administración. Se puede desactivar el reenvío X11 y bajar los intentos sin afectar el uso; `AllowTcpForwarding` debe quedar activo en kit01 porque el salto `ssh -J` lo usa |
 
 ## 12. Cómo se verificó

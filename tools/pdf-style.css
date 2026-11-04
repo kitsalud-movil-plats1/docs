@@ -52,6 +52,20 @@ code {
   font-size: 0.88em;
 }
 
+/* Bloques de comandos y salidas, compactos y con fondo para separarlos del texto. */
+pre {
+  background: #f6f7f9;
+  border: 1px solid var(--borde);
+  border-radius: 1.5mm;
+  padding: 3mm 3.5mm;
+  margin: 0 0 4mm 0;
+  font-size: 7.8pt;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+pre code { font-size: inherit; }
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -91,3 +105,6 @@ div.diagrama img { width: 100%; max-height: 185mm; object-fit: contain; }
 /* El diagrama físico cabe a lo ancho de una página vertical. */
 div.diagrama-fisico { text-align: center; page-break-inside: avoid; margin: 3mm 0 5mm 0; }
 div.diagrama-fisico img { width: 100%; }
+
+/* Cada documento que se junta en un mismo PDF empieza en una página nueva. */
+div.salto { page-break-before: always; }
