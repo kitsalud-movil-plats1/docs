@@ -52,7 +52,19 @@ La biblioteca queda vacía hasta la primera publicación, que el timer hace en 1
 ansible clinica01 -b -m shell -a 'systemctl start publicacion.service; systemctl show -p Result --value publicacion.service'   # success
 ```
 
-PENDIENTE resultado de la prueba.
+Si el paso 2 se detiene en "Originales para preparar" con `HTTP Error 429`, Wikimedia está limitando las descargas de los videos. Se esperan 10 minutos y se vuelve a ejecutar el mismo paso.
+
+**Probado el 2026-11-04 en el kit.** comunidad01 se reconstruyó desde cero siguiendo solo esta parte, con la VM anterior apartada para poder volver atrás.
+
+| Paso | Hora | Resultado |
+|---|---|---|
+| Copia manual y VM anterior apartada | 10:58 | `success` en 17 s. Discos apartados con `.anterior` |
+| 1. `vms.yml` | 10:59 a 11:00 | VM nueva en 74 s. clinica01 en `changed=0` |
+| 2. `comunidad01.yml` | 11:01 a 11:29 | La primera pasada se detuvo con `HTTP Error 429` en tres videos de Wikimedia. Después de esperar los 10 minutos que pide (`Retry-After: 600`), terminó en 4 min 44 s |
+| 3, 4 y 5. `publicacion.yml`, `backups.yml` y `monitoreo.yml` | 11:29 a 11:32 | Sin fallas. En clinica01 y en kit01 solo cambió la clave de host de comunidad01 |
+| Publicación manual | 11:32 | Llegaron los 3 archivos de la biblioteca y Kiwix se reinició solo |
+
+Después de la reconstrucción, comunidad01 tenía lo mismo que antes, es decir, los 3 archivos de la biblioteca, los 8 videos y audios y sus 4 contenedores sanos. Las 39 sondas estaban en verde, `verificar-flujos.yml` dio `69 pruebas, todas como se esperaba` y la copia manual terminó en `success` con `restic check` sin errores. Desde `prueba01`, como un celular de la Comunidad, la biblioteca, los videos, el registro y la CA respondieron en IPv4 e IPv6, el certificado del registro salió del intermedio nuevo de comunidad01 y dos prerregistros de prueba se guardaron en la base de clinica01. Una segunda ejecución de `comunidad01.yml` terminó en `changed=0`, y `red-kit01.yml --check` también. Los servicios de comunidad01 estuvieron fuera 31 minutos, 20 de ellos esperando a Wikimedia, y la clínica siguió funcionando todo el tiempo.
 
 ## clinica01
 
