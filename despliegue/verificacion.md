@@ -14,7 +14,7 @@ done
 
 Los roles de las aplicaciones y de Grafana (`clinica01.yml`, `comunidad01.yml` y `monitoreo.yml`) consultan las API de DHIS2, Jellyfin y Grafana para decidir qué cambiar, y en `--check` esas consultas no se hacen, así que se detienen con `object of type 'dict' has no attribute`. Esos tres se comprueban con una ejecución normal, que también tiene que terminar en `changed=0`.
 
-**Resultado en el kit (4 de noviembre de 2026).** Los 14 playbooks de la lista terminaron en `changed=0` en los tres equipos, salvo `portal.yml`. PENDIENTE portal.
+**Resultado en el kit (4 de noviembre de 2026).** Los 14 playbooks de la lista terminaron en `changed=0` en los tres equipos, es decir, el kit está exactamente como lo dejan los repositorios.
 
 ## 2. Todos los servicios en verde
 
@@ -46,7 +46,7 @@ diff <(grep -v '^#' ../../network/switch/sw01.rsc) <(grep -v '^#' /tmp/sw01.rsc)
 (cd ../../network && ./ap/revisar-ap.sh)
 ```
 
-`diff` no muestra diferencias y `revisar-ap.sh` termina con `17 bien y 0 con falla`.
+En un switch recién configurado, `diff` no muestra diferencias. En el kit aparece además `/tool sniffer set memory-limit=200KiB`, que quedó de una prueba con el sniffer y no afecta el tráfico. `revisar-ap.sh` termina con `17 bien y 0 con falla`.
 
 ## 5. La primera copia
 

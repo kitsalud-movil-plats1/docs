@@ -131,4 +131,4 @@ ansible kit01 -b -m shell -a 'ip -br addr; nft list tables; sysctl net.ipv4.ip_f
 
 Los paquetes con versión fija quedan retenidos con `apt-mark hold`, así que una actualización general no los cambia. `apt-mark showhold` en kit01 los lista.
 
-**Probado el 2026-11-04.** PENDIENTE resultado del `--check`.
+**Probado el 2026-11-04.** Los diez playbooks de esta parte, ejecutados con `--check --diff` contra kit01, terminaron en `changed=0`. El kit real no se reinstaló, porque eso cortaría el acceso remoto. La primera ejecución de `red-kit01.yml` sin las comprobaciones es la misma que se usó en el laboratorio virtual, donde la red y el firewall se desplegaron desde un Ubuntu recién instalado.
