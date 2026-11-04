@@ -1,27 +1,63 @@
 #!/usr/bin/env bash
-# Genera el PDF de un documento Markdown con el estilo del enunciado del curso.
+# Genera el PDF de uno o varios documentos Markdown con el estilo del enunciado
+# del curso. Con varios archivos los junta en un solo PDF, cada uno desde una
+# página nueva, y los enlaces entre ellos pasan a ser enlaces dentro del PDF.
 # Requiere: pandoc >= 3, chromium (o google-chrome). La primera vez necesita
 # Internet para descargar la fuente Arimo desde Google Fonts.
-# Uso: tools/build-pdf.sh arquitectura/00-punto-de-partida.md
+# Uso: tools/build-pdf.sh [-o salida.pdf] archivo.md [archivo.md...]
+#   tools/build-pdf.sh arquitectura/00-punto-de-partida.md
+#   tools/build-pdf.sh -o evidencias/evidencias.pdf evidencias/README.md evidencias/P*.md
 set -euo pipefail
 
 DOCS_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-SRC="$(realpath "${1:?uso: build-pdf.sh <archivo.md>}")"
-SRC_DIR="$(dirname "$SRC")"
-OUT_PDF="${SRC%.md}.pdf"
+OUT_PDF=""
+if [ "${1:-}" = -o ]; then OUT_PDF="$(realpath -m "$2")"; shift 2; fi
+[ $# -ge 1 ] || { echo "uso: build-pdf.sh [-o salida.pdf] archivo.md [archivo.md...]" >&2; exit 2; }
+
+FUENTES=()
+for f in "$@"; do FUENTES+=("$(realpath "$f")"); done
+PRIMERO="${FUENTES[0]}"
+SRC_DIR="$(dirname "$PRIMERO")"
+[ -n "$OUT_PDF" ] || OUT_PDF="${PRIMERO%.md}.pdf"
+
+TMP_DIR="$(mktemp -d)"
 TMP_HTML="$(mktemp --suffix=.html -p "$SRC_DIR")"
-trap 'rm -f "$TMP_HTML"' EXIT
+trap 'rm -rf "$TMP_DIR" "$TMP_HTML"' EXIT
 
-TITLE="$(grep -m1 '^# ' "$SRC" | sed 's/^# //')"
+# Cada archivo después del primero empieza en una página nueva, con un ancla
+# que lleva su nombre para que los enlaces del índice apunten a él
+ENTRADAS=("$PRIMERO")
+RUTAS="$SRC_DIR"
+for f in "${FUENTES[@]:1}"; do
+  salto="$TMP_DIR/salto-$(basename "$f")"
+  printf '\n<div class="salto" id="%s"></div>\n\n' "$(basename "$f")" > "$salto"
+  ENTRADAS+=("$salto" "$f")
+  RUTAS="$RUTAS:$(dirname "$f")"
+done
 
-pandoc "$SRC" \
+cat > "$TMP_DIR/enlaces.lua" <<'FIN'
+-- Los enlaces a archivos .md que van en el mismo PDF pasan a su ancla
+local incluidos = {}
+for nombre in string.gmatch(os.getenv("PDF_INCLUIDOS") or "", "[^:]+") do incluidos[nombre] = true end
+function Link(el)
+  if incluidos[el.target] then el.target = "#" .. el.target end
+  return el
+end
+FIN
+INCLUIDOS=""
+for f in "${FUENTES[@]:1}"; do INCLUIDOS="$INCLUIDOS:$(basename "$f")"; done
+
+TITLE="$(grep -m1 '^# ' "$PRIMERO" | sed 's/^# //')"
+
+PDF_INCLUIDOS="$INCLUIDOS" pandoc "${ENTRADAS[@]}" \
   --from gfm \
   --to html5 \
   --standalone \
   --metadata pagetitle="$TITLE" \
   --css "$DOCS_DIR/tools/pdf-style.css" \
+  --lua-filter "$TMP_DIR/enlaces.lua" \
   --embed-resources \
-  --resource-path "$SRC_DIR:$DOCS_DIR" \
+  --resource-path "$RUTAS:$DOCS_DIR" \
   --output "$TMP_HTML"
 
 BROWSER="$(command -v chromium-browser || command -v chromium || command -v google-chrome)"

@@ -91,3 +91,6 @@ div.diagrama img { width: 100%; max-height: 185mm; object-fit: contain; }
 /* El diagrama físico cabe a lo ancho de una página vertical. */
 div.diagrama-fisico { text-align: center; page-break-inside: avoid; margin: 3mm 0 5mm 0; }
 div.diagrama-fisico img { width: 100%; }
+
+/* Cada documento que se junta en un mismo PDF empieza en una página nueva. */
+div.salto { page-break-before: always; }
