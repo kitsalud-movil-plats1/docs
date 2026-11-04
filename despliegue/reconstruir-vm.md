@@ -68,7 +68,7 @@ clinica01 tiene los datos del kit, así que después de recrearla se restauran d
 | 6 | `ansible-playbook playbooks/backups.yml` | Usuario `backup` en la VM y su clave de host en kit01 |
 | 7 | `ansible-playbook playbooks/monitoreo.yml -l kit01,clinica01` | node_exporter y el acceso de Grafana al dominio |
 
-El dominio se aprovisiona de nuevo en lugar de restaurarse, porque solo contiene lo que crea Ansible. Como los uid y gid de los usuarios son fijos, los archivos restaurados conservan sus dueños. Se pierden las contraseñas que los usuarios hayan cambiado y las cuentas creadas a mano, que se vuelven a crear.
+El dominio se aprovisiona de nuevo con Ansible, porque solo contiene lo que crea Ansible. Como los uid y gid de los usuarios son fijos, los archivos restaurados conservan sus dueños. Se pierden las contraseñas que los usuarios hayan cambiado y las cuentas creadas a mano, que se vuelven a crear.
 
 **Restaurar los datos.** En kit01, como root, con el disco USB conectado.
 

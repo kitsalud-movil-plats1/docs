@@ -6,7 +6,7 @@ Todo el despliegue se ejecuta desde una máquina de control, que es el portátil
 
 | Qué | Para qué |
 |---|---|
-| Portátil con Linux (Ubuntu 24.04 o similar), Internet y sudo | Máquina de control. En macOS los pasos son los mismos con Homebrew en lugar de `apt` |
+| Portátil con Linux (Ubuntu 24.04 o similar), Internet y sudo | Máquina de control. En macOS los paquetes se instalan con Homebrew |
 | Una cuenta en la red de NetBird del grupo y su clave de registro | Llegar a kit01 en remoto, durante el despliegue y después |
 | La contraseña del vault, que el grupo comparte por un canal privado | Abrir los secretos del kit (contraseñas de los usuarios, de las bases y de las copias) |
 | Memoria USB de 4 GB o más | Instalador de Ubuntu Server 24.04.5 para kit01 |
