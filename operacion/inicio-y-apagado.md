@@ -45,7 +45,7 @@ El apagado ordenado cierra primero lo que tiene datos, para que PostgreSQL y el 
 
 Los comandos `shutdown` y `poweroff` apagan las dos máquinas virtuales a la vez y sin orden, así que para apagar el kit se usa `kit-apagado`.
 
-**Cómo comprobar que se apagó en orden.** Al volver a encender, en kit01:
+**Cómo comprobar que se apagó en orden.** Al volver a encender, se revisa en kit01.
 
 ```bash
 journalctl -t kit-apagado -b -1 -o short-iso

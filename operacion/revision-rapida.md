@@ -10,7 +10,7 @@ Este procedimiento sirve para saber en pocos minutos si el kit está bien y, si 
 
 El kit tiene tres equipos con sistema. **kit01** es el mini PC que hace de router, firewall, DNS, DHCP y hora, y donde corren las otras dos máquinas. **clinica01** tiene la historia clínica (DHIS2), la base de datos, el dominio, los archivos compartidos y la consulta de prerregistros. **comunidad01** tiene la biblioteca, los videos y el formulario de prerregistro.
 
-Para entrar por SSH:
+Para entrar por SSH se usan estos comandos.
 
 ```bash
 ssh <usuario>@10.20.10.1                              # kit01 desde la red Interna

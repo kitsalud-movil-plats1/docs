@@ -10,7 +10,7 @@ Este procedimiento explica cómo dar y quitar acceso a las personas de la brigad
 | `admin` de Jellyfin | Administrar los videos, solo desde la red Interna | Página de Jellyfin |
 | Administración del kit | SSH y `sudo` en kit01, clinica01 y comunidad01 | En cada equipo, con `passwd`, y en el vault de Ansible |
 
-Las cuentas del dominio y las de DHIS2 tienen el mismo nombre para cada persona (por ejemplo `ana.rojas`), pero son independientes. Una persona nueva del personal clínico necesita las dos.
+Las cuentas del dominio y las de DHIS2 tienen el mismo nombre para cada persona (por ejemplo `ana.rojas`) y son independientes. Una persona nueva del personal clínico necesita las dos.
 
 **Contraseñas.** El kit usa contraseñas académicas conocidas por el grupo. En el dominio la convención es `password`, porque la política pide 8 caracteres sin complejidad. DHIS2 exige mayúscula, número y símbolo y rechaza palabras genéricas, así que usa `Clave123!`. Antes de una misión real se cambian todas.
 
