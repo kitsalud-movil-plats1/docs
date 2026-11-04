@@ -51,4 +51,4 @@ systemd-analyze critical-chain docker.service       # Docker después de network
 sudo docker compose -f /srv/dhis2/compose.yml ps    # db (healthy) antes que core
 ```
 
-**Medido el 2026-11-04.** clinica01 llegó a `multi-user.target` en 7,6 s y comunidad01 en 6,6 s, en los dos casos con Docker esperando `network-online.target`. En el simulacro de corte de energía de ese día, todo volvió a verde 42 s después de encender las VMs.
+**Medido en el kit.** clinica01 llegó a `multi-user.target` en 7,6 s y comunidad01 en 6,6 s, en los dos casos con Docker esperando `network-online.target`. En un simulacro de corte de energía, todo volvió a verde 42 s después de encender las VMs.

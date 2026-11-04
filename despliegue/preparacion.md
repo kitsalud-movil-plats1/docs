@@ -109,4 +109,4 @@ clinica01 | SUCCESS => { "changed": false, "ping": "pong" }
 comunidad01 | SUCCESS => { "changed": false, "ping": "pong" }
 ```
 
-**Probado el 2026-11-04** en un contenedor Ubuntu 24.04 recién creado, con la red de NetBird de la máquina anfitriona y siguiendo solo esta parte. Los tres equipos respondieron `pong` y los 21 playbooks pasaron `ansible-playbook --syntax-check`.
+**Probado en un contenedor Ubuntu 24.04 recién creado,** con la red de NetBird de la máquina anfitriona y siguiendo solo esta parte. Los tres equipos respondieron `pong` y los 21 playbooks pasaron `ansible-playbook --syntax-check`.

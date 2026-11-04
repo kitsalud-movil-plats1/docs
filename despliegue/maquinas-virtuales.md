@@ -88,4 +88,4 @@ El playbook no deja el disco montado. La copia lo monta solo mientras dura y, si
 
 Las imágenes de contenedores van con versión fija en cada `compose.yml`, así que volver a desplegar baja siempre la misma.
 
-**Probado el 2026-11-04.** `vms.yml`, `samba.yml`, `publicacion.yml` y `backups.yml`, ejecutados con `--check --diff`, terminaron en `changed=0`. comunidad01 se reconstruyó desde cero con los pasos 1, 4, 5, 6 y 7 en la misma fecha, con el resultado en [Reconstruir una máquina virtual](reconstruir-vm.md).
+**Probado en el kit.** `vms.yml`, `samba.yml`, `publicacion.yml` y `backups.yml`, ejecutados con `--check --diff`, terminaron en `changed=0`. comunidad01 se reconstruyó desde cero con los pasos 1, 4, 5, 6 y 7, con el resultado en [Reconstruir una máquina virtual](reconstruir-vm.md).
