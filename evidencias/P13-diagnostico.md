@@ -4,7 +4,7 @@
 
 ## Qué se prueba
 
-Al simular una falla, se usan los logs y los comandos para localizarla y explicar el impacto. Se provocaron tres fallas, una a la vez: el DNS de kit01 detenido, la base de datos de la historia clínica detenida y la VM de la comunidad apagada.
+Al simular una falla, se usan los logs y los comandos para localizarla y explicar el impacto. Se provocaron tres fallas, una a la vez. Se detuvo el DNS de kit01, se detuvo la base de datos de la historia clínica y se apagó la VM de la comunidad.
 
 El kit vigila cada servicio desde kit01. Prometheus prueba cada servicio cada 15 segundos en IPv4 y en IPv6, y lee el estado de los servicios críticos de cada equipo; un servicio que falla 30 segundos seguidos genera una alerta. Grafana lo muestra en el tablero **Estado del kit**. Los logs de todos los equipos llegan a kit01, a una carpeta por equipo en `/var/log/kitsalud/`.
 
