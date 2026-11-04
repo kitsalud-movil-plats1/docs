@@ -7,7 +7,7 @@ Documentación del **Kit móvil de atención primaria en salud** (Plataformas I,
 | `arquitectura/00-punto-de-partida.md` (+ `.pdf`) | Documento inicial con decisiones, supuestos, topología, plan IPv4/IPv6, DNS y flujos |
 | `diagramas/` | Diagramas lógico y físico, de flujos del firewall, del respaldo y del montaje de las pruebas, con la fuente editable en draw.io (`*.drawio`) y el PNG que usan los PDF. Los logos son los oficiales de cada tecnología |
 | `seguridad/` (+ `.pdf`) | Matriz de seguridad, con las reglas de firewall, los flujos, los puertos, la administración remota, las credenciales y la protección de las copias (E4) |
-| `operacion/` | Procedimientos de operación, empezando por la revisión rápida del kit (E3) |
+| `operacion/` (+ `guia-operacion.pdf`) | Guía de operación (E3). Inicio y apagado, revisión rápida, usuarios, logs, actualización, operación sin Internet y cambio de perfil, con un índice en `README.md` |
 | `respaldo/` (+ `.pdf`) | Plan de respaldo y restauración (E5) |
 | `evidencias/` (+ `evidencias.pdf`) | Evidencias de las pruebas P1-P13 con su salida e interpretación, en un solo PDF (E6) |
 | `decisiones/` | Registros de decisiones (ADR) posteriores a v0.1 |
@@ -26,6 +26,7 @@ Requiere `pandoc` ≥ 3 y Chromium/Chrome. Con varios archivos los junta en un s
 ./tools/build-pdf.sh seguridad/matriz-seguridad.md
 ./tools/build-pdf.sh respaldo/plan-respaldo.md
 ./tools/build-pdf.sh -o evidencias/evidencias.pdf evidencias/README.md evidencias/P*.md
+(cd operacion && ../tools/build-pdf.sh -o guia-operacion.pdf README.md inicio-y-apagado.md revision-rapida.md usuarios.md logs.md actualizacion.md sin-internet.md perfiles.md)
 ```
 
 Los diagramas que van en una página horizontal propia se ponen con `<div class="diagrama"><img src="../diagramas/<nombre>.png"></div>`.
