@@ -6,7 +6,7 @@
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
-Este documento reúne las reglas de firewall del kit, los flujos de red permitidos y bloqueados, los puertos de cada equipo, la forma de administrar el kit en remoto, la política de credenciales y la protección de las copias de respaldo. Todo lo que aparece aquí es lo que está aplicado en los equipos, revisado el 2 de noviembre de 2026.
+Este documento reúne las reglas de firewall del kit, los flujos de red permitidos y bloqueados, los puertos de cada equipo, la forma de administrar el kit en remoto, la política de credenciales y la protección de las copias de respaldo.
 
 ## 1. El kit y sus redes
 
