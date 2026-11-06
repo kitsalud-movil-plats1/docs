@@ -4,7 +4,7 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="leyenda" value="&lt;b&gt;Kit móvil de salud · diagrama lógico (v0.10)&lt;/b&gt;&lt;br&gt;Todo el tráfico entre redes pasa por nftables en kit01&lt;br&gt;La política por defecto es denegar y registrar (IPv4 e IPv6)&lt;br&gt;ULA fd5a:fc7e:d716::/48 · gateway .1 / fe80::1 en cada red interna" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;align=left;spacingLeft=10;fillColor=#FFFFFF;strokeColor=#999999;fontSize=13;" vertex="1" parent="1">
+        <mxCell id="leyenda" value="&lt;b&gt;Kit móvil de salud · diagrama lógico&lt;/b&gt;&lt;br&gt;Todo el tráfico entre redes pasa por nftables en kit01&lt;br&gt;La política por defecto es denegar y registrar (IPv4 e IPv6)&lt;br&gt;ULA fd5a:fc7e:d716::/48 · gateway .1 / fe80::1 en cada red interna" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;align=left;spacingLeft=10;fillColor=#FFFFFF;strokeColor=#999999;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="20" y="20" width="460" height="110" as="geometry"/>
         </mxCell>
         <mxCell id="inet" value="Internet (opcional)" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#999999;fontSize=13;" vertex="1" parent="1">
