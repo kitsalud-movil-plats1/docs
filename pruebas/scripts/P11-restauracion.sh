@@ -55,6 +55,8 @@ remoto clinica01 "rm -v $ORIGEN; $PSQL \"drop table $TABLA\"" | sed 's/^/    /'
 if remoto clinica01 "test -e $ORIGEN" >/dev/null; then mal "El archivo sigue"; else bien "El archivo ya no está en archivos"; fi
 if remoto clinica01 "$SMB" >/dev/null; then mal "ana.rojas todavía lo ve por SMB"; else bien "ana.rojas ya no lo encuentra por SMB"; fi
 if remoto clinica01 "$PSQL \"$FIRMA\"" >/dev/null; then mal "La tabla sigue"; else bien "La tabla $TABLA ya no existe"; fi
+# Para mostrar en el explorador que el archivo ya no está antes de recuperarlo
+read -r -p "Mostrar que $ARCHIVO ya no está y presionar Enter para restaurar... " _
 
 seccion "4. Restaurar con restic desde el disco USB"
 T0=$(date +%s)
