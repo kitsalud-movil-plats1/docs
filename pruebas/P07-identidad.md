@@ -14,7 +14,7 @@ Un PC en la Clínica para `archivos`, y NetBird para Grafana (Grafana solo deja 
 **Recurso `archivos`.**
 
 1. En la Clínica, abrir el explorador de archivos. Linux: `smb://archivos.salud.movil/archivos`. Windows: `\\archivos.salud.movil\archivos`.
-2. Entrar con `ana.rojas` (dominio `AD`). Crear un archivo.
+2. Entrar con `ana.rojas` (dominio `SALUD`). Crear un archivo.
 3. Intentar con `laura.gomez`. No entra, porque no es de `clinicos`.
 
 **Grafana.**
