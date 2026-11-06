@@ -12,7 +12,7 @@ Documentación del **Kit móvil de atención primaria en salud** (Plataformas I,
 | `respaldo/` (+ `.pdf`) | Plan de respaldo y restauración (E5) |
 | `evidencias/` (+ `evidencias.pdf`) | Evidencias de las pruebas P1-P13 con su salida e interpretación, en un solo PDF (E6) |
 | `pruebas/` | Guías de las pruebas de aceptación P1-P13, con un script por prueba (Linux y macOS) que guarda su salida como evidencia |
-| `sustentacion/` (+ `guion-demostracion.pdf`) | Guion de sustentación y demostración (E8), con la prueba por prueba, los accesos y el plan B, y la presentación de la entrega de diseño |
+| `sustentacion/` (+ `guion-demostracion.pdf`) | Guion de sustentación y demostración (E8), con los accesos y el paso a paso de P1 a P13, y la presentación de la entrega de diseño |
 | `tools/` | Generación de PDF y diagramas |
 
 ## Generar el PDF
