@@ -20,7 +20,7 @@ El kit tiene un mini PC, `kit01`, que hace de router, firewall e hipervisor. Den
 | WAN | `enp170s0` | La que entrega el sitio | Ninguna | Salida a Internet, cuando la hay |
 | NetBird | `wt0` | `100.90.225.113` | Ninguna | Administración remota durante el desarrollo |
 
-Las direcciones de administración son `10.20.10.10` a `10.20.10.29`, reservadas por MAC en el DHCP de la red Interna. Los servicios de red de kit01 (DNS, NTP, logs) escuchan en `10.20.20.10` y `fd5a:fc7e:d716:20::10`.
+Las direcciones de administración son `10.20.10.10` a `10.20.10.29`. El DHCP entrega de la `.10` a la `.28` a cualquier equipo conectado al puerto `ether4` de sw01, que informa el puerto con la opción 82, y la `.29` queda para una dirección fija a mano. Los servicios de red de kit01 (DNS, NTP, logs) escuchan en `10.20.20.10` y `fd5a:fc7e:d716:20::10`.
 
 ## 2. Principios
 

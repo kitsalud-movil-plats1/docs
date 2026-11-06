@@ -4,7 +4,7 @@ Este procedimiento sirve para saber en pocos minutos si el kit está bien y, si 
 
 ## Lo que se necesita
 
-- Un equipo conectado a la red Interna con una dirección de administración (de `10.20.10.10` a `10.20.10.29`, reservada por MAC), o la conexión remota por NetBird.
+- Un equipo conectado a la red Interna con una dirección de administración (de `10.20.10.10` a `10.20.10.29`, conectado a `ether4` de sw01), o la conexión remota por NetBird.
 - El usuario de administración del kit y su contraseña.
 - Un navegador para abrir el monitoreo en `https://monitoreo.salud.movil`, con una cuenta del grupo de administración del dominio. Si el dominio no responde, sirve la cuenta local `admin` de Grafana.
 
