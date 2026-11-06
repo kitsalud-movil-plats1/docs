@@ -12,7 +12,7 @@ Documentación del **Kit móvil de atención primaria en salud** (Plataformas I,
 | `respaldo/` (+ `.pdf`) | Plan de respaldo y restauración (E5) |
 | `evidencias/` (+ `evidencias.pdf`) | Evidencias de las pruebas P1-P13 con su salida e interpretación, en un solo PDF (E6) |
 | `pruebas/` | Guías de las pruebas de aceptación P1-P13, con un script por prueba (Linux y macOS) que guarda su salida como evidencia |
-| `sustentacion/` | Material de la sustentación (E8) |
+| `sustentacion/` (+ `guion-demostracion.pdf`) | Guion de sustentación y demostración (E8), con la prueba por prueba, los accesos y el plan B, y la presentación de la entrega de diseño |
 | `tools/` | Generación de PDF y diagramas |
 
 ## Generar el PDF
@@ -27,6 +27,7 @@ Requiere `pandoc` ≥ 3 y Chromium/Chrome. Con varios archivos los junta en un s
 ./tools/build-pdf.sh respaldo/plan-respaldo.md
 ./tools/build-pdf.sh -o evidencias/evidencias.pdf evidencias/README.md evidencias/P*.md
 (cd despliegue && ../tools/build-pdf.sh -o guia-despliegue.pdf README.md preparacion.md red-fisica.md kit01.md maquinas-virtuales.md orden-de-inicio.md verificacion.md reconstruir-vm.md)
+(cd sustentacion && ../tools/build-pdf.sh guion-demostracion.md)
 (cd operacion && ../tools/build-pdf.sh -o guia-operacion.pdf README.md inicio-y-apagado.md revision-rapida.md usuarios.md logs.md actualizacion.md sin-internet.md perfiles.md)
 ```
 
