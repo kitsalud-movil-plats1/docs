@@ -11,7 +11,7 @@ source "$(dirname "$0")/comun.sh"
 exige_ansible
 iniciar P12 "Reinicio"
 
-SERVICIOS="nftables kea-dhcp4-server kea-dhcp6-server radvd named chrony nginx kitsalud-portal prometheus grafana-server rsyslog netbird libvirtd"
+SERVICIOS="nftables kea-dhcp4-server kea-dhcp6-server radvd named chrony nginx kitsalud-portal prometheus grafana-server rsyslog netbird libvirtd kit-vecinos"
 ROJAS="curl -s 127.0.0.1:9090/api/v1/query --data-urlencode 'query=(probe_success == 0) or (up == 0)' | python3 -c 'import json,sys; print(len(json.load(sys.stdin)[\"data\"][\"result\"]))'"
 
 estado() {
