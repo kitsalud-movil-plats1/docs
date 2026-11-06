@@ -58,30 +58,38 @@ Cuando un paso dice **en kit01**, es en una sesión abierta desde ese equipo con
 **Red.** `SaludMovil-Clinica`, en una laptop.
 
 1. Conectar la laptop a `SaludMovil-Clinica`.
-2. Preguntar la dirección IPv4 y la IPv6 del mismo nombre.
+2. Preguntar la dirección IPv4 y la IPv6 de cada nombre, cambiando `<nombre>` por los de la lista.
 
 | Sistema | IPv4 | IPv6 |
 |---|---|---|
-| Linux y Mac | `dig biblioteca.salud.movil A +short` | `dig biblioteca.salud.movil AAAA +short` |
-| Windows | `nslookup -type=A biblioteca.salud.movil` | `nslookup -type=AAAA biblioteca.salud.movil` |
+| Linux y Mac | `dig <nombre> A +short` | `dig <nombre> AAAA +short` |
+| Windows | `nslookup -type=A <nombre>` | `nslookup -type=AAAA <nombre>` |
 
-3. Hacer ping por nombre.
+| Nombre | Servicio | IPv4 | IPv6 |
+|---|---|---|---|
+| `pacientes.salud.movil` | Historia clínica | `10.20.20.11` | `fd5a:fc7e:d716:20::11` |
+| `archivos.salud.movil` | Recursos compartidos | `10.20.20.11` | `fd5a:fc7e:d716:20::11` |
+| `biblioteca.salud.movil` | Biblioteca | `10.20.20.12` | `fd5a:fc7e:d716:20::12` |
+| `registro.salud.movil` | Prerregistro | `10.20.20.12` | `fd5a:fc7e:d716:20::12` |
+| `ntp.salud.movil` | Hora | `10.20.20.10` | `fd5a:fc7e:d716:20::10` |
+
+3. Hacer ping por nombre a `biblioteca.salud.movil` y a `pacientes.salud.movil`.
 
 | Sistema | IPv4 | IPv6 |
 |---|---|---|
-| Linux | `ping -4 -c 3 biblioteca.salud.movil` | `ping -6 -c 3 biblioteca.salud.movil` |
-| Mac | `ping -c 3 biblioteca.salud.movil` | `ping6 -c 3 biblioteca.salud.movil` |
-| Windows | `ping -4 biblioteca.salud.movil` | `ping -6 biblioteca.salud.movil` |
+| Linux | `ping -4 -c 3 <nombre>` | `ping -6 -c 3 <nombre>` |
+| Mac | `ping -c 3 <nombre>` | `ping6 -c 3 <nombre>` |
+| Windows | `ping -4 <nombre>` | `ping -6 <nombre>` |
 
-4. Abrir `http://biblioteca.salud.movil` en el navegador, escribiendo solo el nombre.
+4. Abrir en el navegador `http://biblioteca.salud.movil` y `https://pacientes.salud.movil`, escribiendo solo el nombre.
 
 **Mostrar.**
 
-- `10.20.20.12` y `fd5a:fc7e:d716:20::12`.
+- Cada nombre responde con su dirección en IPv4 y en IPv6.
 - El ping responde por las dos familias.
-- La página abre sin escribir una dirección IP.
+- Las páginas abren sin escribir una dirección IP.
 
-**Explicar.** BIND9 en kit01 es la autoridad de `salud.movil`, y delega `ad.salud.movil` a Samba. Nadie tiene que recordar una dirección.
+**Explicar.** BIND9 en kit01 es la autoridad de `salud.movil`, y delega `ad.salud.movil` a Samba. Nadie tiene que recordar una dirección, y si un servicio cambia de equipo solo cambia su registro.
 
 ## P3 Aislamiento
 
@@ -116,7 +124,7 @@ grep 'fw-drop F-20' /var/log/kitsalud/kit01/firewall.log | tail -5
 
 **Red.** `SaludMovil-Comunidad`, con el equipo de P1.
 
-1. Abrir `http://portal.salud.movil`. Aparece el menú con tres opciones.
+1. Abrir `http://portal.salud.movil`. Aparece el menú con tres opciones, y debajo el estado de los servicios.
 2. Entrar a **Biblioteca de salud**. Abrir Wikipedia médica y leer un artículo, por ejemplo sobre fiebre o vacunas. Volver y mostrar que también están Vikidia y las simulaciones de PhET.
 3. Entrar a **Videos**. Tocar `comunidad` y después **Iniciar sesión**, sin contraseña. Reproducir unos segundos de un video de la biblioteca Salud, y mostrar que existe la biblioteca Comunidad.
 4. Entrar a **Prerregistro para la consulta**. Llenar el formulario con datos ficticios, con número de documento, y tocar **Enviar prerregistro**.
@@ -174,6 +182,13 @@ Con eso basta. No hace falta entrar a otras apps ni a la configuración de DHIS2
 
 ## P7 Identidad
 
+**Qué demuestra.** Un usuario se crea una sola vez en el dominio, y su grupo decide a qué entra. Se prueba con dos usuarios en dos servicios distintos.
+
+| Usuario | Grupo | Recurso `archivos` | Grafana |
+|---|---|---|---|
+| `ana.rojas` | `clinicos` | Entra | No entra |
+| `laura.gomez` | `admins` | No entra | Entra |
+
 **Red.** `SaludMovil-Clinica` para el recurso, y el equipo de administración para Grafana.
 
 1. Abrir el recurso con el usuario `SALUD\ana.rojas`.
@@ -222,12 +237,31 @@ ssh kitsalud@10.20.20.11 chronyc -n sources
 ssh kitsalud@10.20.20.12 chronyc -n sources
 ```
 
+3. Mostrar que los logs de distintos equipos se pueden comparar. La entrada del paso 2 se generó en clinica01 y quedó en kit01.
+
+```bash
+date
+grep -h Accepted /var/log/kitsalud/clinica01/auth.log | tail -2
+```
+
+4. Mostrar que el dominio entrega un ticket con esa misma hora. Pide la contraseña de `ana.rojas`.
+
+```bash
+ssh kitsalud@10.20.20.11
+kinit ana.rojas@AD.SALUD.MOVIL
+klist
+kdestroy
+exit
+```
+
 **Mostrar.**
 
 - En la primera lista, las VMs y `10.20.10.2`, que es sw01.
 - En cada VM, una línea que empieza con `^*` y dice `10.20.20.10`. El `^*` indica la fuente en uso.
+- La hora del log coincide con la de `date`, aunque el evento pasó en otro equipo.
+- El ticket de `klist` empieza a la hora actual.
 
-**Explicar.** Chrony sirve la hora a todo el kit y sigue haciéndolo sin Internet. Kerberos y los logs dependen de que todos tengan la misma hora.
+**Explicar.** Chrony sirve la hora a todo el kit y sigue haciéndolo sin Internet. Kerberos rechaza a un equipo con más de 5 minutos de diferencia con el dominio, y por eso sin hora común no hay inicio de sesión. Con una sola hora, los logs de todos los equipos se pueden ordenar para seguir una falla. No se desajusta la hora en vivo, porque dejaría sin dominio a quienes lo están usando.
 
 ## P9 Pérdida de Internet
 
@@ -261,14 +295,30 @@ chronyc tracking
 
 **Red.** `SaludMovil-Comunidad`, con un equipo con el portal aceptado.
 
-1. Probar un acceso permitido y uno bloqueado por IPv6.
+1. Probar por IPv6 los destinos permitidos y los bloqueados, cambiando `<url>` por los de la lista.
 
-| Sistema | Permitido | Bloqueado |
+| Sistema | Comando |
+|---|---|
+| Linux y Mac | `curl -6 -k -I -m 5 <url>` |
+| Windows | `curl.exe -6 -k -I -m 5 <url>` |
+
+| Destino | Puerto | Resultado |
 |---|---|---|
-| Linux y Mac | `curl -6 -I http://biblioteca.salud.movil` | `curl -6 -m 5 https://pacientes.salud.movil` |
-| Windows | `curl.exe -6 -I http://biblioteca.salud.movil` | `curl.exe -6 -m 5 https://pacientes.salud.movil` |
+| `http://biblioteca.salud.movil` | 80 | Permitido, responde `200` |
+| `http://videos.salud.movil` | 80 | Permitido, responde `302` |
+| `https://registro.salud.movil` | 443 | Permitido, responde `200` |
+| `https://pacientes.salud.movil` | 443 | Bloqueado |
+| `https://consultas.salud.movil` | 443 | Bloqueado |
+| `https://monitoreo.salud.movil` | 443 | Bloqueado |
 
-2. En kit01, ver el bloqueo con el mismo comando de P3.
+2. Probar también el recurso compartido, que no es una página.
+
+| Sistema | Comando |
+|---|---|
+| Linux y Mac | `nc -6 -z -w 5 fd5a:fc7e:d716:20::11 445` |
+| Windows | `Test-NetConnection fd5a:fc7e:d716:20::11 -Port 445` |
+
+3. En kit01, ver los bloqueos con el mismo comando de P3.
 
 ```bash
 grep 'fw-drop F-20' /var/log/kitsalud/kit01/firewall.log | tail -5
@@ -276,10 +326,10 @@ grep 'fw-drop F-20' /var/log/kitsalud/kit01/firewall.log | tail -5
 
 **Mostrar.**
 
-- La biblioteca responde `200`.
-- DHIS2 no responde, y el intento aparece en el log con una dirección IPv6.
+- Los destinos permitidos responden.
+- Los bloqueados no responden, y los intentos aparecen en el log con direcciones IPv6.
 
-**Explicar.** Los dos destinos están en la misma red, así que la regla es por equipo y por puerto. Es la misma política de IPv4, en la misma tabla de nftables.
+**Explicar.** Todo está bloqueado salvo lo que tiene una regla. Desde la Comunidad solo se permite DHCP, DNS, hora, el portal y comunidad01 por 80 y 443. Los destinos de la lista están en dos equipos distintos, y la regla es por equipo y por puerto. Es la misma política de IPv4, en la misma tabla de nftables.
 
 ## P11 Restauración
 
@@ -323,48 +373,79 @@ virsh -c qemu:///system reboot comunidad01
 
 **Mostrar.**
 
-- Todo vuelve a verde en unos 45 s sin intervención.
+- Todo vuelve a verde en unos 45 s sin intervención. El estado de los servicios del portal hace lo mismo.
 - Las VMs muestran que acaban de arrancar.
 
 **Explicar.** El arranque automático de libvirt, systemd y la política de reinicio de los contenedores. El orden entre aplicaciones lo resuelven sus reintentos.
 
 ## P13 Diagnóstico
 
-**Red.** Equipo de administración, con **Estado del kit** abierto, y un cliente en cualquier Wi-Fi. No recargar Grafana mientras el DNS esté detenido.
+**Qué demuestra.** Se daña un servicio a propósito y se ve quién se entera y cómo se encuentra la causa. Se usa la biblioteca porque cualquiera entiende la falla.
 
-1. En kit01, provocar la falla.
+**Red.** Equipo de administración con **Estado del kit** abierto, y un equipo en `SaludMovil-Comunidad` con el menú de `http://portal.salud.movil` abierto.
 
-```bash
-sudo systemctl stop named
-```
+| Momento | En el portal | En Grafana |
+|---|---|---|
+| Antes | Todos los servicios funcionan | **Problemas ahora** en 0 |
+| Al detener la biblioteca | Antes de 30 s, Biblioteca de salud en rojo y aviso al personal | Cerca de 40 s después, biblioteca en **Qué está fallando** |
+| Al arrancarla | Verde otra vez | Cerca de 20 s después, **Problemas ahora** en 0 |
 
-2. En el cliente, mostrar el síntoma. El navegador puede seguir mostrando lo que tiene guardado, por eso se pregunta directamente.
-
-| Sistema | Comando |
-|---|---|
-| Linux y Mac | `dig pacientes.salud.movil +time=2 +tries=1` |
-| Windows | `nslookup -timeout=2 pacientes.salud.movil` |
-
-3. Esperar el rojo en **Qué está fallando**, cerca de 35 s.
-4. En kit01, localizar la causa.
+1. Mostrar los dos en verde.
+2. En kit01, entrar a comunidad01 y detener la biblioteca.
 
 ```bash
-systemctl status named --no-pager | head -5
-journalctl -u named -n 5 --no-pager
+ssh kitsalud@10.20.20.12
+sudo docker stop kiwix-kiwix-1
 ```
 
-5. Explicar el impacto y arreglar la falla.
+3. En el cliente, tocar **Biblioteca de salud**. No abre, y el usuario no sabe por qué.
+4. Volver al menú y recargar la página. Aparece **Un servicio tiene problemas**, con la biblioteca en rojo y **Avise al personal de la brigada**.
+5. Esperar el rojo en Grafana y leer en **Qué está fallando** el servicio y el equipo.
+6. En comunidad01, buscar la causa. `kiwix-kiwix-1` sale como `Exited` y los demás siguen `Up`.
 
 ```bash
-sudo systemctl start named
+sudo docker ps -a
 ```
 
-6. Repetir la consulta del paso 2 y esperar el verde en Grafana.
+7. Explicar el impacto, que es solo la biblioteca. Mostrar que Videos sigue funcionando y que DHIS2 no se enteró.
+8. Arreglar la falla.
+
+```bash
+sudo docker start kiwix-kiwix-1
+exit
+```
+
+9. Esperar el verde en Grafana y en el portal, y abrir la biblioteca.
 
 **Mostrar.**
 
-- La consulta falla y el DNS sale en rojo.
-- `systemctl` dice `inactive (dead)`.
-- Todo vuelve a verde al arrancarlo.
+- La comunidad ve el problema sin ayuda, y sabe que debe avisar.
+- El personal ve qué servicio y qué equipo fallaron.
+- El servicio vuelve sin tocar nada más.
 
-**Explicar.** Una falla se localiza con el panel primero, `systemctl` después y los logs al final. El impacto es que nadie resuelve nombres nuevos, aunque DHIS2 y los demás servicios siguen arriba.
+**Explicar.** Las dos vistas salen de las mismas sondas. El portal muestra verde si todo responde, amarillo si responde a medias, por ejemplo solo IPv4, y rojo si no responde. Una falla se localiza con el panel primero, el estado del servicio después y los logs al final.
+
+## Publicación de contenido
+
+**Qué demuestra.** Lo que ve la comunidad depende del dominio. El personal sube material con su usuario y llega a Jellyfin, sin que la comunidad toque la red clínica.
+
+**Red.** Un equipo en `SaludMovil-Clinica`, el equipo de administración y un equipo en `SaludMovil-Comunidad`.
+
+1. Abrir el recurso `contenido` con `SALUD\ana.rojas`, igual que en P7. En Windows, `\\archivos.salud.movil\contenido`. En Linux y Mac, `smb://archivos.salud.movil/contenido`.
+2. Copiar un audio MP3 o un video MP4 corto a la carpeta `comunidad`.
+3. Esperar 2 minutos. Lo recién modificado no se publica, porque podría seguir subiendo.
+4. En kit01, publicar sin esperar el ciclo de 10 minutos.
+
+```bash
+ssh -t kitsalud@10.20.20.11 sudo systemctl start publicacion.service
+```
+
+5. En la Comunidad, abrir **Videos** con el usuario `comunidad`, entrar a la biblioteca **Comunidad** y reproducirlo. Aparece cerca de un minuto después.
+6. Borrar el archivo del recurso. La siguiente publicación lo quita de Jellyfin.
+
+**Mostrar.**
+
+- El archivo que subió `ana.rojas` lo reproduce un celular de la Comunidad.
+- Desde la Comunidad, el recurso `contenido` sigue bloqueado.
+
+**Explicar.** Solo los grupos `clinicos` y `admins` pueden escribir en `contenido`. Cada 10 minutos, clinica01 copia las carpetas `salud`, `comunidad` y `zim` a comunidad01, con un usuario que solo puede escribir ahí. Así la comunidad recibe contenido sin tener ningún camino hacia clinica01. Lo mismo vale para los archivos ZIM de la biblioteca.
