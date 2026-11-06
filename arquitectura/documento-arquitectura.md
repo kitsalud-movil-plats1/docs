@@ -309,6 +309,8 @@ Las dos VMs arrancan con el `autostart` de libvirt, que no tiene un retardo entr
 - **Servidores.** Direcciones estáticas que espejan el último octeto IPv4 (`10.20.20.11` ↔ `fd5a:fc7e:d716:20::11`).
 - **Sin GUA.** IPv6 es solo interno. Con ULA, los clientes prefieren IPv4 para salir a Internet (RFC 6724), así que IPv6 nunca queda como una vía sin portal.
 
+**Vecinos de los clientes Wi-Fi.** Los clientes del Wi-Fi no responden las solicitudes de vecino multicast de kit01, y sí las unicast. Por eso el servicio `kit-vecinos` aprende de cada paquete que entra la dirección y la MAC del cliente, las carga en la tabla de vecinos y el kernel las comprueba por unicast. Solo acepta direcciones del prefijo de cada red.
+
 ### 8.2 Asignación por segmento
 
 | Red | Prefijo | Mecanismo | Flags RA | DNS |
@@ -582,6 +584,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda documentada y 
 | Material audiovisual con personas de la comunidad | Solo con consentimiento; sin datos de pacientes en los medios; se publica solo en la red local |
 | NetBird depende de un servicio externo y de Internet | Solo se usa para administrar en remoto. Se puede desactivar en campo (`systemctl disable netbird`) sin afectar el kit |
 | Por alcance académico, el AP conserva su contraseña de fábrica. Además se gestiona solo por HTTP e IPv4 y, según su manual, cualquier cliente inalámbrico puede llegar a su página de gestión | Servidor DHCP propio, WPS y SNMP desactivados y "Allow remote access" apagado, así que la gestión solo responde desde la VLAN 10. En un despliegue real se cambiaría la contraseña y se guardaría en `ansible-vault`. Evolución hacia un AP con VLAN de gestión propia |
+| Los clientes del Wi-Fi no responden las solicitudes de vecino multicast, y en la red Comunidad y la Interna dependen de `kit-vecinos` para recibir respuestas por IPv6 | El servicio arranca solo y se reinicia si falla, y las pruebas de IPv6 se ejecutan desde un cliente Wi-Fi real. Un AP distinto se debe probar antes de quitarlo |
 | El AP es de 2,4 GHz, 802.11n y con puerto de 100 Mb/s, así que con muchos celulares y video, el Wi-Fi se satura antes que cualquier otro componente | Videos a 480p, aislamiento de clientes y canal automático. Evolución hacia un AP de doble banda con puerto gigabit (sección 13.1) |
 | Un solo usuario de administración compartido (kit01, VMs, sw01 y AP) deja sin trazabilidad por persona, y el enunciado recomienda cuentas individuales | Riesgo aceptado por el tamaño del grupo y el alcance académico. Las contraseñas se registran en `ansible-vault`, nunca en los repositorios. Sin acceso directo de root; SSH solo desde las IPs de administración y NetBird; registro de accesos centralizado con la IP de origen. Evolución hacia cuentas individuales con llave SSH |
 | Hay una sola copia de respaldo y viaja con el kit, así que un robo, un incendio o un golpe se llevan los datos y el respaldo a la vez | El repositorio está cifrado y kit01 lo monta solo durante la copia. La copia en línea (sección 10.6) y un segundo disco que se rota y se queda en la base completan la regla 3-2-1. Las dos quedan como evolución |
