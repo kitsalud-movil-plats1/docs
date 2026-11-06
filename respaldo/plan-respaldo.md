@@ -16,7 +16,7 @@ Este plan describe qué se respalda en el kit, cómo, cada cuánto, dónde queda
 sudo systemctl start backup.service    # en kit01, unos 15 s
 ```
 
-**RTO.** Depende de qué se perdió. Los tiempos marcados como medidos salen de las pruebas del 2026-11-02 en el kit real; los demás son estimados.
+**RTO.** Depende de qué se perdió. Los tiempos marcados como medidos salen de las pruebas en el kit real; los demás son estimados.
 
 | Escenario | Tiempo de recuperación | Base |
 |---|---|---|
@@ -60,7 +60,7 @@ kit01 extrae los datos de las VMs, que nunca los envían por su cuenta. kit01 en
 |---|---|
 | Programación | `backup.timer`, el domingo a las 4:00, después de la analítica de DHIS2 de las 2:00. Con `Persistent=true`, si kit01 estaba apagado corre al arrancar |
 | Conexión | IPv6 y, si no responde, IPv4. El log dice cuál se usó |
-| Duración | Unos 15 s por pasada (2026-11-02). Las copias de `rsync` se conservan en el área temporal, así que solo se transfiere lo que cambió |
+| Duración | Unos 15 s por pasada. Las copias de `rsync` se conservan en el área temporal, así que solo se transfiere lo que cambió |
 | Copia manual | `sudo systemctl start backup.service` antes de cada cambio y al cerrar cada misión |
 | Verificación | `restic check` al final de cada copia |
 | Falla | El servicio termina con error, aparece `UnidadFallida` en **Estado del kit** (Grafana) y lo que se pudo extraer se guarda igual |
@@ -69,7 +69,7 @@ kit01 extrae los datos de las VMs, que nunca los envían por su cuenta. kit01 en
 
 **Retención.** 4 semanales y 3 mensuales por etiqueta (`restic forget --group-by host,tags --keep-weekly 4 --keep-monthly 3 --prune`). Las copias manuales de una misma semana se reemplazan entre sí y queda la última.
 
-**Destino.** Un disco USB 3.0 de 500 GB (Seagate, ext4 con etiqueta `kitbackup`), conectado a kit01. Se monta por UUID en `/mnt/backup` solo durante la copia, con `noatime,nodev,nosuid,noexec`, y no está en `fstab`. El repositorio de restic ocupa unos 850 MiB (2026-11-02). Casi todo son los ZIM de `contenido`, que no se comprimen. Cada copia sin cambios en los recursos agrega unos 5 MiB, así que el disco alcanza para años con la retención de arriba.
+**Destino.** Un disco USB 3.0 de 500 GB (Seagate, ext4 con etiqueta `kitbackup`), conectado a kit01. Se monta por UUID en `/mnt/backup` solo durante la copia, con `noatime,nodev,nosuid,noexec`, y no está en `fstab`. El repositorio de restic ocupa unos 850 MiB. Casi todo son los ZIM de `contenido`, que no se comprimen. Cada copia sin cambios en los recursos agrega unos 5 MiB, así que el disco alcanza para años con la retención de arriba.
 
 **Cifrado y clave.** restic cifra el repositorio (AES-256 y Poly1305). La clave está en `/etc/kitsalud/backup/restic.clave` de kit01 (`400`, root) y sale de `vault_restic_password` en el vault de Ansible del kit. El vault está cifrado en el repositorio y su contraseña solo está en las máquinas de control (`~/.config/kitsalud/vault-pass`). Sin la clave las copias no se pueden leer, así que la contraseña del vault se guarda además fuera de los equipos del kit.
 
@@ -144,7 +144,7 @@ samba-tool dns add 127.0.0.1 ad.salud.movil dc01 A 10.20.20.11 -U Administrator
 samba-tool dns add 127.0.0.1 ad.salud.movil dc01 AAAA fd5a:fc7e:d716:20::11 -U Administrator
 ```
 
-La restauración offline está probada en clinica01 (2026-11-02). Dejó los mismos 6 usuarios, los mismos grupos y los mismos miembros de `clinicos` que el DC vivo, con `DC02$` en lugar de `DC01$`, en 2,5 s y sin tocar el DC en uso. La puesta en servicio del camino B no se probó.
+La restauración offline está probada en clinica01. Dejó los mismos 6 usuarios, los mismos grupos y los mismos miembros de `clinicos` que el DC vivo, con `DC02$` en lugar de `DC01$`, en 2,5 s y sin tocar el DC en uso. La puesta en servicio del camino B no se probó.
 
 ### 5.5 Una VM
 
@@ -179,12 +179,12 @@ Si kit01 no está, el repositorio se puede leer desde cualquier Linux con restic
 
 ## 7. Pruebas hechas
 
-| Fecha | Prueba | Resultado |
-|---|---|---|
-| 2026-11-01 | Copia programada con el disco real | Cuatro snapshots, `restic check` sin errores. Contenido comparado con lo vivo (filas de DHIS2, recursos y ZIM) |
-| 2026-11-02 | Prueba de restauración, archivo de `archivos` y tabla de `prerregistro` | Aprobada, 16 de 16, en 68 s. Archivo con su dueño de AD y su ACL, abierto por SMB con `ana.rojas`; tabla con las mismas 1000 filas y el mismo md5 |
-| 2026-11-02 | Base `dhis2` completa en la base temporal `dhis2_restauracion` | Las 333 tablas con el mismo número de filas que la base viva (45 893 en total) y las mismas extensiones (PostGIS 3.5.2). `pg_restore` en 7,7 s. La base temporal se borró |
-| 2026-11-02 | Dominio restaurado en un directorio temporal de clinica01 | Mismos usuarios, grupos y miembros de `clinicos` que el DC vivo, en 2,5 s. El DC en uso no cambió (`dbcheck` sin errores, `kinit` y sondas LDAPS en verde). Con `--newservername=dc01` falla (sección 5.4) |
+| Prueba | Resultado |
+|---|---|
+| Copia programada con el disco real | Cuatro snapshots, `restic check` sin errores. Contenido comparado con lo vivo (filas de DHIS2, recursos y ZIM) |
+| Prueba de restauración, archivo de `archivos` y tabla de `prerregistro` | Aprobada, 16 de 16, en 68 s. Archivo con su dueño de AD y su ACL, abierto por SMB con `ana.rojas`; tabla con las mismas 1000 filas y el mismo md5 |
+| Base `dhis2` completa en la base temporal `dhis2_restauracion` | Las 333 tablas con el mismo número de filas que la base viva (45 893 en total) y las mismas extensiones (PostGIS 3.5.2). `pg_restore` en 7,7 s. La base temporal se borró |
+| Dominio restaurado en un directorio temporal de clinica01 | Mismos usuarios, grupos y miembros de `clinicos` que el DC vivo, en 2,5 s. El DC en uso no cambió (`dbcheck` sin errores, `kinit` y sondas LDAPS en verde). Con `--newservername=dc01` falla (sección 5.4) |
 
 ## 8. Límites conocidos
 

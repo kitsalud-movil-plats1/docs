@@ -3,9 +3,7 @@
 ## Qué se prueba
 
 **Enunciado.** Un cliente nuevo es redirigido al portal cautivo.
-**Presentación.** Un cliente nuevo ve el portal, también sin Internet.
-
-Sin aceptar, nftables manda todo el HTTP del cliente a nginx en kit01, que lo lleva a `http://portal.salud.movil`; el HTTPS se rechaza (D-22, F-08). Al tocar Acepto, el servicio agrega la MAC del equipo al set `portal_ok` por 8 h. `http://portal.salud.movil` muestra el menú a quien ya aceptó.
+Con Internet o sin ella, un cliente nuevo termina en el portal. Sin Internet, el DNS del kit le responde cualquier nombre externo con la dirección del portal, así el celular lo detecta y lo abre solo. Sin aceptar, nftables manda todo el HTTP del cliente a nginx en kit01, que lo lleva a `http://portal.salud.movil`; el HTTPS se rechaza. Al tocar Acepto, el servicio agrega la MAC del equipo al set `portal_ok` por 8 h. `http://portal.salud.movil` muestra el menú a quien ya aceptó.
 
 ## Qué necesitas
 

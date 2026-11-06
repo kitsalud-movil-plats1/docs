@@ -99,7 +99,7 @@ responde con el usuario, el rol "Personal clínico" y el grupo "Personal clínic
 
 ## Prueba hecha en el kit
 
-El 4 de noviembre de 2026 se creó una cuenta temporal en cada sistema y se borró al terminar.
+En el kit se creó una cuenta temporal en cada sistema y se borró al terminar.
 
 | Paso | Resultado |
 |---|---|

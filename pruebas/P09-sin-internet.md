@@ -3,8 +3,6 @@
 ## Qué se prueba
 
 **Enunciado.** Se desconecta la salida externa y los servicios locales esenciales continúan disponibles.
-**Presentación.** Se desconecta la WAN y todo sigue.
-
 Todo lo esencial vive en el kit, como DNS (BIND9 autoritativo de `salud.movil`), NTP (Chrony en modo orphan), DHCP, el portal, DHIS2, SMB, la biblioteca, los videos y los formularios. Sin Internet solo falla lo que es de afuera.
 
 ## Qué necesitas
@@ -54,7 +52,9 @@ Durante el corte comprueba que lo externo falla, que los nombres del kit resuelv
 | Clínica | Abrir `archivos` por SMB | SMB y Samba AD sin Internet | Funciona |
 | Comunidad | `http://biblioteca.salud.movil`, `http://videos.salud.movil`, `https://registro.salud.movil` | Lo público local | Funciona |
 | Comunidad | Equipo nuevo, `http://neverssl.com` | Que el portal sale sin Internet | Redirige al portal |
-| Comunidad | Enviar un prerregistro | F-11 sin Internet | Muestra el código |
+| Comunidad | `dig +short example.org` | Que el DNS manda a la Comunidad al portal | `10.20.40.1`, menos de 1 min después del corte |
+| Comunidad | Celular conectado al Wi-Fi | Que el sistema detecta el portal | Abre solo la ventana del portal |
+| Comunidad | Enviar un prerregistro | El formulario sin Internet | Muestra el código |
 
 **En kit01 (por consola o al volver la WAN).**
 

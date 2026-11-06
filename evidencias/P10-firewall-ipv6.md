@@ -1,6 +1,6 @@
 # P10 - Firewall IPv6
 
-**Fecha.** 2026-11-02, 16:57 (hora de Colombia) · **Entorno.** Kit real, en remoto por NetBird · **Versión.** `docs` `ddb5f1f`, `network` `1133967`, `platform` `025b11c`, `apps` `3969c3b`, `observability` `43b7ed6`
+**Entorno.** Kit real, en remoto por NetBird
 
 ## Qué se prueba
 
@@ -12,7 +12,6 @@ Se realizan una prueba de acceso permitido y otra de acceso bloqueado mediante I
 
 ```
 == P10 - Firewall IPv6
-Fecha 2026-11-02 16:57:48 -0500 · equipo prueba01 · Linux
 
 ## IPv6
   [ OK ]  IPv6 permitido: http://biblioteca.salud.movil/ (200)

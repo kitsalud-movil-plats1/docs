@@ -154,7 +154,7 @@ Antes, la instantánea si el paquete está en una VM. Después, la prueba del se
 
 ## Tiempos medidos
 
-Medidos en el kit el 2026-11-02, con todo en verde antes y después.
+Medidos en el kit, con todo en verde antes y después.
 
 | Paso | Tiempo | Detalle |
 |---|---|---|

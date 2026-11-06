@@ -3,13 +3,11 @@
 ## Qué se prueba
 
 **Enunciado.** Se realizan una prueba de acceso permitido y otra de acceso bloqueado mediante IPv6.
-**Presentación.** Por IPv6 se llega a comunidad01 y no a clinica01.
-
-Los dos destinos están en la misma red (`fd5a:fc7e:d716:20::/64`), así que el resultado muestra que la regla es por equipo y por puerto, con la misma política que IPv4 (F-09 permite, F-20 bloquea y registra).
+Los dos destinos están en la misma red (`fd5a:fc7e:d716:20::/64`), así que el resultado muestra que la regla es por equipo y por puerto, con la misma política que IPv4 (una regla permite y otra bloquea y registra).
 
 ## Qué necesitas
 
-Un cliente de la Comunidad **con IPv6 global** y el portal aceptado. La laptop de Melo no recibe IPv6 por Wi-Fi; usar otro PC, o `prueba01`, la VM de la Comunidad que hace de celular (D-24).
+Un cliente de la Comunidad **con IPv6 global** y el portal aceptado. Una laptop del grupo no recibe IPv6 por Wi-Fi; usar otro PC, o `prueba01`, la VM de la Comunidad que hace de celular.
 
 ## Paso a paso
 
@@ -33,9 +31,9 @@ Por IPv6 y luego por IPv4, revisa que biblioteca y registro responden y que DHIS
 
 | Comando | Qué prueba | Esperado |
 |---|---|---|
-| `curl -6 -I http://biblioteca.salud.movil` | Permitido, comunidad01 por IPv6 (F-09) | `200 OK` |
+| `curl -6 -I http://biblioteca.salud.movil` | Permitido, comunidad01 por IPv6 | `200 OK` |
 | `curl -6 -I https://registro.salud.movil` | Permitido, comunidad01 443 por IPv6 | `200 OK` |
-| `curl -6 -k -m 5 -I https://pacientes.salud.movil` | Bloqueado, clinica01 por IPv6 (F-20) | Timeout |
+| `curl -6 -k -m 5 -I https://pacientes.salud.movil` | Bloqueado, clinica01 por IPv6 | Timeout |
 | `curl -6 -m 5 -I "http://[fd5a:fc7e:d716:20::11]/"` | Bloqueado, clinica01 por IP directa | Timeout |
 | `nc -6 -vz -w 5 fd5a:fc7e:d716:20::10 22` | Bloqueado, SSH de kit01 | Timeout |
 | `curl -4 -I http://biblioteca.salud.movil` y `curl -4 -k -m 5 -I https://pacientes.salud.movil` | Lo mismo en IPv4 | `200` y timeout |

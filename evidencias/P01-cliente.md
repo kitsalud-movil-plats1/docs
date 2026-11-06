@@ -1,6 +1,6 @@
 # P1 - Cliente comunitario
 
-**Fecha.** 2026-11-02, 16:44 (hora de Colombia) · **Entorno.** Kit real, en remoto por NetBird · **Versión.** `docs` `ddb5f1f`, `network` `1133967`, `platform` `025b11c`
+**Entorno.** Kit real, en remoto por NetBird
 
 ## Qué se prueba
 
@@ -12,7 +12,6 @@ Un dispositivo que se conecta a la red Comunidad obtiene IPv4 e IPv6, DNS y gate
 
 ```
 == P01 - Cliente comunitario
-Fecha 2026-11-02 16:44:17 -0500 · equipo prueba01 · Linux
           Interfaz eth0, red comunidad (VLAN 40)
 
 ## Configuración recibida

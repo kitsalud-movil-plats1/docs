@@ -1,8 +1,8 @@
 # Pruebas de aceptación P1-P13
 
-Una guía por prueba, con el criterio del enunciado (sección 8), lo que se dijo en la presentación (diapositiva 38), el paso a paso, los comandos de verificación con su explicación, el resultado esperado y qué guardar como evidencia (E6, `plantillas/evidencia.md`).
+Una guía por prueba, con el criterio del enunciado, el paso a paso, los comandos de verificación con su explicación y el resultado esperado.
 
-| Prueba | Qué demuestra | Dónde | Estado al 2026-11-02 |
+| Prueba | Qué demuestra | Dónde | Estado |
 |---|---|---|---|
 | [P1](P01-cliente.md) | Un cliente de la Comunidad recibe IPv4, IPv6, DNS y gateway | `prueba01`; sitio con celulares | Aprobada en remoto (9 de 9); celulares en cada SSID en la sustentación |
 | [P2](P02-dns.md) | Los servicios responden por nombre, A y AAAA, sin escribir IP | `prueba01` y sw01; sitio con un PC de la Interna | Aprobada en remoto (27 y 12) |
@@ -12,7 +12,7 @@ Una guía por prueba, con el criterio del enunciado (sección 8), lo que se dijo
 | [P6](P06-clinica.md) | Un usuario del personal registra y consulta un paciente | sw01 y kit01 (`--remoto`); sitio con un PC de la Interna | Aprobada en remoto (16 de 16) |
 | [P7](P07-identidad.md) | Un usuario del dominio entra a `archivos` y a Grafana | sw01, clinica01 y NetBird | Aprobada en remoto (8 y 2); montar `archivos` desde un PC en la sustentación |
 | [P8](P08-tiempo.md) | Los equipos toman la hora de kit01 | Remoto | Aprobada (9 de 9) |
-| [P9](P09-sin-internet.md) | Sin la WAN todo lo local sigue | Corte simulado en remoto; sitio con el cable | Aprobada en remoto (40 de 40); con el cable en la sustentación |
+| [P9](P09-sin-internet.md) | Sin la WAN todo lo local sigue | Corte simulado en remoto; sitio con el cable | Aprobada en remoto (51 de 51); con el cable en la sustentación |
 | [P10](P10-firewall-ipv6.md) | Por IPv6 se llega a comunidad01 y no a clinica01 | `prueba01` | Aprobada en remoto (10 de 10) |
 | [P11](P11-restauracion.md) | Se borra un archivo y se recupera del disco USB | Remoto | Aprobada (16 de 16) |
 | [P12](P12-reinicio.md) | Un equipo se reinicia y todo vuelve solo | Remoto (las VMs) y sitio (kit01) | Aprobada en remoto reiniciando las dos VMs, todo en verde a los 44 s; kit01 en la sustentación |

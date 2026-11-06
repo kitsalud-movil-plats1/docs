@@ -3,9 +3,7 @@
 ## Qué se prueba
 
 **Enunciado.** El mismo cliente de P3 accede a la biblioteca y al formulario locales según la política definida.
-**Presentación.** Biblioteca, videos y registro después del portal.
-
-F-09 es la única excepción de la Comunidad hacia la red de servidores: con el portal aceptado, los puertos 80 y 443 de comunidad01. Los prerregistros se guardan en PostgreSQL de clinica01 por F-11, sin que el cliente toque clinica01.
+El acceso a comunidad01 es la única excepción de la Comunidad hacia la red de servidores: con el portal aceptado, los puertos 80 y 443 de comunidad01. Los prerregistros se guardan en PostgreSQL de clinica01, sin que el cliente toque clinica01.
 
 ## Qué necesitas
 
@@ -42,7 +40,7 @@ Revisa biblioteca, videos, registro (verificando el certificado con la raíz del
 
 `-I` pide solo las cabeceras, suficiente para ver el código de respuesta.
 
-**En kit01 (remoto).** `sudo nft list set inet filtro portal_ok` muestra la MAC del cliente en el set de autorizados; sin ella F-09 no lo deja pasar.
+**En kit01 (remoto).** `sudo nft list set inet filtro portal_ok` muestra la MAC del cliente en el set de autorizados; sin ella el firewall no lo deja pasar.
 
 **macOS.** Los `curl` son iguales. Para instalar la raíz, abrir `raiz.crt` (se agrega a Acceso a Llaveros), buscar **Kit de salud movil - Raiz**, abrirla y en Confiar elegir **Confiar siempre**; o en la terminal `sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain raiz.crt`.
 
@@ -50,7 +48,7 @@ Revisa biblioteca, videos, registro (verificando el certificado con la raíz del
 
 - **Todo redirige al portal.** El equipo no está en `portal_ok`. Abrir `http://portal.salud.movil` y tocar Acepto.
 - **`registro` muestra aviso de certificado.** Falta la raíz del kit. Seguir las instrucciones de `http://ca.salud.movil`.
-- **El formulario no guarda.** En comunidad01, `docker logs formularios-app-1`; F-11 hacia el 5432 de clinica01.
+- **El formulario no guarda.** En comunidad01, `docker logs formularios-app-1`; revisar el paso hacia el 5432 de clinica01.
 
 ## Evidencia
 

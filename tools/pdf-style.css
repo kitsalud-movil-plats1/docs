@@ -108,3 +108,6 @@ div.diagrama-fisico img { width: 100%; }
 
 /* Cada documento que se junta en un mismo PDF empieza en una página nueva. */
 div.salto { page-break-before: always; }
+
+/* Tablas cuya primera columna es texto largo */
+.texto-normal td:first-child { font-weight: normal; }

@@ -1,6 +1,6 @@
 # P5 - Portal cautivo
 
-**Fecha.** 2026-11-02, 16:45 (hora de Colombia) · **Entorno.** Kit real, en remoto por NetBird · **Versión.** `docs` `ddb5f1f`, `network` `1133967`, `platform` `025b11c`, `apps` `3969c3b`, `observability` `43b7ed6`
+**Entorno.** Kit real, en remoto por NetBird
 
 ## Qué se prueba
 
@@ -12,7 +12,6 @@ Un cliente nuevo es redirigido al portal cautivo.
 
 ```
 == P05 - Portal cautivo
-Fecha 2026-11-02 16:45:54 -0500 · equipo prueba01 · Linux
 
 ## Antes de aceptar
   [ OK ]  IPv4 http://neverssl.com va al portal (302 http://portal.salud.movil/)

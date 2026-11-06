@@ -80,7 +80,7 @@ La hora puede tardar unos minutos en volver a una referencia externa, y si kit01
 
 ## Prueba hecha en el kit
 
-El 2 de noviembre de 2026 se cortó la salida a Internet de kit01 durante 5 minutos con una tabla temporal del firewall, sin desconectar el cable para no perder el acceso remoto. Con el corte se comprobaron 40 cosas en IPv4 y en IPv6, desde kit01, las dos máquinas virtuales, el switch (red Interna) y una máquina de prueba en la red Comunidad.
+En el kit se cortó la salida a Internet de kit01 durante 5 minutos con una tabla temporal del firewall, sin desconectar el cable para no perder el acceso remoto. Con el corte se comprobaron 40 cosas en IPv4 y en IPv6, desde kit01, las dos máquinas virtuales, el switch (red Interna) y una máquina de prueba en la red Comunidad.
 
 - Los nombres de Internet dieron `SERVFAIL` y las máquinas virtuales y la Comunidad no llegaron a Internet.
 - El DNS del kit respondió todos sus nombres, y kit01 siguió sincronizado (estrato 3) y entregando la hora.
@@ -89,4 +89,4 @@ El 2 de noviembre de 2026 se cortó la salida a Internet de kit01 durante 5 minu
 - El monitoreo no puso nada en rojo y ninguna unidad falló en kit01.
 - Al quitar la tabla, la salida a Internet volvió sola.
 
-El 4 de noviembre de 2026 se revisaron en kit01, con Internet, los comandos de este procedimiento. Dieron la ruta por `enp170s0`, `0% packet loss`, direcciones para `example.org`, `10.20.20.11` para `pacientes.salud.movil`, estrato 3 con `Leap status Normal` y NetBird conectado.
+Se revisaron en kit01, con Internet, los comandos de este procedimiento. Dieron la ruta por `enp170s0`, `0% packet loss`, direcciones para `example.org`, `10.20.20.11` para `pacientes.salud.movil`, estrato 3 con `Leap status Normal` y NetBird conectado.

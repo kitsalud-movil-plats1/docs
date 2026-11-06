@@ -13,7 +13,11 @@ nota "Red $RED. Esta prueba vale con el cable WAN de kit01 desconectado."
 RAIZ=$(raiz_kit)
 
 seccion "Lo externo falla"
-if [ -z "$(resolver google.com A)" ]; then bien "google.com no resuelve"; else nota "google.com resuelve; ¿la WAN sigue conectada?"; fi
+EXTERNO=$(resolver google.com A)
+if [ "$RED" = comunidad ]; then
+  # Sin Internet, el DNS le responde a la Comunidad la dirección del portal
+  if [ "$EXTERNO" = 10.20.40.1 ]; then bien "google.com responde con la dirección del portal"; else nota "google.com responde ${EXTERNO:-vacío}; kit01 tarda hasta 1 min en notar el corte"; fi
+elif [ -z "$EXTERNO" ]; then bien "google.com no resuelve"; else nota "google.com resuelve; ¿la WAN sigue conectada?"; fi
 if [ "$(codigo_http 4 https://www.google.com/ -m 5)" = 000 ]; then bien "https://www.google.com no responde"; else mal "Hay salida a Internet; desconectar la WAN"; fi
 
 seccion "DNS del kit"

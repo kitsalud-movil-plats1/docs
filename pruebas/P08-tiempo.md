@@ -3,8 +3,6 @@
 ## Qué se prueba
 
 **Enunciado.** Dos o más nodos muestran sincronización con el servicio NTP interno.
-**Presentación.** Todos los equipos toman la hora de kit01.
-
 Chrony en kit01 (`ntp.salud.movil`, `10.20.20.10` y `fd5a:fc7e:d716:20::10`) toma la hora del pool cuando hay Internet y sigue sirviendo con `local stratum 10 orphan` cuando no hay. clinica01, comunidad01 y sw01 son clientes. Una hora coherente importa para Kerberos (máximo 5 min de diferencia), los logs y los certificados.
 
 ## Qué necesitas
@@ -49,8 +47,8 @@ En `chronyc sources`, `^` es un servidor, `*` es el que se está usando y `+` un
 
 ## Si algo falla
 
-- **El cliente muestra `^?`.** No llega al 123/udp de kit01. Revisar F-03.
-- **kit01 en estrato 10 con Internet.** No llega al pool. Revisar F-18 y `chronyc sources`.
+- **El cliente muestra `^?`.** No llega al 123/udp de kit01. Revisar el firewall hacia kit01.
+- **kit01 en estrato 10 con Internet.** No llega al pool. Revisar la salida de kit01 a Internet y `chronyc sources`.
 
 ## Evidencia
 

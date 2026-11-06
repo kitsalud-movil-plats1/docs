@@ -1,6 +1,6 @@
 # P2 - DNS
 
-**Fecha.** 2026-11-02, de 17:01 a 17:03 (hora de Colombia) · **Entorno.** Kit real, en remoto por NetBird · **Versión.** `docs` `ddb5f1f`, `network` `1133967`, `platform` `025b11c`, `apps` `3969c3b`, `observability` `43b7ed6`
+**Entorno.** Kit real, en remoto por NetBird
 
 ## Qué se prueba
 
@@ -14,7 +14,6 @@ Se resuelve por nombre un servicio con registros A y AAAA y se accede sin escrib
 
 ```
 == P02 - DNS
-Fecha 2026-11-02 17:01:38 -0500 · equipo prueba01 · Linux
 
 ## Registros A y AAAA
   [ OK ]  A    biblioteca.salud.movil (10.20.20.12)
@@ -57,7 +56,6 @@ Resultado: 27 bien y 0 con falla.
 
 ```
 == P02 - DNS
-Fecha 2026-11-02 17:02:40 -0500 · equipo melo-laptop · Linux
           Desde sw01 (10.20.10.2, red Interna), por el salto de kit01
 
 ## Consultas al DNS del kit desde sw01

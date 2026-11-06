@@ -82,7 +82,7 @@ sudo virsh -c qemu:///system start clinica01
 
 El archivo `simulacro` vale por una hora. Si es más viejo, el apagado es real, y por eso se enmascara además el apagado de kit01 mientras dura la práctica. Al terminar, la UPS lógica vuelve sola a `OL` en unos 15 s.
 
-**Resultado en el kit (4 de noviembre de 2026).** comunidad01 se apagó en 2 s y clinica01 en 4 s, 16 s después de la batería baja. kit01 siguió encendido y la UPS volvió a `OL`. Después de encender las dos máquinas virtuales, todos los servicios estaban en verde a los 42 s, y la revisión de estado del kit dio 22 comprobaciones bien y ninguna falla.
+**Resultado en el kit.** comunidad01 se apagó en 2 s y clinica01 en 4 s, 16 s después de la batería baja. kit01 siguió encendido y la UPS volvió a `OL`. Después de encender las dos máquinas virtuales, todos los servicios estaban en verde a los 42 s, y la revisión de estado del kit dio 22 comprobaciones bien y ninguna falla.
 
 ## Si algo no sale como se espera
 

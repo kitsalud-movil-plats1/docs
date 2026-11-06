@@ -1,6 +1,6 @@
 # P3 - Aislamiento
 
-**Fecha.** 2026-11-02, de 16:51 a 16:53 (hora de Colombia) · **Entorno.** Kit real, en remoto por NetBird · **Versión.** `docs` `ddb5f1f`, `network` `1133967`, `platform` `025b11c`, `apps` `3969c3b`, `observability` `43b7ed6`
+**Entorno.** Kit real, en remoto por NetBird
 
 ## Qué se prueba
 
@@ -12,7 +12,6 @@ Un cliente de invitados intenta acceder a un servicio clínico o de administraci
 
 ```
 == P03 - Aislamiento
-Fecha 2026-11-02 16:51:17 -0500 · equipo prueba01 · Linux
 
 ## IPv4
   [ OK ]  IPv4 bloqueado: DHIS2 (clinica01 443)
