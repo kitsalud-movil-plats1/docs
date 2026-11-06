@@ -3,8 +3,6 @@
 ## Qué se prueba
 
 **Enunciado.** Al simular una falla, los estudiantes usan logs y comandos para localizarla y explicar el impacto.
-**Presentación.** Una falla inducida aparece en Grafana y en los logs.
-
 Prometheus en kit01 sondea cada servicio en IPv4 e IPv6 (blackbox) y el estado de las unidades críticas (node_exporter). Grafana lo muestra en **Estado del kit**, en verde o rojo. Los logs de todos los equipos llegan a `/var/log/kitsalud/` en kit01.
 
 ## Qué necesitas

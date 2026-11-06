@@ -3,9 +3,7 @@
 ## Qué se prueba
 
 **Enunciado.** Un usuario autorizado accede al sistema de pacientes y registra o consulta un dato.
-**Presentación.** Se registra y consulta un paciente ficticio.
-
-DHIS2 2.42 en clinica01, publicado por Caddy en `https://pacientes.salud.movil` solo para la Interna (F-05). Las cuentas del personal son locales de DHIS2: `ana.rojas` y `carlos.perez` (Personal clínico) y `laura.gomez` (Administrador).
+DHIS2 2.42 en clinica01, publicado por Caddy en `https://pacientes.salud.movil` solo para la Interna. Las cuentas del personal son locales de DHIS2: `ana.rojas` y `carlos.perez` (Personal clínico) y `laura.gomez` (Administrador).
 
 ## Qué necesitas
 

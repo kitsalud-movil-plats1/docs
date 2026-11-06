@@ -35,19 +35,28 @@ Se ejecutó `./scripts/P09-sin-internet-remoto.sh` en la máquina de control. Pr
   [ OK ]  prueba01 sin el portal aceptado
 
 ## 2. Corte de Internet
-    corte aplicado a las 15:13:53
+    corte aplicado a las 22:03:25
   [ OK ]  Tabla del corte activa (table inet prueba_sin_internet)
   [ OK ]  NetBird sigue: esta máquina de control sigue entrando a kit01
-          Se borra sola a los 15 min (fin-prueba_sin_internet.timer). Esperando 60 s
+          Se borra sola a los 15 min (fin-prueba_sin_internet.timer). Esperando que kit01 note el corte
+  [ OK ]  kit01 pasó a modo sin Internet (sin)
+    Sin Internet: la Comunidad va al portal con cualquier nombre
 
 ## 3. Lo externo falla
   [ OK ]  clinica01 hacia https://www.google.com (sin conexión)
   [ OK ]  prueba01 hacia https://www.google.com (sin conexión)
   [ OK ]  Un nombre externo no resuelve (status: SERVFAIL)
+  [ OK ]  prueba01 (Comunidad), prueba-p9-1793934319.example.org A (10.20.40.1)
+  [ OK ]  prueba01 (Comunidad), prueba-p9-1793934319.example.org AAAA (fd5a:fc7e:d716:40::1)
+  [ OK ]  prueba01, pacientes.salud.movil sigue igual (10.20.20.11)
+  [ OK ]  clinica01 (servidores), prueba-p9-1793934319.example.org no resuelve ()
+  [ OK ]  sw01 (Interna), prueba-p9-1793934319.example.org no resuelve ()
+  [ OK ]  IPv4 detección de Android sin aceptar lleva al portal (http://portal.salud.movil/)
+  [ OK ]  IPv6 detección de Android sin aceptar lleva al portal (http://portal.salud.movil/)
     Contadores del corte:
-      oifname "enp170s0" counter packets 28
-      oifname "enp170s0" meta l4proto { tcp, udp } th dport 53 ip daddr != { 192.168.215.20, 192.168.215.30 } counter packets 15
-      oifname "enp170s0" udp dport 123 counter packets 1
+      oifname "enp170s0" counter packets 9
+      oifname "enp170s0" meta l4proto { tcp, udp } th dport 53 ip daddr != { 192.168.215.20, 192.168.215.30 } counter packets 53
+      oifname "enp170s0" udp dport 123 counter packets 2
       oifname "enp170s0" tcp dport 80 counter packets 0
 
 ## 4. DNS y hora del kit
@@ -75,13 +84,14 @@ Se ejecutó `./scripts/P09-sin-internet-remoto.sh` en la máquina de control. Pr
   [ OK ]  IPv4 biblioteca sin aceptar el portal (redirige) (302)
   [ OK ]  IPv6 biblioteca sin aceptar el portal (redirige) (302)
   [ OK ]  Portal aceptado sin Internet
+  [ OK ]  Detección de iOS con el portal aceptado lleva al portal (http://portal.salud.movil/)
   [ OK ]  IPv4 biblioteca (200)
   [ OK ]  IPv4 videos (302)
   [ OK ]  IPv4 registro (HTTPS con la raíz del kit) (200)
   [ OK ]  IPv6 biblioteca (200)
   [ OK ]  IPv6 videos (302)
   [ OK ]  IPv6 registro (HTTPS con la raíz del kit) (200)
-  [ OK ]  Prerregistro enviado sin Internet y guardado en clinica01 (código UFJT)
+  [ OK ]  Prerregistro enviado sin Internet y guardado en clinica01 (código JEEJ)
 
 ## 7. Estado general durante el corte
   [ OK ]  Sondas en rojo (0)
@@ -90,10 +100,12 @@ Se ejecutó `./scripts/P09-sin-internet-remoto.sh` en la máquina de control. Pr
 ## 8. Fin del corte
   [ OK ]  Tabla del corte borrada (0)
   [ OK ]  clinica01 llega a Internet otra vez (200)
+  [ OK ]  kit01 volvió a modo con Internet (con)
+  [ OK ]  prueba01 resuelve wikipedia.org normalmente (208.80.154.224)
   [ OK ]  Prerregistro de prueba borrado
   [ OK ]  prueba01 sin portal y apagándose
 
-Resultado: 40 bien y 0 con falla. Salida en /home/melo/8thSem/plats1/kitsalud-movil-plats1/docs/pruebas/salidas/P09-20261102-151256.txt
+Resultado: 51 bien y 0 con falla.
 ```
 
 ### IPv4
@@ -106,8 +118,8 @@ Los nombres resuelven su registro AAAA, DHIS2 y la consulta responden por `fd5a:
 
 ## Interpretación
 
-Con Internet cortado, lo externo falló como debía. Un nombre de Internet devolvió `SERVFAIL` y las VMs y la Comunidad no llegaron a `google.com`. Todo lo local siguió funcionando en IPv4 e IPv6. El DNS del kit respondió todos sus nombres, kit01 siguió sincronizado (estrato 3, la última referencia que tenía) y entregando la hora a las VMs, los servicios de la Clínica respondieron por HTTPS con la CA del kit y `ana.rojas` abrió los archivos compartidos. Un equipo nuevo de la Comunidad vio el portal sin Internet, lo aceptó y usó todos los servicios públicos, y su prerregistro quedó guardado en la base de clinica01. El monitoreo no puso en rojo ningún servicio ni ningún equipo durante el corte, y en kit01 ninguna unidad falló. Los contadores de la tabla muestran que el kit intentó salir (DNS hacia afuera, NTP y reenvío) y fue bloqueado. Al quitar la tabla, la salida a Internet volvió sola.
+Con Internet cortado, kit01 lo notó en menos de un minuto y pasó a modo sin Internet. Lo externo falló como debía, un nombre de Internet devolvió `SERVFAIL` desde kit01, las VMs y la red Interna, y las VMs y la Comunidad no llegaron a `google.com`. Desde la Comunidad, cualquier nombre externo respondió con la dirección del portal en IPv4 e IPv6, y las pruebas de detección que usan Android e iOS terminaron en el portal, tanto sin aceptar como aceptado. Al volver Internet, kit01 regresó solo a su modo normal y `prueba01` resolvió `wikipedia.org` con su dirección real. Todo lo local siguió funcionando en IPv4 e IPv6. El DNS del kit respondió todos sus nombres, kit01 siguió sincronizado (estrato 3, la última referencia que tenía) y entregando la hora a las VMs, los servicios de la Clínica respondieron por HTTPS con la CA del kit y `ana.rojas` abrió los archivos compartidos. Un equipo nuevo de la Comunidad vio el portal sin Internet, lo aceptó y usó todos los servicios públicos, y su prerregistro quedó guardado en la base de clinica01. El monitoreo no puso en rojo ningún servicio ni ningún equipo durante el corte, y en kit01 ninguna unidad falló. Los contadores de la tabla muestran que el kit intentó salir (DNS hacia afuera, NTP y reenvío) y fue bloqueado. Al quitar la tabla, la salida a Internet volvió sola.
 
 ## Resultado
 
-Aprobada. 40 comprobaciones bien y ninguna falla. Queda repetirla en el laboratorio con el cable de la WAN desconectado, con un celular y un PC reales y las capturas de pantalla.
+Aprobada. 51 comprobaciones bien y ninguna falla. En la sustentación se repite desconectando el cable de la WAN, con un celular y un PC reales.

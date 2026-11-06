@@ -57,6 +57,8 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 
 ### 3.1 Supuestos
 
+<div class="texto-normal">
+
 | Supuesto | Impacto si es falso |
 |---|---|
 | El mini PC Beelink EQi12 (Intel Core i3-1220P de 10 núcleos y 12 hilos, 16 GB DDR4, SSD de 500 GB, **dos NIC de 1 GbE**) es el equipo central del kit | El mismo diseño corre en una laptop de 16 GB con un adaptador USB-Ethernet para la WAN |
@@ -68,7 +70,11 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 | Todos los datos de pacientes que se usen son ficticios | Ninguno |
 | El material propio de la comunidad se graba con ella y con su consentimiento; el kit solo lo almacena y lo publica | Jellyfin sigue publicando el contenido médico general |
 
+</div>
+
 ### 3.2 Restricciones
+
+<div class="texto-normal">
 
 | Restricción | Consecuencia en el diseño |
 |---|---|
@@ -77,7 +83,11 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 | Sin Internet en sitio | Todo servicio esencial es local; las actualizaciones se aplican en base |
 | El equipo de red es prestado | Las configuraciones se versionan para poder reinstalarlas en cualquier momento |
 
+</div>
+
 ## 4. Decisiones de diseño
+
+<div class="texto-normal">
 
 | Decisión | Alternativas descartadas | Justificación |
 |---|---|---|
@@ -104,6 +114,8 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 | Portal cautivo **propio** en kit01. nginx sirve la página de aceptación y un script agrega la MAC del cliente a un set de nftables (8 h) | Portal de OPNsense; portal del AP | Al estar en la tabla `inet`, el mismo set autoriza IPv4 e IPv6. La página del portal sirve además de inicio con íconos hacia biblioteca, videos y registro |
 | **Administración remota segura.** kit01 se configura en remoto por NetBird sin tocar la WAN ni NetBird. Los cambios de red se aplican con `netplan generate` y `networkctl reload`, que reconfigura las interfaces sin bajar los enlaces y conserva las direcciones y rutas que no cambian, siempre con una restauración programada. nftables permite siempre NetBird (`wt0` y su tráfico de salida) y SSH, se valida con `nft -c` y se aplica con restauración programada. En sw01 cada cambio remoto se hace en Safe Mode de RouterOS | Configurar solo en sitio; `netplan apply` | Un error en un cambio remoto se deshace solo y no deja al equipo sin acceso |
 | **VM de prueba `prueba01`** conectada a `br-com` (VLAN 40) para validar en remoto DHCPv4, IPv6, DNS, portal y firewall desde la red de Comunidad | Probar solo con celulares en el sitio | Casi todas las pruebas de la Comunidad se repiten sin viajar |
+
+</div>
 
 ## 5. Arquitectura física
 
@@ -477,6 +489,8 @@ El enunciado no exige implementarla, pero sí documentarla. Queda documentada y 
 
 ## 14. Riesgos aceptados
 
+<div class="texto-normal">
+
 | Riesgo | Mitigación |
 |---|---|
 | kit01 es un punto único de falla, porque es el router y el hipervisor | Copias probadas, apagado ordenado, reconstrucción con Ansible y restauración. Un segundo nodo queda como evolución (sección 13.1) |
@@ -492,3 +506,5 @@ El enunciado no exige implementarla, pero sí documentarla. Queda documentada y 
 | El AP es de 2,4 GHz, 802.11n y con puerto de 100 Mb/s, así que con muchos celulares y video, el Wi-Fi se satura antes que cualquier otro componente | Videos a 480p, aislamiento de clientes y canal automático. Evolución hacia un AP de doble banda con puerto gigabit (sección 13.1) |
 | Un solo usuario de administración compartido (kit01, VMs, sw01 y AP) deja sin trazabilidad por persona, y el enunciado recomienda cuentas individuales | Riesgo aceptado por el tamaño del grupo y el alcance académico. Las contraseñas se registran en `ansible-vault`, nunca en los repositorios. Sin acceso directo de root; SSH solo desde las IPs de administración y NetBird; registro de accesos centralizado con la IP de origen. Evolución hacia cuentas individuales con llave SSH |
 | Hay una sola copia de respaldo y viaja con el kit, así que un robo, un incendio o un golpe se llevan los datos y el respaldo a la vez | El repositorio está cifrado y kit01 lo monta solo durante la copia. Un segundo disco que se rota y se queda en la base (regla 3-2-1) queda como evolución |
+
+</div>

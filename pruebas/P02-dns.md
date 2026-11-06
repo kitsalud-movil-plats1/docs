@@ -3,13 +3,11 @@
 ## Qué se prueba
 
 **Enunciado.** Se resuelve por nombre un servicio con registros A y AAAA y se accede sin escribir la IP. El enunciado (5.2) pide además demostrar conectividad extremo a extremo con ping, resolución DNS y acceso por IPv6.
-**Presentación.** Los servicios responden por nombre en IPv4 e IPv6.
-
 BIND9 en kit01 es autoritativo de `salud.movil` y recursivo para el kit, con la subzona `ad.salud.movil` delegada a Samba AD.
 
 ## Qué necesitas
 
-Un equipo en la Interna (Clínica) con IPv6, o hacerlo desde kit01 o una VM en remoto. Para el extremo a extremo IPv6 se usa la Interna, porque F-22 permite el eco ICMP desde ahí.
+Un equipo en la Interna (Clínica) con IPv6, o hacerlo desde kit01 o una VM en remoto. Para el extremo a extremo IPv6 se usa la Interna, porque el firewall permite el eco ICMP desde ahí.
 
 ## Paso a paso
 
@@ -54,7 +52,7 @@ En Windows, `nslookup biblioteca.salud.movil` muestra las dos direcciones; `ping
 
 - **El nombre da `127.0.0.1`.** Hay una línea en `/etc/hosts` del equipo. Comentarla.
 - **`dig` responde pero `ping -6` no.** El equipo no tiene IPv6 global (ver P1).
-- **`SERVFAIL` en `ad.salud.movil`.** Samba AD o el 53 de clinica01 (F-25). En clinica01, `systemctl status samba-ad-dc`.
+- **`SERVFAIL` en `ad.salud.movil`.** Samba AD o el 53 de clinica01. En clinica01, `systemctl status samba-ad-dc`.
 
 ## Evidencia
 

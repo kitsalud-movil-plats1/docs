@@ -3,9 +3,7 @@
 ## Qué se prueba
 
 **Enunciado.** Se elimina o modifica un recurso y se recupera desde un backup o snapshot.
-**Presentación.** Se borra un archivo y se recupera.
-
-kit01 hace una copia semanal con restic al disco USB (R11, D-10), con un snapshot por tipo (`config`, `recursos`, `bd` y `dominio`). La copia conserva dueños numéricos y ACL, así que el archivo restaurado vuelve con su dueño de AD.
+kit01 hace una copia semanal con restic al disco USB, con un snapshot por tipo (`config`, `recursos`, `bd` y `dominio`). La copia conserva dueños numéricos y ACL, así que el archivo restaurado vuelve con su dueño de AD.
 
 ## Qué necesitas
 

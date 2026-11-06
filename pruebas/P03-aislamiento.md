@@ -3,9 +3,7 @@
 ## Qué se prueba
 
 **Enunciado.** Un cliente de invitados intenta acceder a un servicio clínico o de administración y la conexión queda bloqueada.
-**Presentación.** La Comunidad no llega a pacientes ni a SSH.
-
-F-20 bloquea y registra todo lo que va de la Comunidad a la Interna, a clinica01 y a la gestión de kit01 (22 y `monitoreo`). El AP aísla además a los clientes entre sí (AP Isolation).
+El firewall bloquea y registra todo lo que va de la Comunidad a la Interna, a clinica01 y a la gestión de kit01 (22 y `monitoreo`). El AP aísla además a los clientes entre sí (AP Isolation).
 
 ## Qué necesitas
 

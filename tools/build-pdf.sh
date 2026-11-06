@@ -5,7 +5,7 @@
 # Requiere: pandoc >= 3, chromium (o google-chrome). La primera vez necesita
 # Internet para descargar la fuente Arimo desde Google Fonts.
 # Uso: tools/build-pdf.sh [-o salida.pdf] archivo.md [archivo.md...]
-#   tools/build-pdf.sh arquitectura/00-punto-de-partida.md
+#   tools/build-pdf.sh arquitectura/documento-arquitectura.md
 #   tools/build-pdf.sh -o evidencias/evidencias.pdf evidencias/README.md evidencias/P*.md
 set -euo pipefail
 

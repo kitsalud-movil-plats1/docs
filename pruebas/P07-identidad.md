@@ -3,13 +3,11 @@
 ## Qué se prueba
 
 **Enunciado.** Un usuario del directorio inicia sesión en al menos un recurso administrativo.
-**Presentación.** Un usuario del dominio entra a Grafana y a archivos.
-
 Samba AD (`ad.salud.movil`) en clinica01. El recurso SMB `archivos` solo admite al grupo `clinicos` y exige cifrado (SMB3). Grafana usa LDAPS contra el mismo dominio: `admins` entra como Admin y los demás no entran.
 
 ## Qué necesitas
 
-Un PC en la Clínica para `archivos`, y NetBird para Grafana (F-01 solo deja entrar a Grafana desde las IP de administración y NetBird; todavía no hay IP de administración reservadas). La contraseña de los usuarios de prueba del dominio.
+Un PC en la Clínica para `archivos`, y NetBird para Grafana (Grafana solo deja entrar desde las IP de administración y NetBird). La contraseña de los usuarios de prueba del dominio.
 
 ## Paso a paso
 
@@ -21,7 +19,7 @@ Un PC en la Clínica para `archivos`, y NetBird para Grafana (F-01 solo deja ent
 
 **Grafana.**
 
-1. Con NetBird activo en la laptop, abrir `https://monitoreo.salud.movil` (en la laptop de Melo, la línea de `monitoreo` en `/etc/hosts` apunta a `100.90.225.113`).
+1. Con NetBird activo en la laptop, abrir `https://monitoreo.salud.movil` (en la laptop de administración, la línea de `monitoreo` en `/etc/hosts` apunta a `100.90.225.113`).
 2. Entrar con `laura.gomez`. Entra como Admin y ve **Estado del kit**.
 3. Intentar con `ana.rojas`. No entra.
 

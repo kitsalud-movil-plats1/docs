@@ -25,7 +25,7 @@ Lo que solo se ve en el sitio (celulares en cada SSID, el aislamiento entre dos 
 | [P6](P06-clinica.md) | El personal clínico registra y consulta un paciente | sw01 y kit01 | Aprobada, 16 de 16 |
 | [P7](P07-identidad.md) | Los usuarios del directorio entran a los recursos de su grupo | sw01, `clinica01` y la consola de monitoreo | Aprobada, 10 de 10 |
 | [P8](P08-tiempo.md) | Los equipos toman la hora de kit01 | VMs, sw01 y `prueba01` | Aprobada, 9 de 9 |
-| [P9](P09-sin-internet.md) | Sin Internet todo lo local sigue funcionando | Corte simulado en kit01, con `prueba01` y sw01 | Aprobada, 40 de 40 |
+| [P9](P09-sin-internet.md) | Sin Internet todo lo local sigue funcionando | Corte simulado en kit01, con `prueba01` y sw01 | Aprobada, 51 de 51 |
 | [P10](P10-firewall-ipv6.md) | Por IPv6 se permite lo público y se bloquea lo clínico | `prueba01` y el registro de kit01 | Aprobada, 10 de 10 |
 | [P11](P11-restauracion.md) | Un archivo y una tabla se recuperan de la copia | Kit real y disco USB | Aprobada, 16 de 16 |
 | [P12](P12-reinicio.md) | Los servicios vuelven solos después de un reinicio | Reinicio de las dos VMs | Aprobada, 47 de 47, todo en verde a los 44 s |

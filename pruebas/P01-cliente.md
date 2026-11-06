@@ -3,20 +3,18 @@
 ## Qué se prueba
 
 **Enunciado.** El cliente obtiene IPv4, IPv6, DNS y gateway, y puede identificar su configuración.
-**Presentación.** Un celular de la Comunidad recibe dirección, ruta y DNS.
-
-El kit entrega IPv4 por Kea DHCPv4, IPv6 por SLAAC con el anuncio de radvd (prefijo `fd5a:fc7e:d716:40::/64`, gateway `fe80::1`) y el DNS IPv6 por DHCPv6 stateless (D-20).
+El kit entrega IPv4 por Kea DHCPv4, IPv6 por SLAAC con el anuncio de radvd (prefijo `fd5a:fc7e:d716:40::/64`, gateway `fe80::1`) y el DNS IPv6 por DHCPv6 stateless.
 
 ## Qué necesitas
 
-Un celular y, si se puede, un PC (Linux o Windows) que reciba IPv6 por Wi-Fi. La laptop de Melo no sirve para la parte IPv6: su tarjeta no recibe el multicast IPv6 del Wi-Fi (verificado con `tcpdump`, 0 paquetes ICMPv6).
+Un celular y, si se puede, un PC (Linux o Windows) que reciba IPv6 por Wi-Fi. Una laptop del grupo no sirve para la parte IPv6: su tarjeta no recibe el multicast IPv6 del Wi-Fi (verificado con `tcpdump`, 0 paquetes ICMPv6).
 
 ## Paso a paso
 
 1. Conectar el equipo a `SaludMovil-Comunidad` (abierta).
 2. Aceptar el portal si aparece (P5).
 3. Revisar la configuración con los comandos de abajo.
-4. Hacer ping al gateway en IPv4 e IPv6 (F-23 lo permite).
+4. Hacer ping al gateway en IPv4 e IPv6 (el firewall lo permite).
 
 ## Con el script
 

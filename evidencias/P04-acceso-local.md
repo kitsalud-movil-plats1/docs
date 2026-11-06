@@ -31,10 +31,10 @@ El mismo cliente de la prueba de aislamiento accede a la biblioteca y al formula
     SSL certificate verify ok.
 
 ## Prerregistro por IPv4
-  [ OK ]  IPv4 prerregistro enviado, código DPDV
+  [ OK ]  IPv4 prerregistro enviado, código VT6Y
 
 ## Prerregistro por IPv6
-  [ OK ]  IPv6 prerregistro enviado, código E66T
+  [ OK ]  IPv6 prerregistro enviado, código KMUJ
           Los códigos se buscan desde la Clínica en https://consultas.salud.movil
 
 Resultado: 10 bien y 0 con falla.
@@ -43,11 +43,11 @@ Resultado: 10 bien y 0 con falla.
 **Los prerregistros en la base de `clinica01`.**
 
 ```
-$ docker exec dhis2-db-1 psql -U dhis -d prerregistro -c "select codigo, nombres, apellidos, motivo, creado, atendido from prerregistros where codigo in ('DPDV','E66T')"
- codigo | nombres | apellidos | motivo  |       creado        | atendido
---------+---------+-----------+---------+---------------------+----------
- DPDV   | Prueba  | P4 IPv4   | CONTROL | 2026-11-02 21:55:45 | f
- E66T   | Prueba  | P4 IPv6   | CONTROL | 2026-11-02 21:55:45 | f
+$ docker exec dhis2-db-1 psql -U dhis -d prerregistro -c "select codigo, nombres, apellidos, tipo_documento, numero_documento, motivo, atendido from prerregistros where codigo in ('VT6Y','KMUJ')"
+ codigo | nombres | apellidos | tipo_documento | numero_documento | motivo  | atendido
+--------+---------+-----------+----------------+------------------+---------+----------
+ VT6Y   | Prueba  | P4 IPv4   | CC             | 99000004         | CONTROL | f
+ KMUJ   | Prueba  | P4 IPv6   | CC             | 99000006         | CONTROL | f
 (2 rows)
 ```
 
@@ -55,11 +55,11 @@ La hora de la base está en UTC (16:55 en Colombia). Desde la Clínica, `ana.roj
 
 ### IPv4
 
-La biblioteca (Kiwix), la página de la CA y el formulario respondieron 200, y los videos (Jellyfin) 302, que es la redirección de Jellyfin a su página de inicio. El formulario se abrió por HTTPS con el certificado verificado y el prerregistro enviado por IPv4 quedó guardado con el código `DPDV`.
+La biblioteca (Kiwix), la página de la CA y el formulario respondieron 200, y los videos (Jellyfin) 302, que es la redirección de Jellyfin a su página de inicio. El formulario se abrió por HTTPS con el certificado verificado y el prerregistro enviado por IPv4 quedó guardado con el código `VT6Y`.
 
 ### IPv6
 
-Los mismos servicios respondieron igual por IPv6 y el prerregistro enviado por IPv6 quedó guardado con el código `E66T`.
+Los mismos servicios respondieron igual por IPv6 y el prerregistro enviado por IPv6 quedó guardado con el código `KMUJ`.
 
 ## Interpretación
 

@@ -13,7 +13,7 @@
         <mxCell id="rb" value="&lt;b&gt;Uplink del sitio&lt;/b&gt; (fuera del kit)&lt;br&gt;en el laboratorio 192.168.160.0/24 · NAT a Internet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="515" y="110" width="290" height="50" as="geometry"/>
         </mxCell>
-        <mxCell id="nb" value="&lt;b&gt;Administrador remoto&lt;/b&gt; (NetBird, desarrollo)&lt;br&gt;túnel WireGuard sobre wan0 · solo SSH y monitoreo" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+        <mxCell id="nb" value="&lt;b&gt;Administrador remoto&lt;/b&gt; (NetBird)&lt;br&gt;túnel WireGuard sobre wan0 · solo SSH y monitoreo" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="1120" y="105" width="340" height="55" as="geometry"/>
         </mxCell>
         <mxCell id="kit" value="&lt;b&gt;kit01&lt;/b&gt; · Mini PC Beelink EQi12 (i3-1220P, 16 GB, SSD 500 GB, 2 NIC 1 GbE) · Ubuntu Server 24.04 · router, firewall e hipervisor KVM" style="rounded=1;arcSize=2;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=12;spacingTop=16;fontSize=15;strokeWidth=2;" vertex="1" parent="1">
