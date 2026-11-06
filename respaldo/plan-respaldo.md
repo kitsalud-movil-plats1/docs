@@ -6,7 +6,7 @@
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
-Este plan describe qué se respalda en el kit, cómo, cada cuánto, dónde queda y cómo se recupera cada cosa. kit01, el mini PC que hace de router e hipervisor, extrae una vez por semana los datos de sus dos máquinas virtuales (clinica01, con los datos clínicos y el dominio, y comunidad01, con los servicios para la comunidad) y los guarda cifrados con restic en un disco USB. Lo instalan los roles de Ansible `backups` (en kit01) y `backup_origen` (en las VMs).
+Este plan describe qué se respalda en el kit, cómo, cada cuánto, dónde queda y cómo se recupera cada cosa. kit01, el mini PC que hace de router e hipervisor, extrae una vez por semana los datos de sus dos máquinas virtuales (clinica01, con los datos clínicos y el dominio, y comunidad01, con los servicios para la comunidad) y los guarda cifrados con restic en un disco USB. Lo instalan los roles de Ansible `backups` (en kit01) y `backup_origen` (en las VMs). El plan define además una copia en línea, diseñada y sin implementar (sección 8), y la energía que necesitan las copias y el apagado (sección 9).
 
 ## 1. Objetivos de recuperación
 
@@ -73,7 +73,7 @@ kit01 extrae los datos de las VMs, que nunca los envían por su cuenta. kit01 en
 
 **Cifrado y clave.** restic cifra el repositorio (AES-256 y Poly1305). La clave está en `/etc/kitsalud/backup/restic.clave` de kit01 (`400`, root) y sale de `vault_restic_password` en el vault de Ansible del kit. El vault está cifrado en el repositorio y su contraseña solo está en las máquinas de control (`~/.config/kitsalud/vault-pass`). Sin la clave las copias no se pueden leer, así que la contraseña del vault se guarda además fuera de los equipos del kit.
 
-**Custodia.** El disco viaja con el kit. Hay una sola copia y está en el mismo lugar que los datos, así que un robo, un incendio o un golpe se llevan los dos. Es un riesgo aceptado por el alcance del proyecto.
+**Custodia.** El disco viaja con el kit. Hoy hay una sola copia y está en el mismo lugar que los datos, así que un robo, un incendio o un golpe se llevan los dos. Es un riesgo aceptado por el alcance del proyecto, y la copia en línea de la sección 8 es la forma de cerrarlo.
 
 ## 5. Procedimientos de restauración
 
@@ -186,8 +186,103 @@ Si kit01 no está, el repositorio se puede leer desde cualquier Linux con restic
 | Base `dhis2` completa en la base temporal `dhis2_restauracion` | Las 333 tablas con el mismo número de filas que la base viva (45 893 en total) y las mismas extensiones (PostGIS 3.5.2). `pg_restore` en 7,7 s. La base temporal se borró |
 | Dominio restaurado en un directorio temporal de clinica01 | Mismos usuarios, grupos y miembros de `clinicos` que el DC vivo, en 2,5 s. El DC en uso no cambió (`dbcheck` sin errores, `kinit` y sondas LDAPS en verde). Con `--newservername=dc01` falla (sección 5.4) |
 
-## 8. Límites conocidos
+## 8. Copia en línea
 
-- Una sola copia, en el mismo lugar que el kit. La evolución es un segundo disco que se rota y se queda en la base.
+**Estado.** Diseñada y sin implementar. No hay servidor, usuario ni credenciales, y este diseño no se ha probado.
+
+La copia del disco USB viaja con el kit. La copia en línea deja una tercera copia fuera del sitio y completa la regla 3-2-1, con los datos vivos, el disco USB y un servidor externo. Si se pierden el kit y el disco a la vez, los datos se recuperan desde ese servidor.
+
+### 8.1 Diseño
+
+| Elemento | Diseño |
+|---|---|
+| Destino | `rest-server` en un servidor de la organización de salud, por HTTPS en el puerto 443, con TLS, un usuario para el kit y modo solo agregar |
+| Qué se sube | Todos los snapshots del repositorio del disco USB (`config`, `recursos`, `bd` y `dominio`). Las imágenes Docker no se suben, porque están fuera del repositorio y se pueden descargar otra vez |
+| Método | `restic copy` desde kit01, con un repositorio y una clave propios. Los datos salen cifrados, así que el servidor no puede leerlos |
+| Cuándo | Un timer de kit01 revisa cada hora. Si `/run/kit-internet/modo` dice `con`, la UPS está en línea y hay snapshots sin subir, monta el disco, copia y desmonta |
+| Sin Internet | No intenta nada. Los snapshots quedan pendientes y suben cuando vuelve la conexión |
+| Si se corta a la mitad | `restic copy` solo envía lo que falta, así que la siguiente pasada continúa |
+| Retención | 4 semanales y 3 mensuales, igual que en el disco. La aplica el administrador en el servidor, porque kit01 no puede borrar |
+| Firewall | Sin cambios. kit01 ya puede salir a Internet por TCP 443, solo por IPv4, y las VMs no participan |
+| Credenciales | La clave del repositorio y la contraseña del usuario van en el vault de Ansible y en archivos de kit01 que solo lee root |
+| Falla | El servicio termina con error y aparece `UnidadFallida` en **Estado del kit** (Grafana) |
+
+**Protección.** Con el modo solo agregar, kit01 puede subir copias nuevas y no puede borrar ni cambiar las que ya están. Una falla o un atacante en kit01 no alcanza lo que ya se subió. Las VMs siguen sin credenciales. Si el kit se pierde o lo roban, sus credenciales quedan en el equipo, así que se revoca su usuario en el servidor y después se cambia la clave del repositorio.
+
+**Datos de pacientes.** El servidor guarda copias cifradas de datos sensibles, por eso la organización de salud aprueba el destino antes de activar la copia.
+
+```bash
+# En el servidor. La ruta y los certificados dependen de cada organización
+rest-server --path /srv/restic --append-only --private-repos \
+  --tls --tls-cert /etc/rest-server/cert.pem --tls-key /etc/rest-server/key.pem
+
+# Una sola vez, en kit01. Comparte los parámetros del repositorio local para deduplicar
+restic -r rest:https://kit01@respaldo.ejemplo.org/kit01/ init \
+  --from-repo /mnt/backup/restic --copy-chunker-params
+
+# En cada pasada, en kit01
+restic -r rest:https://kit01@respaldo.ejemplo.org/kit01/ copy \
+  --from-repo /mnt/backup/restic --from-password-file /etc/kitsalud/backup/restic.clave
+```
+
+### 8.2 Dimensionamiento
+
+Los tamaños salen del repositorio actual y los tiempos son estimados, sin contar la sobrecarga del protocolo.
+
+| Dato | Tamaño | A 2 Mb/s | A 10 Mb/s |
+|---|---|---|---|
+| Primera subida | 850 MiB | Cerca de 1 h | Unos 12 min |
+| Copia semanal sin cambios en los recursos | 5 MiB | Unos 20 s | Unos 4 s |
+| 10 GiB de videos nuevos en `contenido` | 10 GiB | Unas 12 h | Unas 2 h 20 min |
+
+La primera subida y las cargas grandes de `contenido` se hacen en la base. En campo, con un enlace débil, solo pasa lo que cambió en la semana. En el servidor bastan 1 vCPU, 1 GB de RAM y 20 GB de disco para empezar, y el disco crece con `contenido`.
+
+### 8.3 Recuperación
+
+La ventana de pérdida es la última copia que alcanzó a subir. En una misión sin Internet, lo registrado en campo solo está en el kit y en el disco USB hasta volver a tener conexión.
+
+```bash
+# Desde cualquier Linux con restic 0.16 o superior
+export RESTIC_REPOSITORY=rest:https://kit01@respaldo.ejemplo.org/kit01/
+export RESTIC_PASSWORD_FILE=<clave> RESTIC_REST_PASSWORD=<contraseña>
+restic snapshots
+restic restore latest --tag bd --target /tmp/r
+```
+
+Lo descargado se restaura con los procedimientos de la sección 5. Bajar el repositorio completo toma unos 12 min a 10 Mb/s, estimado. Si se perdió el kit, primero se reconstruye kit01 (sección 5.6), que toma medio día en la base.
+
+### 8.4 Para implementarla
+
+1. Preparar el servidor con `rest-server`, un certificado válido y el usuario `kit01`.
+2. Guardar las credenciales en el vault y agregar el timer al rol `backups`.
+3. Hacer la primera subida en la base.
+4. Probar que un archivo y una tabla se recuperan desde el servidor, y que `restic forget` desde kit01 es rechazado.
+
+## 9. Energía
+
+Las copias y el apagado ordenado dependen de tener energía. El kit no tiene UPS física, así que NUT simula la batería y las cifras de esta sección son estimadas. Ningún consumo se ha medido con un vatímetro.
+
+| Carga | Consumo | Cómo se obtiene |
+|---|---|---|
+| Típica | ≈ 47 W | Mini PC 25 W, switch 18 W y AP 4 W |
+| Diseño | ≈ 95 W | 136 W de las fuentes de los equipos, menos 30 % |
+| Pico estimado | ≈ 101 W | Mini PC 60 W, switch 36 W y AP 5,4 W |
+
+| Situación | Equipo | Alcance |
+|---|---|---|
+| Corte de energía | UPS de 1000 VA y 600 W, unos 70 Wh útiles | Cerca de 1 h 30 a carga típica y 45 min a carga de diseño |
+| Jornada de 8 h sin red eléctrica | Estación LiFePO4 de 1024 Wh, unos 870 Wh útiles | 376 Wh a carga típica y 760 Wh a carga de diseño |
+
+**Reserva para apagar.** La señal de batería baja se configura en el 20 %, unos 14 Wh. El peor caso del apagado son 7 minutos, con 180 s por VM y un minuto para kit01, y a carga de diseño usa unos 11 Wh. En las pruebas, cada VM cerró en menos de 5 s.
+
+**Cierre de una misión.** Primero la copia manual, que dura unos 15 s y usa menos de 1 Wh, y después `sudo kit-apagado`.
+
+**Corte durante una copia.** restic escribe el snapshot al final, así que una copia interrumpida no queda como válida. Con `Persistent=true`, la copia corre otra vez al arrancar kit01. Este caso no se ha probado con un corte real.
+
+**Copia en línea.** Solo corre con la UPS en línea, para no gastar batería en una subida.
+
+## 10. Límites conocidos
+
+- Hoy hay una sola copia, en el mismo lugar que el kit. La evolución es la copia en línea de la sección 8 y un segundo disco que se rota y se queda en la base.
 - Lo que cambia entre dos copias se pierde si falla el SSD de kit01 antes de la siguiente. La copia manual al cerrar cada misión reduce esa ventana.
 - La reconstrucción de una VM o de kit01 necesita Internet, así que en campo solo se restauran datos sobre equipos que funcionan.
