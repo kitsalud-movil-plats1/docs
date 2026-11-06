@@ -1,6 +1,6 @@
 # P7 - Identidad
 
-**Fecha.** 2026-11-02, de 17:11 a 17:13 (hora de Colombia) · **Entorno.** Kit real, en remoto por NetBird · **Versión.** `docs` `ddb5f1f`, `network` `1133967`, `platform` `025b11c`, `apps` `3969c3b`, `observability` `43b7ed6`
+**Entorno.** Kit real, en remoto por NetBird
 
 ## Qué se prueba
 
@@ -14,7 +14,6 @@ Un usuario del directorio inicia sesión en al menos un recurso administrativo.
 
 ```
 == P07 - Identidad
-Fecha 2026-11-02 17:11:44 -0500 · equipo melo-laptop · Linux
 
 ## Desde la Interna (sw01) hacia el 445 de clinica01
   [ OK ]  sw01 abre 10.20.20.11 puerto 445 (status: requesting)
@@ -47,7 +46,6 @@ Resultado: 8 bien y 0 con falla.
 
 ```
 == P07 - Identidad
-Fecha 2026-11-02 17:12:56 -0500 · equipo melo-laptop · Linux
 
 ## Grafana por NetBird (100.90.225.113)
           Raíz del kit tomada de kit01

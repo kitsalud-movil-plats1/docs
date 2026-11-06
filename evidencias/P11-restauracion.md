@@ -1,6 +1,6 @@
 # P11 - Restauración
 
-**Fecha.** 2026-11-02, de 10:46 a 11:10 (hora de Colombia) · **Entorno.** Kit real, en remoto por NetBird · **Versión.** `platform` `d655908`, `docs` `085fe07` (script `pruebas/scripts/P11-restauracion.sh`)
+**Entorno.** Kit real, en remoto por NetBird
 
 ## Qué se prueba
 
@@ -12,7 +12,6 @@ Se ejecutó el script de la prueba (`./scripts/P11-restauracion.sh`) en la máqu
 
 ```
 == P11 - Restauración
-Fecha 2026-11-02 10:46:45 -0500 · equipo melo-laptop · Linux
 
 ## 1. Estado antes de borrar
     10101:10001 660 4

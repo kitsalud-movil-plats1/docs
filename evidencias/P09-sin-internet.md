@@ -1,6 +1,6 @@
 # P9 - Pérdida de Internet
 
-**Fecha.** 2026-11-02, de 15:12 a 15:17 (hora de Colombia) · **Entorno.** Kit real, en remoto por NetBird, con el corte de Internet simulado · **Versión.** `docs` `92cd7a7`, `network` `1133967`, `platform` `025b11c`, `apps` `3969c3b`
+**Entorno.** Kit real, en remoto por NetBird, con el corte de Internet simulado
 
 ## Qué se prueba
 

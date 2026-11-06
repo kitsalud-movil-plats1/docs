@@ -1,6 +1,6 @@
 # P4 - Acceso público local
 
-**Fecha.** 2026-11-02, 16:55 (hora de Colombia) · **Entorno.** Kit real, en remoto por NetBird · **Versión.** `docs` `ddb5f1f`, `network` `1133967`, `platform` `025b11c`, `apps` `3969c3b`, `observability` `43b7ed6`
+**Entorno.** Kit real, en remoto por NetBird
 
 ## Qué se prueba
 
@@ -12,7 +12,6 @@ El mismo cliente de la prueba de aislamiento accede a la biblioteca y al formula
 
 ```
 == P04 - Acceso público local
-Fecha 2026-11-02 16:55:45 -0500 · equipo prueba01 · Linux
 
 ## IPv4
   [ OK ]  IPv4 biblioteca (Kiwix) (200)

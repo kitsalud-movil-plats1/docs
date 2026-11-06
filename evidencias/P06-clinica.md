@@ -1,6 +1,6 @@
 # P6 - Aplicación clínica
 
-**Fecha.** 2026-11-02, 17:09 (hora de Colombia) · **Entorno.** Kit real, en remoto por NetBird · **Versión.** `docs` `ddb5f1f`, `network` `1133967`, `platform` `025b11c`, `apps` `3969c3b`, `observability` `43b7ed6`
+**Entorno.** Kit real, en remoto por NetBird
 
 ## Qué se prueba
 
@@ -12,7 +12,6 @@ Un usuario autorizado accede al sistema de pacientes y registra o consulta un da
 
 ```
 == P06 - Aplicación clínica
-Fecha 2026-11-02 17:09:18 -0500 · equipo melo-laptop · Linux
 
 ## Desde la Interna (sw01) hacia clinica01
   [ OK ]  sw01 abre 10.20.20.11 puerto 443 (Caddy responde: failure: Fetch failed with status 400)

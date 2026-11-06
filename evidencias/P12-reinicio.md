@@ -1,6 +1,6 @@
 # P12 - Reinicio
 
-**Fecha.** 2026-11-02, de 16:28 a 16:40 (hora de Colombia) · **Entorno.** Kit real, en remoto por NetBird · **Versión.** `docs` `a0a1452`, `network` `1133967`, `platform` `025b11c`, `apps` `3969c3b`, `observability` `43b7ed6`
+**Entorno.** Kit real, en remoto por NetBird
 
 ## Qué se prueba
 

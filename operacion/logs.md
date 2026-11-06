@@ -159,4 +159,4 @@ Las copias anteriores se leen con `zgrep` (por ejemplo `sudo zgrep "fw-drop F-20
 
 ## Comprobación hecha en el kit
 
-El 4 de noviembre de 2026 se ejecutaron en kit01 todos los comandos de este procedimiento y las salidas de ejemplo son las que dieron. En ese momento el log central ocupaba 16 MB de clinica01, 23 MB de comunidad01, 36 MB de kit01 y 60 KB de sw01, más 55 MB de consultas DNS. El bloqueo de una cuenta de prueba del dominio por 5 contraseñas equivocadas quedó en el log central con su hora.
+Se ejecutaron en kit01 todos los comandos de este procedimiento y las salidas de ejemplo son las que dieron. En ese momento el log central ocupaba 16 MB de clinica01, 23 MB de comunidad01, 36 MB de kit01 y 60 KB de sw01, más 55 MB de consultas DNS. El bloqueo de una cuenta de prueba del dominio por 5 contraseñas equivocadas quedó en el log central con su hora.

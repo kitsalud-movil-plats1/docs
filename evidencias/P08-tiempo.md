@@ -1,6 +1,6 @@
 # P8 - Tiempo
 
-**Fecha.** 2026-11-02, 17:15 (hora de Colombia) · **Entorno.** Kit real, en remoto por NetBird · **Versión.** `docs` `ddb5f1f`, `network` `1133967`, `platform` `025b11c`, `apps` `3969c3b`, `observability` `43b7ed6`
+**Entorno.** Kit real, en remoto por NetBird
 
 ## Qué se prueba
 
@@ -12,7 +12,6 @@ Dos o más nodos muestran sincronización con el servicio NTP interno.
 
 ```
 == P08 - Tiempo
-Fecha 2026-11-02 17:15:02 -0500 · equipo melo-laptop · Linux
 
 ## kit01, servidor NTP
     Reference ID    : BB31BC09 (187.49.188.9)

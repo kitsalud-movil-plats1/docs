@@ -1,6 +1,6 @@
 # P13 - Diagnóstico
 
-**Fecha.** 2026-11-02, de 15:19 a 15:30 (hora de Colombia) · **Entorno.** Kit real, en remoto por NetBird · **Versión.** `docs` `aed2acf`, `observability` `43b7ed6`, `platform` `025b11c`, `apps` `3969c3b`
+**Entorno.** Kit real, en remoto por NetBird
 
 ## Qué se prueba
 

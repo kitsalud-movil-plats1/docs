@@ -302,7 +302,7 @@ PostgreSQL (5432) corre en Docker, que publica el puerto con sus propias reglas 
 
 ## 12. Cómo se verificó
 
-Todo se revisó en el kit real el 2 de noviembre de 2026.
+Todo se revisó en el kit real.
 
 | Qué se comprobó | Cómo | Resultado |
 |---|---|---|

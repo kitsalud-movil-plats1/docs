@@ -92,7 +92,7 @@ En menos de un minuto el tablero vuelve a **Problemas ahora** en 0 y todos los s
 
 ## Prueba hecha en el kit
 
-El 4 de noviembre de 2026 se pasó el kit a "Solo clínica" y se volvió al perfil de referencia, sin tocar el Wi-Fi, que se cambia en el sitio.
+En el kit se pasó a "Solo clínica" y se volvió al perfil de referencia, sin tocar el Wi-Fi, que se cambia en el sitio.
 
 | Paso | Resultado |
 |---|---|
