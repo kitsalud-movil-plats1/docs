@@ -268,6 +268,8 @@ El set, la redirección y las reglas que lo usan están en la tabla `inet filtro
 
 Sin Internet, los sistemas operativos no pueden comprobar la conectividad, porque sus nombres de prueba (`connectivitycheck.gstatic.com`, `captive.apple.com` y otros) no resuelven. Para eso kit01 revisa cada 30 s si los reenviadores de BIND9 responden y, con dos fallos seguidos, activa una zona RPZ que responde a la Comunidad cualquier nombre externo con la IP del portal (TTL de 30 s). La Interna, los servidores y las zonas del kit no cambian. Con esa respuesta, el celular abre el portal solo y cualquier dirección por HTTP termina en él, con las condiciones o con el menú según si ya aceptó. Cuando vuelve Internet, la zona queda vacía. El HTTPS externo no se puede redirigir. La página del portal también sirve de **inicio con íconos** hacia biblioteca, videos y registro.
 
+**Estado de los servicios.** El menú del portal muestra a la comunidad la biblioteca, los videos, el prerregistro y la red del kit, en verde, amarillo o rojo según las sondas de Prometheus. Con una falla pide avisar al personal de la brigada. La respuesta no trae direcciones ni nombres internos, y Prometheus sigue accesible solo desde kit01.
+
 ### 6.5 Dependencias entre servicios (orden de arranque)
 
 1. En kit01, red (netplan), nftables, Kea, radvd, BIND9, Chrony, portal.
