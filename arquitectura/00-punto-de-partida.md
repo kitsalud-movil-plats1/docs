@@ -2,7 +2,7 @@
 
 # Kit móvil de atención primaria en salud
 
-## Documento de arquitectura inicial (punto de partida) - v0.33
+## Documento de arquitectura inicial (punto de partida) - v0.34
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
@@ -245,7 +245,7 @@ table inet filtro {
 
 El set, la redirección y las reglas que lo usan están en la tabla `inet filtro`, porque un set solo se usa dentro de su tabla. Así el portal falla cerrado, porque sin el set nadie de la Comunidad pasa de kit01. El set arranca vacío, así que después de un reinicio cada cliente acepta otra vez. Aplicar el firewall conserva las MAC autorizadas con el tiempo que les queda.
 
-Sin Internet, los sistemas operativos no pueden comprobar la conectividad y a veces no abren el portal solos. Basta con abrir en el navegador una dirección local por HTTP, como `http://portal.salud.movil` o `http://biblioteca.salud.movil`, y la redirección lleva al portal (R-04). La página del portal también sirve de **inicio con íconos** hacia biblioteca, videos y registro.
+Sin Internet, los sistemas operativos no pueden comprobar la conectividad, porque sus nombres de prueba (`connectivitycheck.gstatic.com`, `captive.apple.com` y otros) no resuelven. Para eso kit01 revisa cada 30 s si los reenviadores de BIND9 responden y, con dos fallos seguidos, activa una zona RPZ que responde a la Comunidad cualquier nombre externo con la IP del portal (TTL de 30 s). La Interna, los servidores y las zonas del kit no cambian. Con esa respuesta, el celular abre el portal solo y cualquier dirección por HTTP termina en él, con las condiciones o con el menú según si ya aceptó. Cuando vuelve Internet, la zona queda vacía (R-04). El HTTPS externo no se puede redirigir. La página del portal también sirve de **inicio con íconos** hacia biblioteca, videos y registro.
 
 ### 6.5 Dependencias entre servicios (orden de arranque)
 
@@ -507,7 +507,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | R-01 | kit01 es un punto único de falla, porque es el router y el hipervisor | Backups probados, apagado ordenado, reconstrucción con Ansible y restauración (P11). Segundo nodo como evolución (13.1) |
 | R-02 | sw01 es un router (CCR2004), y un error de configuración (una dirección en otra VLAN o el reenvío activado) lo haría enrutar entre VLAN y el tráfico se saltaría nftables | Reenvío IPv4 e IPv6 desactivado y una sola dirección (la de gestión), comprobados en cada cambio (`/ip settings print`, `/ip address print`); configuración exportada (`/export`) y versionada |
 | R-03 | DHIS2 consume mucha RAM | Heap limitado a 2 GB y contenedores con límite de 6 GB. La prueba de humo en clinica01 (apps#1) mostró un pico de unos 2 GB con 5 usuarios a la vez, así que se mantiene el perfil de referencia. Las tablas analíticas, con unos 220 pacientes y 320 consultas, se generan en 5 s con un pico de 1,9 GB en DHIS2, dentro de su límite. Si con más datos no alcanza, perfil "+1 equipo" (10.4) |
-| R-04 | El portal cautivo es código propio y la detección de portal falla sin Internet | Lógica mínima (una página, un script y un set de nftables). Sin Internet, el cliente abre una dirección local por HTTP y llega al portal. Pruebas con celulares en la visita |
+| R-04 | El portal cautivo es código propio y la detección de portal falla sin Internet | Lógica mínima (una página, un script y un set de nftables). Sin Internet, una zona RPZ de BIND9 responde a la Comunidad cualquier nombre externo con la IP del portal, así el celular lo detecta. Pruebas con celulares en la sustentación |
 | R-05 | Actualizaciones sin Internet | No se actualiza en campo. Se actualiza en base, en una ventana documentada en E3, con snapshot previo de cada VM. Imágenes Docker con versión fija, guardadas con `docker save` en el disco USB |
 | R-06 | La red Interna mezcla personal clínico y administración, así que el switch y el AP son alcanzables dentro de la VLAN y una IP de administración se puede suplantar | Servicios de gestión de sw01 limitados por dirección (`/ip service`), DHCP snooping, RA multicast descartados en los puertos de acceso (los unicast no se pueden filtrar en sw01), SSH solo desde las IPs de administración y NetBird, reservas por MAC y registro de accesos. Para crecer, se separa la VLAN de gestión (13.1) |
 | R-07 | La laptop del perfil "+1 equipo" puede no estar disponible | Solo aloja comunidad01, el servicio menos crítico (10.2). Se vuelve al perfil de referencia |
@@ -601,3 +601,4 @@ El enunciado no exige implementarla, pero sí documentarla. Queda **documentada 
 | v0.31 | 2026-10-30 | Backups semanales con retención de 4 semanales y 3 mensuales, comando forzado en las VMs y un snapshot por tipo (R11, 10.2, 10.6) |
 | v0.32 | 2026-11-02 | Plan de respaldo (E5) con objetivos de recuperación y copia manual al cerrar cada misión (10.6), y riesgo de la copia única (R-15) |
 | v0.33 | 2026-11-02 | UPS lógica con `kit-ups`, vuelta a `OL` en cada arranque, espera de 180 s por VM y simulacro sin apagar kit01 (13) |
+| v0.34 | 2026-11-04 | Sin Internet, una zona RPZ de BIND9 lleva a la Comunidad al portal con cualquier nombre externo (6.4, R-04) |

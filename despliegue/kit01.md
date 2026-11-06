@@ -81,7 +81,7 @@ Todos se ejecutan desde `kitsalud/platform/ansible`, en este orden y uno por vez
 | 1 | `ansible-playbook playbooks/comun.yml -l kit01` | Usuario `kitsalud` en los grupos `libvirt` y `kvm`, SSH sin root y zona horaria `America/Bogota` | Es la base de todo lo demás |
 | 2 | `ansible-playbook playbooks/kit01.yml` | Nombre `kit01.salud.movil`, QEMU/KVM y libvirt, la red `default` de libvirt apagada y NetBird retenido | La red `default` de libvirt tiene que estar apagada antes del firewall, porque trae su propio NAT |
 | 3 | `ansible-playbook playbooks/red-kit01.yml` (ver abajo) | Firewall con nftables, VLAN, bridges de las VMs y de la Comunidad, direcciones IPv4 e IPv6 y reenvío | Los servicios que siguen escuchan en las direcciones que crea este paso |
-| 4 | `ansible-playbook playbooks/dns.yml` | BIND9 con la zona `salud.movil` y sus inversas, recursivo para el kit | Las VMs resuelven nombres con él desde el primer arranque |
+| 4 | `ansible-playbook playbooks/dns.yml` | BIND9 con la zona `salud.movil` y sus inversas, recursivo para el kit, y la revisión de Internet que sin conexión lleva la Comunidad al portal | Las VMs resuelven nombres con él desde el primer arranque |
 | 5 | `ansible-playbook playbooks/ntp.yml` | Chrony como servidor de hora del kit, que sigue sirviendo hora sin Internet | Las VMs, sw01 y el dominio necesitan la misma hora |
 | 6 | `ansible-playbook playbooks/dhcp.yml` | Kea DHCPv4, Kea DHCPv6 sin estado y radvd en la Interna y en la Comunidad | Los clientes reciben dirección, DNS y hora |
 | 7 | `ansible-playbook playbooks/portal.yml` | nginx con el portal cautivo y el servicio que autoriza a cada cliente de la Comunidad | La redirección y el set de clientes ya los puso el firewall |
@@ -135,7 +135,7 @@ ansible kit01 -b -m shell -a 'ip -br addr; nft list tables; sysctl net.ipv4.ip_f
 | Acceso remoto | `netbird` 0.80.0, retenido | La de NetBird, sin cambios | `netbird` |
 | Firewall | `nftables` del sistema | `/etc/nftables.conf`, `/etc/nftables/quitar.nft`, `/etc/systemd/system/nftables.service.d/kit01.conf` | `nftables` |
 | Red | `netplan.io` del sistema | `/etc/netplan/50-cloud-init.yaml`, `/etc/sysctl.d/60-kit01-router.conf` | `systemd-networkd` |
-| DNS | `bind9` 9.18.39, retenido | `/etc/bind/named.conf.options`, `/etc/bind/named.conf.local`, `/etc/bind/zonas/` | `named` |
+| DNS | `bind9` 9.18.39, retenido | `/etc/bind/named.conf.options`, `/etc/bind/named.conf.local`, `/etc/bind/zonas/`, zona RPZ activa en `/var/lib/bind/sin-internet.rpz` y `/usr/local/sbin/kit-internet` | `named`, `kit-internet.timer` (sin Internet, manda la Comunidad al portal) |
 | Hora | `chrony` 4.5, retenido | `/etc/chrony/chrony.conf` | `chrony` |
 | DHCP e IPv6 | `kea-dhcp4-server` y `kea-dhcp6-server` 2.4.1, `radvd` 2.19, retenidos | `/etc/kea/kea-dhcp4.conf`, `/etc/kea/kea-dhcp6.conf`, `/etc/radvd.conf` | `kea-dhcp4-server`, `kea-dhcp6-server`, `radvd` |
 | Portal cautivo | `nginx` 1.24.0, retenido | `/etc/nginx/conf.d/kitsalud.conf`, `/etc/nginx/sites-available/portal`, `/usr/local/lib/kitsalud-portal/portal.py`, `/usr/share/kitsalud-portal/` | `nginx`, `kitsalud-portal` |

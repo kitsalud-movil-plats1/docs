@@ -60,14 +60,29 @@ seccion "2. Corte de Internet"
 remoto kit01 "nft -c -f /run/$TABLA.nft && nft -f /run/$TABLA.nft && systemd-run --quiet --collect --on-active=900 --unit=fin-$TABLA nft delete table inet $TABLA && date +%T" | sed 's/^/    corte aplicado a las /'
 comprobar "Tabla del corte activa" "table inet $TABLA" "$(remoto kit01 "nft list tables | grep $TABLA")"
 bien "NetBird sigue: esta máquina de control sigue entrando a kit01"
-nota "Se borra sola a los 15 min (fin-$TABLA.timer). Esperando 60 s"
-sleep 60
+nota "Se borra sola a los 15 min (fin-$TABLA.timer). Esperando que kit01 note el corte"
+# kit-internet revisa cada 30 s y cambia de modo con dos fallos seguidos
+for i in $(seq 1 24); do
+  [ "$(remoto kit01 "cat /run/kit-internet/modo" | tail -1)" = sin ] && break; sleep 5
+done
+comprobar "kit01 pasó a modo sin Internet" sin "$(remoto kit01 "cat /run/kit-internet/modo" | tail -1)"
+remoto kit01 "journalctl -t kit-internet -n1 -o cat" | sed 's/^/    /'
 
 seccion "3. Lo externo falla"
 comprobar "clinica01 hacia https://www.google.com" "sin conexión" "$(http clinica01 4 https://www.google.com)"
 comprobar "prueba01 hacia https://www.google.com" "sin conexión" "$(http prueba01 4 https://www.google.com)"
 EXTERNO=$(remoto kit01 "dig @10.20.20.10 prueba-p9-\$(date +%s).wikipedia.org +time=3 +tries=1 | grep -oE 'status: [A-Z]+|timed out' | head -1")
 if echo "$EXTERNO" | grep -qE 'SERVFAIL|timed out'; then bien "Un nombre externo no resuelve ($EXTERNO)"; else mal "Un nombre externo resolvió ($EXTERNO)"; fi
+# La Comunidad recibe el portal para cualquier nombre; la Interna y las VMs no
+NOMBRE=prueba-p9-$(date +%s).example.org
+comprobar "prueba01 (Comunidad), $NOMBRE A" 10.20.40.1 "$(remoto prueba01 "dig +short +time=3 +tries=1 $NOMBRE A" | tail -1)"
+comprobar "prueba01 (Comunidad), $NOMBRE AAAA" fd5a:fc7e:d716:40::1 "$(remoto prueba01 "dig +short +time=3 +tries=1 $NOMBRE AAAA" | tail -1)"
+comprobar "prueba01, pacientes.$DOMINIO sigue igual" 10.20.20.11 "$(remoto prueba01 "dig +short pacientes.$DOMINIO A" | tail -1)"
+comprobar "clinica01 (servidores), $NOMBRE no resuelve" "" "$(remoto clinica01 "dig +short +time=3 +tries=1 $NOMBRE A" | tail -1)"
+comprobar "sw01 (Interna), $NOMBRE no resuelve" "" "$(en_sw01 ":do { :put [:resolve domain-name=$NOMBRE server=10.20.20.10] } on-error={ :put \"\" }" | tr -d '\r' | tail -1)"
+for f in 4 6; do
+  comprobar "IPv$f detección de Android sin aceptar lleva al portal" "http://portal.$DOMINIO/" "$(remoto prueba01 "curl -$f -s -o /dev/null -m 8 -w '%{redirect_url}' http://connectivitycheck.gstatic.com/generate_204" | tail -1)"
+done
 echo "    Contadores del corte:"; remoto kit01 "nft list table inet $TABLA | grep -oE '(oifname|udp|tcp|meta).*packets [0-9]+'" | sed 's/^/      /'
 
 seccion "4. DNS y hora del kit"
@@ -98,12 +113,13 @@ for f in 4 6; do
 done
 remoto prueba01 "curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Host: portal.$DOMINIO' http://10.20.40.1/aceptar" | tail -1 | grep -q 303 && bien "Portal aceptado sin Internet" || mal "No se pudo aceptar el portal"
 remoto prueba01 "curl -s -m 8 -o /tmp/raiz-kit.crt http://ca.$DOMINIO/raiz.crt" >/dev/null
+comprobar "Detección de iOS con el portal aceptado lleva al portal" "http://portal.$DOMINIO/" "$(remoto prueba01 "curl -s -o /dev/null -m 8 -w '%{redirect_url}' http://captive.apple.com/hotspot-detect.html" | tail -1)"
 for f in 4 6; do
   en "IPv$f biblioteca" "200 302" "$(http prueba01 $f "http://biblioteca.$DOMINIO/")"
   en "IPv$f videos" "200 302" "$(http prueba01 $f "http://videos.$DOMINIO/")"
   en "IPv$f registro (HTTPS con la raíz del kit)" "200 302" "$(http prueba01 $f "https://registro.$DOMINIO/" --cacert /tmp/raiz-kit.crt)"
 done
-CODIGO=$(remoto prueba01 "curl -s -m 10 --cacert /tmp/raiz-kit.crt -d nombres=Prueba -d apellidos=SinInternet -d tipo_documento=NINGUNO -d motivo=CONTROL -d autoriza_datos=si https://registro.$DOMINIO/ | grep -oE 'class=\"codigo\"[^>]*>[A-Z0-9]{4}' | grep -oE '[A-Z0-9]{4}\$'")
+CODIGO=$(remoto prueba01 "curl -s -m 10 --cacert /tmp/raiz-kit.crt -d nombres=Prueba -d apellidos=SinInternet -d tipo_documento=CC -d numero_documento=99000009 -d motivo=CONTROL -d autoriza_datos=si https://registro.$DOMINIO/ | grep -oE 'class=\"codigo\"[^>]*>[A-Z0-9]{4}' | grep -oE '[A-Z0-9]{4}\$'")
 CODIGO=$(echo "$CODIGO" | tail -1)
 if [ -n "$CODIGO" ] && [ "$(remoto clinica01 "$PSQL \"select count(*) from prerregistros where codigo = '$CODIGO'\"")" = 1 ]; then
   bien "Prerregistro enviado sin Internet y guardado en clinica01 (código $CODIGO)"
@@ -119,6 +135,13 @@ seccion "8. Fin del corte"
 comprobar "Tabla del corte borrada" 0 "$(remoto kit01 "nft delete table inet $TABLA; systemctl stop fin-$TABLA.timer 2>/dev/null; rm -f /run/$TABLA.nft; nft list tables | grep -c $TABLA || true" | tail -1)"
 sleep 5
 comprobar "clinica01 llega a Internet otra vez" 200 "$(http clinica01 4 https://www.google.com)"
+for i in $(seq 1 24); do
+  [ "$(remoto kit01 "cat /run/kit-internet/modo" | tail -1)" = con ] && break; sleep 5
+done
+comprobar "kit01 volvió a modo con Internet" con "$(remoto kit01 "cat /run/kit-internet/modo" | tail -1)"
+sleep 31   # lo que dura en caché la respuesta del portal
+R=$(remoto prueba01 "dig +short +time=3 +tries=1 wikipedia.org A" | tail -1)
+if [ -n "$R" ] && [ "$R" != 10.20.40.1 ]; then bien "prueba01 resuelve wikipedia.org normalmente ($R)"; else mal "prueba01 no resuelve wikipedia.org (${R:-nada})"; fi
 [ -n "$CODIGO" ] && remoto clinica01 "$PSQL \"delete from prerregistros where codigo = '$CODIGO' and apellidos = 'SinInternet'\"" >/dev/null && bien "Prerregistro de prueba borrado"
 remoto kit01 "nft 'destroy element inet filtro portal_ok { $MAC_PRUEBA01 }'; virsh -c qemu:///system shutdown prueba01" >/dev/null && bien "prueba01 sin portal y apagándose"
 terminar
