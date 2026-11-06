@@ -16,6 +16,22 @@ Una brigada de salud debe desplegar en sitio una infraestructura pequeña que pr
 
 El criterio que guía el diseño es el del enunciado, que pide construir una plataforma **pequeña, segura, reproducible y útil** con la menor cantidad de tecnologías posible. Por eso hay un solo sistema operativo (Ubuntu Server 24.04) en el host y en las VMs, dos VLAN físicas, dos VMs y, para cada requisito, la herramienta más simple que lo cumple.
 
+### 1.1 Usuarios, necesidades y aplicaciones
+
+Cada necesidad tiene una aplicación, un nombre fácil de recordar y una red desde donde se usa.
+
+| Usuario | Necesidad | Aplicación | Nombre | Corre en | Red |
+|---|---|---|---|---|---|
+| Personal de salud | Registrar y seguir pacientes | DHIS2 | `pacientes.salud.movil` | clinica01 | Interna |
+| Personal de salud | Ver los prerregistros y marcar a quién se atendió | Consulta de prerregistros | `consultas.salud.movil` | clinica01 | Interna |
+| Personal de salud | Compartir documentos | Recursos SMB de Samba | `archivos.salud.movil` | clinica01 | Interna |
+| Personal técnico | Ver el estado, las métricas y los logs | Grafana, Prometheus y rsyslog | `monitoreo.salud.movil` | kit01 | Direcciones de administración o NetBird |
+| Personal técnico | Configurar, respaldar y recuperar | SSH, Ansible y restic | `kit01` | kit01 | Direcciones de administración o NetBird |
+| Comunidad y visitantes | Conectarse al Wi-Fi | Portal cautivo | `portal.salud.movil` | kit01 | Comunidad |
+| Comunidad y visitantes | Consultar literatura y contenido educativo | Kiwix | `biblioteca.salud.movil` | comunidad01 | Comunidad |
+| Comunidad y visitantes | Ver videos y escuchar audio | Jellyfin | `videos.salud.movil` | comunidad01 | Comunidad |
+| Pacientes en sala de espera | Llenar el prerregistro desde su celular | Formularios | `registro.salud.movil` | comunidad01, y guarda en clinica01 | Comunidad |
+
 ## 2. Requisitos y pruebas
 
 ### 2.1 Requisitos técnicos
@@ -101,6 +117,7 @@ El criterio que guía el diseño es el del enunciado, que pide construir una pla
 | Contenido comunitario con **Kiwix** (biblioteca de salud y contenido infantil) y **Jellyfin** (audio y video de contenido médico general y para la comunidad) | Kolibri; solo Kiwix | Jellyfin publica cualquier carpeta de audio o video sin preparación previa. Kolibri requiere Kolibri Studio (con Internet) para el contenido propio |
 | Observabilidad con **Prometheus, Grafana y rsyslog en kit01** | Zabbix; Loki; monitoreo dentro de una VM | Permite diagnosticar aunque una VM se caiga. Sin Internet no hay a dónde enviar alertas, así que se revisan en Grafana |
 | Backups con **restic en modelo pull**. kit01 extrae por SSH los dumps de cada VM y los guarda cifrados en un disco USB | rest-server append-only; push por SFTP | Las VMs no tienen credenciales del repositorio de backups. Es otro medio físico y se desmonta al terminar. Se respaldan datos y configuraciones, no imágenes de VM |
+| **Copia en línea** con `restic copy` hacia `rest-server` en modo solo agregar, en un servidor de la organización de salud. Diseñada y sin implementar | Almacenamiento S3 de un proveedor externo; segundo disco como única copia externa | Saca una copia del lugar donde está el kit sin abrir puertos, porque kit01 ya sale por TCP 443. Con solo agregar, un kit comprometido no puede borrar lo que ya subió, y los datos salen cifrados desde kit01 |
 | IPv4 `10.20.<id>.0/24`, gateway `.1` | `192.168.<id>.0/24` | Evita solaparse con las redes del uplink (`192.168.x`, como `192.168.160.0/24` en el laboratorio) y se resume en una sola regla `10.20.0.0/16` |
 | IPv6 **ULA `fd5a:fc7e:d716::/48`** con un /64 por segmento; sin GUA | Solo GUA; `2001:db8::/32` | Direcciones estables sin Internet. `2001:db8::/32` es solo para documentación (RFC 3849) |
 | **Dos NIC sin renombrar.** `wan0` (`enp170s0`) va al uplink y `lan0` (`enp171s0`) es el trunk 802.1Q hacia el switch. `wan0` y `lan0` son nombres de rol en este documento, y la configuración usa los nombres del kernel, que se mantienen entre reinicios | WAN como VLAN 900 en el trunk; renombrar las NIC por MAC | El Beelink EQi12 tiene dos NIC de 1 GbE, así que la WAN queda separada físicamente y desaparece una VLAN. Renombrarlas exigiría un reinicio que, si fallara, cortaría la WAN y el acceso remoto por NetBird sin aportar nada al kit |
@@ -175,6 +192,20 @@ El AP (firmware 3.16.9) trabaja en modo Multi-SSID con VLAN. El tráfico de cada
 ### 5.4 Diagrama físico
 
 <div class="diagrama-fisico"><img src="../diagramas/diagrama-fisico.png" alt="Diagrama físico del kit"></div>
+
+### 5.5 Equipos recomendados
+
+El kit usa los equipos disponibles para el proyecto. Para un despliegue real se recomiendan estos cambios. kit01 se conserva, y los valores salen de las fichas de cada fabricante.
+
+| Componente | En el kit | Recomendado | Por qué |
+|---|---|---|---|
+| UPS | Lógica, con NUT | APC Back-UPS BX1000M (1000 VA, 600 W, 120 V, USB HID) | Protege el kit ante un corte y avisa cuándo apagar. Se conecta por USB y solo cambia el driver de NUT, lo que se comprueba al instalarla |
+| Energía en campo | Ninguna | Estación LiFePO4 de 1 kWh, como EcoFlow DELTA 2 (1024 Wh, unos 12 kg) | Mantiene el kit una jornada completa en un sitio sin red eléctrica |
+| Punto de acceso | TL-WA801ND, 2,4 GHz y 100 Mb/s | TP-Link EAP650 (Wi-Fi 6 de doble banda, puerto de 1 GbE, PoE 802.3at, VLAN por SSID y VLAN de gestión) | Quita el cuello de botella del Wi-Fi y permite separar la gestión |
+| Switch | CCR2004, un router de 16 puertos usado en capa 2 | Switch gestionable de 8 puertos con PoE+, como TP-Link TL-SG2210P | Más liviano, y alimenta el AP sin inyector. Antes de comprarlo se comprueba en su ficha el soporte de DHCP snooping y de filtrado de RA |
+| Disco de copias | Disco de 2,5" a 7200 rpm | Dos SSD USB de 1 TB | Un SSD resiste mejor los golpes del transporte. Uno viaja con el kit y el otro se queda en la base |
+| Memoria de kit01 | 16 GB en dos módulos de 8 GB | 32 GB en dos módulos | Da margen para el crecimiento de clinica01. El equipo reporta hasta 64 GB |
+| Transporte | Sin definir | Maleta rígida con espuma | Protege los equipos en el viaje. El kit se opera fuera de la maleta para que se ventile |
 
 ## 6. Arquitectura lógica
 
@@ -401,9 +432,30 @@ La copia corre el domingo de madrugada. En cada VM la llave de kit01 solo entra 
 
 Además de la copia semanal, se hace una copia manual antes de cada cambio y al cerrar cada misión, así que se pierde como máximo una semana de datos.
 
+**Copia en línea.** Está diseñada y sin implementar. Cuando kit01 detecta Internet y la UPS está en línea, sube los snapshots pendientes con `restic copy` a un `rest-server` de la organización de salud, por HTTPS y en modo solo agregar. Los datos salen cifrados y no hace falta abrir puertos, porque kit01 ya sale por TCP 443. La primera subida son 850 MiB, unos 12 minutos a 10 Mb/s, y cada semana sin cambios en los recursos son unos 5 MiB.
+
 ### 10.7 Acceso remoto
 
 NetBird corre solo en kit01 (interfaz `wt0`, red `100.64.0.0/10`, que no se solapa con `10.20.0.0/16`). En nftables, `wt0` es una zona más que solo admite SSH a kit01 y HTTPS a `monitoreo`. A las VMs, al switch y al AP se llega con `ssh -J kit01`. La clave de registro de NetBird nunca se versiona. NetBird queda fuera de la operación en campo, porque sin Internet no está disponible y el kit no lo necesita.
+
+### 10.8 Requerimientos de software
+
+Todo sale de los repositorios del Ubuntu o de imágenes con versión fija, así que el mismo kit se puede reconstruir. Son las versiones instaladas en el kit.
+
+| Dónde | Función | Software y versión |
+|---|---|---|
+| Todos | Sistema operativo | Ubuntu Server 24.04.5 LTS |
+| kit01 | Virtualización | QEMU 8.2.2, libvirt 10.0.0 |
+| kit01 | Red | nftables 1.0.9, Kea 2.4.1, radvd 2.19, BIND9 9.18.39, Chrony 4.5, nginx 1.24.0 |
+| kit01 | Monitoreo y logs | Prometheus 2.45.3, blackbox exporter 0.24.0, node exporter 1.7.0, Grafana 13.2.4, rsyslog 8.2312.0 |
+| kit01 | Copias, energía y acceso | restic 0.16.4, NUT 2.8.1, NetBird 0.80.0 |
+| clinica01 | Contenedores | Docker 29.1.3, Compose 2.40.3 |
+| clinica01 | Aplicaciones | DHIS2 2.42.6.0, PostGIS 16-3.5, Caddy 2.11.7, consulta de prerregistros con Flask 3.1.3 |
+| clinica01 | Identidad y archivos | Samba 4.19.5 |
+| comunidad01 | Contenedores | Docker 29.1.3, Compose 2.40.3 |
+| comunidad01 | Aplicaciones | kiwix-serve 3.8.2, Jellyfin 12.3.20261023, Caddy 2.11.7, formularios con Flask 3.1.3 |
+| Máquina de control | Automatización | ansible-core 2.20.7, `ansible.posix` 2.2.0, `community.general` 12.6.2, `community.crypto` 3.2.2 |
+| Clientes | Uso | Navegador web. Para `archivos`, un cliente SMB3 |
 
 ## 11. Matriz de flujos
 
@@ -449,20 +501,47 @@ Procedimiento que otro administrador puede ejecutar.
 
 - **Cómputo.** 6 vCPU en VMs, más los servicios del host, sobre los 12 hilos del i3-1220P (sobreasignación baja). La carga pico es la de DHIS2 durante su arranque y el registro.
 - **Memoria.** 12,5 GB de 16 en el perfil de referencia, con ≈ 3,5 GB de margen.
-- **Almacenamiento.** ≈ 400 GB asignados en el SSD de 500 GB, de los que hoy hay ocupados unos 45 GB, porque los discos de las VMs son delgados. Copias en un disco USB de 500 GB; hoy ocupan menos de 1 GB y crecen con los datos y con los medios de `contenido`.
+- **Almacenamiento.** ≈ 400 GB asignados en el SSD de 500 GB, de los que hoy hay ocupados unos 45 GB, porque los discos de las VMs son delgados. Copias en un disco USB de 500 GB; hoy ocupan menos de 3 GB, con las imágenes Docker, y crecen con los datos y con los medios de `contenido`.
 - **Clientes.** 5-10 del personal y hasta 50 de la comunidad. El pool de la comunidad tiene 151 direcciones con lease de 1 h; el límite real lo pone el AP.
 - **Red.** El trunk entre kit01 y sw01 es de 1 GbE. El cuello de botella es el AP, con Wi-Fi 802.11n en 2,4 GHz (300 Mb/s nominales, del orden de 50-80 Mb/s reales compartidos entre todos los clientes) y un puerto Ethernet de 100 Mb/s. Por eso los videos se preparan a 480p (≈ 1 Mb/s), y así caben unas 20-30 reproducciones simultáneas, y con 50 celulares conectados la experiencia depende sobre todo del espacio y la interferencia.
 
-| Equipo | Consumo típico | Pico |
+**Energía.** Las cargas son estimadas. Ningún consumo se ha medido con un vatímetro. sw01 solo reporta su voltaje (49,7 V), y los contadores de energía de la CPU de kit01 no incluyen la memoria, el disco, la red ni las pérdidas de la fuente.
+
+| Equipo | Fuente | Capacidad | Consumo típico | Pico estimado |
+|---|---|---|---|---|
+| Mini PC Beelink EQi12 | Interna, 100-240 V | 85 W | ≈ 25 W | ≈ 60 W |
+| MikroTik CCR2004-16G-2S+PC | Adaptador de 48 V y 0,95 A | 45,6 W | ≈ 18 W | 36 W (ficha del fabricante) |
+| AP TL-WA801ND con inyector PoE | 9 V y 0,6 A | 5,4 W | ≈ 4 W | 5,4 W |
+| **Total (brigada de salud)** | | **136 W** | **≈ 47 W** | **≈ 101 W** |
+
+El disco USB se alimenta de kit01 y su consumo entra en el del mini PC. Las laptops tienen batería propia y no entran en la cuenta.
+
+| Dato | Valor | Cómo se obtiene |
 |---|---|---|
-| Mini PC Beelink EQi12 | ≈ 25 W | ≈ 60 W (fuente interna de 85 W) |
-| MikroTik CCR2004-16G-2S+PC | ≈ 18 W (estimado) | 36 W (ficha del fabricante) |
-| AP TL-WA801ND con inyector PoE | ≈ 4 W | 5,4 W (9 V × 0,6 A) |
-| **Total (brigada de salud)** | **≈ 47 W** | **≈ 101 W** |
+| Capacidad instalada | 136 W | Suma de las fuentes (V × A) |
+| Carga de diseño | ≈ 95 W | 136 W menos 30 %, porque los equipos no usan toda su fuente al tiempo. El pico estimado de 101 W confirma el orden de magnitud |
+| Carga típica | ≈ 47 W | Suma de los consumos típicos |
+| Jornada comunitaria | ≈ 42 W | Con clinica01 apagada se toma el mini PC en reposo, unos 20 W |
+| Carga térmica | ≈ 160 BTU/h típica y ≈ 324 BTU/h de diseño | 1 W son 3,41 BTU/h. Equivale a 0,027 toneladas de enfriamiento, así que basta con ventilación natural |
+
+**Autonomía con UPS.** La referencia es una UPS de 1000 VA y 600 W. Su carga de diseño es el 16 % de lo que soporta, así que se elige por energía y no por potencia. El fabricante indica 42 minutos a 100 W, unos 70 Wh útiles, y ese valor se usa para todo el cálculo.
+
+| Carga | Hasta agotarse | Hasta la señal de batería baja (20 %) |
+|---|---|---|
+| Típica, 47 W | Cerca de 1 h 30 | Cerca de 1 h 10 |
+| Diseño, 95 W | Unos 45 min | Unos 35 min |
+
+**Reserva para apagar.** La señal de batería baja se configura en el 20 %, unos 14 Wh. El peor caso del apagado son 7 minutos, con 180 s por VM y un minuto para kit01, y a carga de diseño usa unos 11 Wh. En las pruebas, cada VM cerró en menos de 5 s.
+
+**Jornada sin red eléctrica.** La UPS cubre un corte y un apagado ordenado, y no alcanza para operar una jornada.
+
+| Caso | Energía necesaria | Equipo | Alcance estimado |
+|---|---|---|---|
+| Jornada de 8 h | 376 Wh típica y 760 Wh de diseño | Estación LiFePO4 de 1024 Wh, unos 870 Wh útiles | Cerca de 18 h a carga típica y 9 h a carga de diseño |
+| Varias jornadas | Lo mismo cada día | La estación con un panel plegable de 200 W | Unos 640 Wh al día con 4 horas de sol pico |
 
 **Alimentación segura (implementación lógica).** No se cuenta con UPS física, así que el diseño la trata como un componente lógico.
 
-- **Dimensionamiento de referencia.** Una UPS de 1000 VA/600 W tiene unos 200 Wh nominales, de los que se aprovecha cerca del 60 % (≈ 120 Wh). Con la carga típica de unos 47 W daría una **autonomía estimada de 2 a 2,5 horas**; con la carga pico, algo más de una hora. En la jornada comunitaria, con clinica01 apagada, el mini PC consume menos y la autonomía aumenta.
 - **Simulación.** En kit01, NUT usa el driver `dummy-ups` con un archivo de estado, que se cambia con `kit-ups ob` (en batería) y `kit-ups lb` (batería baja). En cada arranque el estado vuelve a `OL`, así kit01 no se vuelve a apagar al encender.
 - **Apagado ordenado.** `upsmon` ejecuta el script de apagado en el orden comunidad01 → clinica01 (con espera a que PostgreSQL y Samba cierren) → kit01. Cada VM tiene 180 s para cerrar; si no termina, se fuerza para que kit01 alcance a apagarse con batería.
 - **Simulacro.** Con un archivo de simulacro reciente, el script apaga las VMs en orden pero no kit01, y la UPS vuelve a `OL`. Así se prueba en el kit sin que nadie tenga que ir a encenderlo.
@@ -485,7 +564,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda documentada y 
 | Datos de pacientes (DHIS2) | Instancia central de DHIS2 de la organización de salud | Trabajos programados de sincronización de datos y metadatos de DHIS2, ejecutados solo cuando kit01 detecta salida a Internet |
 | Formularios de prerregistro | DHIS2 local | El personal convierte cada prerregistro en un registro del tracker al atender al paciente; viajan al servidor central con el resto de DHIS2 |
 | Contenido (ZIM y medios) | Desde la biblioteca de Kiwix y un repositorio central de medios | Descarga en base, nunca en campo; se carga en el recurso `contenido` y se publica con el flujo normal (sección 10.5) |
-| Backups | Copia externa (p. ej. almacenamiento de la organización) | `restic copy` del repositorio del USB hacia un repositorio remoto cifrado |
+| Backups | `rest-server` de la organización de salud, en modo solo agregar | `restic copy` del repositorio del USB por HTTPS, cuando kit01 detecta Internet y la UPS está en línea (sección 10.6) |
 
 ## 14. Riesgos aceptados
 
@@ -505,6 +584,7 @@ El enunciado no exige implementarla, pero sí documentarla. Queda documentada y 
 | Por alcance académico, el AP conserva su contraseña de fábrica. Además se gestiona solo por HTTP e IPv4 y, según su manual, cualquier cliente inalámbrico puede llegar a su página de gestión | Servidor DHCP propio, WPS y SNMP desactivados y "Allow remote access" apagado, así que la gestión solo responde desde la VLAN 10. En un despliegue real se cambiaría la contraseña y se guardaría en `ansible-vault`. Evolución hacia un AP con VLAN de gestión propia |
 | El AP es de 2,4 GHz, 802.11n y con puerto de 100 Mb/s, así que con muchos celulares y video, el Wi-Fi se satura antes que cualquier otro componente | Videos a 480p, aislamiento de clientes y canal automático. Evolución hacia un AP de doble banda con puerto gigabit (sección 13.1) |
 | Un solo usuario de administración compartido (kit01, VMs, sw01 y AP) deja sin trazabilidad por persona, y el enunciado recomienda cuentas individuales | Riesgo aceptado por el tamaño del grupo y el alcance académico. Las contraseñas se registran en `ansible-vault`, nunca en los repositorios. Sin acceso directo de root; SSH solo desde las IPs de administración y NetBird; registro de accesos centralizado con la IP de origen. Evolución hacia cuentas individuales con llave SSH |
-| Hay una sola copia de respaldo y viaja con el kit, así que un robo, un incendio o un golpe se llevan los datos y el respaldo a la vez | El repositorio está cifrado y kit01 lo monta solo durante la copia. Un segundo disco que se rota y se queda en la base (regla 3-2-1) queda como evolución |
+| Hay una sola copia de respaldo y viaja con el kit, así que un robo, un incendio o un golpe se llevan los datos y el respaldo a la vez | El repositorio está cifrado y kit01 lo monta solo durante la copia. La copia en línea (sección 10.6) y un segundo disco que se rota y se queda en la base completan la regla 3-2-1. Las dos quedan como evolución |
+| No hay UPS física y los consumos no se han medido, así que la autonomía es una estimación | El apagado ordenado está probado con NUT y el cálculo usa el dato del fabricante, que es el más conservador. Con una UPS real se mide la autonomía antes de salir a campo |
 
 </div>
