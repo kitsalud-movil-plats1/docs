@@ -25,7 +25,7 @@ P9 va de última a propósito. Al quitar el cable de la WAN se cae NetBird, y lo
 
 | Equipo | Papel | Conexión |
 |---|---|---|
-| Laptop Fedora | PC de administración. Abre Grafana, entra a kit01 y ejecuta los scripts del kit | Cable a `ether4` de sw01, con IP fija `10.20.10.10` |
+| Laptop Fedora | PC de administración. Abre Grafana, entra a kit01 y ejecuta los scripts del kit | Cable a `ether4` de sw01, que le da su dirección de administración |
 | Laptop Ubuntu | Estación de la Clínica | Wi-Fi `SaludMovil-Clinica` |
 | Laptop Mac | Cliente de la Comunidad | Wi-Fi `SaludMovil-Comunidad` |
 | iPhone | Celular de la Comunidad para P5 y P4 | Wi-Fi `SaludMovil-Comunidad` |
@@ -83,43 +83,28 @@ La laptop Fedora necesita además el espacio de trabajo con todos los repositori
 
 ### PC de administración por cable al switch
 
-Grafana, el SSH de kit01 y la gestión de sw01 y ap01 solo responden a las direcciones `10.20.10.10` a `10.20.10.29` y a NetBird. Un equipo en el Wi-Fi de la Clínica recibe una dirección `.100` o superior y queda bloqueado, aunque esté en la red Interna. Por eso el PC de administración va por cable y con dirección fija.
+Grafana, el SSH de kit01 y la gestión de sw01 y ap01 solo responden a las direcciones `10.20.10.10` a `10.20.10.29` y a NetBird. El puerto `ether4` de sw01 entrega esas direcciones por DHCP a cualquier equipo que se conecte, sin registrarlo ni configurarlo. Por cualquier otro puerto o por el Wi-Fi de la Clínica, el equipo recibe una dirección `.100` o superior y queda bloqueado, aunque esté en la red Interna.
 
-1. Conectar un cable de red del PC a `ether4` de sw01. Sirve cualquier puerto del 4 al 8. No usar `ether1` (kit01), `ether2` (AP), `ether3` (apagado) ni del 9 en adelante (apagados y fuera del bridge).
-2. Apagar el Wi-Fi del PC. Si queda encendido puede competir con el cable por la ruta y por el DNS.
-3. Ponerle la dirección fija. El primer PC usa `.10`, y si hay más, `.11`, `.12` y así hasta `.29`, sin repetir. La máscara es `255.255.255.0`, la puerta de enlace `10.20.10.1` y el DNS `10.20.20.10`.
-
-   **Linux.** Reemplazar `<interfaz>` por el nombre del puerto de red (`ip -br link`).
-
-   ```bash
-   sudo nmcli con add type ethernet ifname <interfaz> con-name kit ipv4.method manual \
-     ipv4.addresses 10.20.10.10/24 ipv4.gateway 10.20.10.1 ipv4.dns 10.20.20.10
-   sudo nmcli con up kit
-   ```
-
-   **Mac.** `networksetup -listallnetworkservices` muestra el nombre del puerto de red.
+1. Conectar un cable de red del PC a `ether4` de sw01. Tiene que ser ese puerto. No usar `ether1` (kit01), `ether2` (AP), `ether3` (apagado), del 5 al 8 (estaciones) ni del 9 en adelante (apagados y fuera del bridge).
+2. Dejar el puerto de red del PC en automático (DHCP). Si el PC tenía una dirección fija de otra prueba, quitarla.
+3. Apagar el Wi-Fi del PC. Si queda encendido puede competir con el cable por la ruta y por el DNS.
+4. Comprobar que recibió una dirección entre `10.20.10.10` y `10.20.10.28`.
 
    ```bash
-   sudo networksetup -setmanual "<puerto>" 10.20.10.11 255.255.255.0 10.20.10.1
-   sudo networksetup -setdnsservers "<puerto>" 10.20.20.10
+   ip -br addr                          # Linux
+   ifconfig | grep 'inet 10.20'         # Mac
+   ipconfig                             # Windows
    ```
 
-   **Windows.** En PowerShell como administrador, con el nombre que muestra `Get-NetAdapter`.
-
-   ```powershell
-   netsh interface ipv4 set address name="Ethernet" static 10.20.10.12 255.255.255.0 10.20.10.1
-   netsh interface ipv4 set dns name="Ethernet" static 10.20.20.10
-   ```
-
-4. Comprobar la conexión.
+5. Comprobar la conexión.
 
    ```bash
    ping -c 2 10.20.10.1                 # responde kit01
    ssh kitsalud@10.20.10.1 hostname     # kit01
    ```
 
-5. Comentar los nombres del kit en `/etc/hosts` e instalar la raíz, con los pasos 2 y 5 de la lista que sigue.
-6. Abrir `https://monitoreo.salud.movil` y entrar con `laura.gomez`.
+6. Comentar los nombres del kit en `/etc/hosts` e instalar la raíz, con los pasos 2 y 5 de la lista que sigue.
+7. Abrir `https://monitoreo.salud.movil` y entrar con `laura.gomez`.
 
 Desde este PC se llega a lo siguiente.
 
@@ -134,10 +119,31 @@ Desde este PC se llega a lo siguiente.
 
 Hay que tener en cuenta lo siguiente.
 
+- Se puede cambiar de PC cuando se quiera. Cada equipo recibe su dirección al conectarse, y no hay que registrar nada.
 - La administración es solo por IPv4. El SSH por IPv6 está bloqueado a propósito.
 - NetBird solo hace falta para los scripts que usan Ansible, que son P11 y `P12-reinicio.sh estado`. El resto funciona por el cable.
 - Sin NetBird también se trabaja. Si hay que confirmar el estado del kit, en kit01 se usa `systemctl --failed` y el tablero de Grafana.
-- Al terminar se quita la dirección fija. En Linux, `sudo nmcli con delete kit`. En Mac, `sudo networksetup -setdhcp "<puerto>"` y `sudo networksetup -setdnsservers "<puerto>" empty`. En Windows, `netsh interface ipv4 set address name="Ethernet" source=dhcp` y `netsh interface ipv4 set dns name="Ethernet" source=dhcp`.
+
+**Si el PC no recibe una dirección de administración.** Se le pone a mano la `10.20.10.29`, que queda fuera del DHCP, con máscara `255.255.255.0`, puerta de enlace `10.20.10.1` y DNS `10.20.20.10`.
+
+```bash
+# Linux, con <interfaz> de ip -br link
+sudo nmcli con add type ethernet ifname <interfaz> con-name kit ipv4.method manual \
+  ipv4.addresses 10.20.10.29/24 ipv4.gateway 10.20.10.1 ipv4.dns 10.20.20.10
+sudo nmcli con up kit
+# Mac, con <puerto> de networksetup -listallnetworkservices
+sudo networksetup -setmanual "<puerto>" 10.20.10.29 255.255.255.0 10.20.10.1
+sudo networksetup -setdnsservers "<puerto>" 10.20.20.10
+```
+
+En Windows, en PowerShell como administrador, con el nombre que muestra `Get-NetAdapter`.
+
+```powershell
+netsh interface ipv4 set address name="Ethernet" static 10.20.10.29 255.255.255.0 10.20.10.1
+netsh interface ipv4 set dns name="Ethernet" static 10.20.20.10
+```
+
+Al terminar se quita. En Linux, `sudo nmcli con delete kit`. En Mac, `sudo networksetup -setdhcp "<puerto>"` y `sudo networksetup -setdnsservers "<puerto>" empty`. En Windows, `netsh interface ipv4 set address name="Ethernet" source=dhcp` y `netsh interface ipv4 set dns name="Ethernet" source=dhcp`.
 
 ### En el laboratorio
 
@@ -470,7 +476,7 @@ Si kit01 no vuelve, se conectan el monitor y el teclado y se revisa en este orde
 | Qué pasa | Qué hacer |
 |---|---|
 | Un script de `prueba01` o de Ansible no conecta | Revisar `netbird status` en la Fedora. Si NetBird no vuelve, usar `ssh kitsalud@10.20.10.1` por cable |
-| Grafana o el SSH no responden desde el PC | Revisar que tenga una dirección entre `10.20.10.10` y `.29` (`ip -br addr`), que el cable esté en un puerto del 4 al 8, que el Wi-Fi esté apagado y que los nombres del kit estén comentados en `/etc/hosts` |
+| Grafana o el SSH no responden desde el PC | Revisar que el cable esté en `ether4`, que tenga una dirección entre `10.20.10.10` y `.29` (`ip -br addr`), que el Wi-Fi esté apagado y que los nombres del kit estén comentados en `/etc/hosts`. Si recibió una `.100` o superior, revisar en sw01 `/interface bridge print proplist=add-dhcp-option82`, que debe decir `yes`. Si sigue sin funcionar, usar la dirección fija `.29` |
 | Un cliente Wi-Fi no recibe respuestas por IPv6 | En kit01, `systemctl is-active kit-vecinos` y `journalctl -u kit-vecinos -n 20 -o cat`, donde debe aparecer su dirección. Si está detenido, `sudo systemctl restart kit-vecinos` |
 | El log de P3 no muestra nada | Revisar que la Mac esté en la Comunidad, con el portal aceptado, y que el `grep` incluya `F-20` |
 | Un celular no abre el portal solo | Abrir `http://portal.salud.movil` a mano |
@@ -492,7 +498,9 @@ Si kit01 no vuelve, se conectan el monitor y el teclado y se revisa en este orde
 | Prueba | Equipo | ¿Funcionó? | Tiempo | Notas |
 |---|---|---|---|---|
 | Reinicio de kit01 | Fedora | | | |
-| PC de administración por cable | Fedora | | | |
+| PC de administración en `ether4` recibe su dirección | Fedora | | | |
+| Otro PC en `ether4` también la recibe | Otro equipo | | | |
+| Un PC en `ether5` no la recibe | Otro equipo | | | |
 | Grafana, sw01 y ap01 desde el PC | Fedora | | | |
 | Wi-Fi Clínica y Comunidad | Ubuntu, Mac y celulares | | | |
 | P5 Portal cautivo | iPhone y Mac | | | |

@@ -44,18 +44,12 @@ El tablero de monitoreo no se pone en rojo por falta de Internet, porque todo lo
 
 ## Administrar el kit sin NetBird
 
-Sin Internet no hay acceso remoto, así que el kit se administra desde un equipo conectado a la red Interna, por cable a un puerto de la Interna del switch o por el Wi-Fi `SaludMovil-Clinica`. kit01 acepta SSH y el monitoreo solo desde las direcciones de administración, de `10.20.10.10` a `10.20.10.29`.
+Sin Internet no hay acceso remoto, así que el kit se administra desde un equipo conectado a la red Interna, por cable al puerto de administración del switch. kit01 acepta SSH y el monitoreo solo desde las direcciones de administración, de `10.20.10.10` a `10.20.10.29`.
 
 Hay dos formas de tener una de esas direcciones.
 
-- **Reserva por MAC.** La forma permanente. Se agrega el equipo al inventario de Ansible, en `platform/ansible/inventarios/kit/group_vars/all/dhcp.yml`, y se aplica con `ansible-playbook playbooks/dhcp.yml`. Desde ahí el equipo recibe siempre la misma dirección.
-
-  ```yaml
-  dhcp_reservas:
-    - { nombre: laptop-ana, mac: "aa:bb:cc:dd:ee:ff", ipv4: 10.20.10.10 }
-  ```
-
-- **Dirección fija a mano.** Para un equipo sin reserva. Se configura en el equipo la dirección `10.20.10.29/24`, la puerta de enlace `10.20.10.1` y el DNS `10.20.20.10`. Las direcciones de `10.20.10.10` a `10.20.10.29` están fuera del rango que entrega el DHCP, así que no chocan con otros equipos. Al terminar se vuelve el equipo a DHCP.
+- **Puerto de administración.** La forma normal. Se conecta el equipo a `ether4` de sw01 con la configuración de red automática, y recibe una dirección entre `10.20.10.10` y `10.20.10.28`. No hace falta registrar el equipo. Los demás puertos y el Wi-Fi reciben direcciones que no administran.
+- **Dirección fija a mano.** Si el DHCP falla. Se configura en el equipo la dirección `10.20.10.29/24`, la puerta de enlace `10.20.10.1` y el DNS `10.20.20.10`. Esa dirección está fuera del rango que entrega el DHCP, así que no choca con otros equipos. Al terminar se vuelve el equipo a DHCP.
 
 Con la dirección de administración, el acceso es el mismo que por NetBird, cambiando la dirección de kit01.
 
