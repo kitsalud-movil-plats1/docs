@@ -12,12 +12,12 @@ Este guion lleva la demostración de las trece pruebas de aceptación de princip
 
 | Bloque | Contenido | Tiempo |
 |---|---|---|
-| Presentación | Problema, arquitectura, decisiones y qué cambiaría con más usuarios | 15 min |
+| Presentación | Problema, solución, decisiones, seguridad, continuidad y qué cambiaría con más usuarios | 35 min |
 | Comunidad | P5, P1, P4, P3 y P10 | 15 min |
 | Clínica | P2, P6, P7 y P8 | 15 min |
 | Resiliencia | P11, P13, P12 y P9 | 20 min |
 | Preguntas | | 10 min |
-| **Total** | | **1 h 15 min** |
+| **Total** | | **1 h 35 min** |
 
 P9 va de última a propósito. Al quitar el cable de la WAN se cae NetBird, y los scripts que usan Ansible dejan de funcionar hasta que vuelve.
 
