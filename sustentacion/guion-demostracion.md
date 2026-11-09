@@ -106,8 +106,7 @@ Cuando un paso dice **en kit01**, es en una sesión abierta desde ese equipo con
 | Linux y Mac | `curl -4 -m 5 https://pacientes.salud.movil` | `curl -6 -m 5 https://pacientes.salud.movil` |
 | Windows | `curl.exe -4 -m 5 https://pacientes.salud.movil` | `curl.exe -6 -m 5 https://pacientes.salud.movil` |
 
-3. Si hay otro cliente en la Comunidad, hacerle ping a su IP. No responde.
-4. En kit01, ver los intentos en el log.
+3. En kit01, ver los intentos en el log.
 
 ```bash
 grep 'fw-drop F-20' /var/log/kitsalud/kit01/firewall.log | tail -5
@@ -118,7 +117,7 @@ grep 'fw-drop F-20' /var/log/kitsalud/kit01/firewall.log | tail -5
 - `curl` espera 5 s y termina sin conexión. Ese es el resultado correcto.
 - En el log, los intentos con la dirección del cliente como `SRC`, y `10.20.20.11` y su pareja en IPv6 como `DST`.
 
-**Explicar.** La política es denegar y registrar. Desde la Comunidad no se llega a la red Interna, a clinica01 ni a la gestión, y el AP aísla a los clientes entre sí.
+**Explicar.** La política es denegar y registrar. Desde la Comunidad no se llega a la red Interna, a clinica01 ni a la gestión. Entre dos invitados el AP no aísla, porque su firmware solo lo hace en el SSID de la Clínica, y queda como riesgo aceptado.
 
 ## P4 Acceso público local
 

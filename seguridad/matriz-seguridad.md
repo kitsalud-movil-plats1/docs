@@ -206,7 +206,7 @@ PostgreSQL (5432) corre en Docker, que publica el puerto con sus propias reglas 
 
 **ap01 (TP-Link TL-WA801ND)**
 
-- Un SSID por red, cada uno en su VLAN, con aislamiento entre clientes inalámbricos.
+- Un SSID por red, cada uno en su VLAN. El aislamiento entre clientes inalámbricos está activado, pero el firmware solo lo aplica al SSID de la Clínica.
 - Su servidor DHCP está apagado; las direcciones las entrega kit01.
 - Se administra por HTTP en `10.20.10.3`, solo por IPv4, con la contraseña de fábrica, que es un riesgo aceptado del proyecto.
 
@@ -293,7 +293,8 @@ PostgreSQL (5432) corre en Docker, que publica el puerto con sus propias reglas 
 |---|---|---|
 | Usuario de administración compartido | Tamaño del grupo y alcance académico | Acceso por dirección, sin root, `sudo` registrado |
 | Contraseñas de laboratorio conocidas por el grupo | Proyecto académico | Se cambian antes de una misión real (sección 9) |
-| ap01 con la contraseña de fábrica, gestión solo por HTTP, y según su manual cualquier cliente inalámbrico puede llegar a su página | El firmware no permite más y es un equipo de laboratorio | Servidor DHCP, WPS y SNMP del AP apagados; aislamiento de clientes |
+| ap01 con la contraseña de fábrica, gestión solo por HTTP, y según su manual cualquier cliente inalámbrico puede llegar a su página | El firmware no permite más y es un equipo de laboratorio | Servidor DHCP, WPS y SNMP del AP apagados; aislamiento de clientes en el SSID de la Clínica |
+| Los invitados de la Comunidad se alcanzan entre sí en el Wi-Fi | El firmware del AP solo aísla a los clientes del primer SSID | Todo lo que sale de la Comunidad pasa por nftables. La mejora es un AP que aísle cada SSID |
 | Una sola copia de respaldo, que viaja con el kit | Hay un solo disco | Copia cifrada y desmontada. La mejora es un segundo disco que se rota y queda en la base |
 | PostgreSQL sin TLS entre las VMs | El tráfico no sale de kit01; va por el bridge interno | Tabla `bridge` y usuario de solo `INSERT` |
 | kit01 puede sacar cualquier UDP hacia Internet | NetBird negocia el túnel por UDP con puertos variables | Solo kit01; las VMs solo salen por TCP 80 y 443 |

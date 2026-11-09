@@ -13,7 +13,7 @@ Resultados de las trece pruebas de aceptación del kit, cada una con los comando
 
 <div class="diagrama"><img src="../diagramas/montaje-pruebas.png" alt="Cómo se montaron las pruebas en remoto"></div>
 
-Lo que solo se ve en el sitio (celulares en cada SSID, el aislamiento entre dos clientes Wi-Fi, un PC de la red Interna, el cable de Internet desconectado y el reinicio de kit01) se demuestra en vivo en la sustentación con los mismos scripts.
+Lo que solo se ve en el sitio (celulares en cada SSID, un PC de la red Interna, el cable de Internet desconectado y el reinicio de kit01) se demuestra en vivo en la sustentación con los mismos scripts.
 
 | Prueba | Qué demuestra | Cómo se probó | Resultado |
 |---|---|---|---|

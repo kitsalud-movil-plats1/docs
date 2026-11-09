@@ -6,7 +6,7 @@ Una guía por prueba, con el criterio del enunciado, el paso a paso, los comando
 |---|---|---|---|
 | [P1](P01-cliente.md) | Un cliente de la Comunidad recibe IPv4, IPv6, DNS y gateway | `prueba01`; sitio con celulares | Aprobada en remoto (9 de 9); celulares en cada SSID en la sustentación |
 | [P2](P02-dns.md) | Los servicios responden por nombre, A y AAAA, sin escribir IP | `prueba01` y sw01; sitio con un PC de la Interna | Aprobada en remoto (27 y 12) |
-| [P3](P03-aislamiento.md) | La Comunidad no llega a lo clínico ni a la administración | `prueba01` y el registro de kit01 | Aprobada en remoto (17 de 17), con la gestión del AP y del switch; aislamiento entre dos celulares en la sustentación |
+| [P3](P03-aislamiento.md) | La Comunidad no llega a lo clínico ni a la administración | `prueba01` y el registro de kit01 | Aprobada en remoto (17 de 17), con la gestión del AP y del switch; el AP no aísla a dos clientes de la Comunidad (limitación del firmware) |
 | [P4](P04-acceso-local.md) | Biblioteca, videos y registro después del portal | `prueba01` | Aprobada en remoto (10 de 10), con un prerregistro por familia |
 | [P5](P05-portal.md) | Un cliente nuevo ve el portal | `prueba01`; sitio con un celular | Aprobada en remoto (8 de 8) |
 | [P6](P06-clinica.md) | Un usuario del personal registra y consulta un paciente | sw01 y kit01 (`--remoto`); sitio con un PC de la Interna | Aprobada en remoto (16 de 16) |

@@ -3,7 +3,7 @@
 ## Qué se prueba
 
 **Enunciado.** Un cliente de invitados intenta acceder a un servicio clínico o de administración y la conexión queda bloqueada.
-El firewall bloquea y registra todo lo que va de la Comunidad a la Interna, a clinica01 y a la gestión de kit01 (22 y `monitoreo`). El AP aísla además a los clientes entre sí (AP Isolation).
+El firewall bloquea y registra todo lo que va de la Comunidad a la Interna, a clinica01 y a la gestión de kit01 (22 y `monitoreo`). Entre dos clientes de la Comunidad el AP no aísla, porque su firmware solo aplica AP Isolation al SSID de la Clínica. Un ping entre dos celulares de la Comunidad responde.
 
 ## Qué necesitas
 
@@ -23,7 +23,7 @@ Se ejecuta en un cliente de la Comunidad con el portal aceptado, desde `docs/pru
 ./scripts/P03-aislamiento.sh [IP de otro cliente]
 ```
 
-Intenta DHIS2, la consulta de prerregistros, SMB, Grafana y el SSH de kit01 en IPv4 e IPv6 y espera que todo quede bloqueado; con la IP de otro cliente revisa el aislamiento del AP. Cada línea sale como `[ OK ]` o `[FALLA]` y todo queda en `salidas/P03-<fecha>.txt`, que sirve de evidencia. Los comandos de abajo son los que usa el script, para ejecutarlos a mano o explicarlos.
+Intenta DHIS2, la consulta de prerregistros, SMB, Grafana y el SSH de kit01 en IPv4 e IPv6 y espera que todo quede bloqueado; con la IP de otro cliente informa si le responde, sin contarlo como falla. Cada línea sale como `[ OK ]` o `[FALLA]` y todo queda en `salidas/P03-<fecha>.txt`, que sirve de evidencia. Los comandos de abajo son los que usa el script, para ejecutarlos a mano o explicarlos.
 
 ## Comandos de verificación
 
@@ -38,7 +38,7 @@ Intenta DHIS2, la consulta de prerregistros, SMB, Grafana y el SSH de kit01 en I
 | `curl -k -m 5 https://monitoreo.salud.movil` | Grafana | Timeout |
 | `nc -vz -w 5 10.20.20.11 445` | SMB de clinica01 | Timeout |
 | `ping -c3 10.20.10.1` | La Interna | Sin respuesta |
-| `ping -c3 <IP de otro celular en la Comunidad>` | Otro cliente del mismo SSID | Sin respuesta (AP Isolation) |
+| `ping -c3 <IP de otro celular en la Comunidad>` | Otro cliente del mismo SSID | Responde, porque el AP solo aísla el SSID de la Clínica |
 
 `curl -k` ignora el certificado, así que el único motivo para que falle es la red. `nc -vz` solo intenta abrir la conexión TCP sin enviar nada. `-m 5` y `-w 5` cortan a los 5 s.
 
@@ -57,7 +57,7 @@ En el celular, abrir `https://pacientes.salud.movil` no carga.
 ## Si algo falla
 
 - **`pacientes` abre desde la Comunidad.** Revisar que el equipo esté de verdad en la Comunidad (`10.20.40.x`) y la cadena `bloqueo_f20` en kit01.
-- **El ping entre clientes responde.** Confirmar en el AP, Wireless → Wireless Advanced, que **Enable AP Isolation** esté marcado y guardado.
+- **El ping entre dos clientes de la Clínica responde.** Confirmar en el AP, Wireless → Wireless Advanced, que **Enable AP Isolation** esté marcado y guardado. En la Comunidad es normal que responda.
 
 ## Evidencia
 
