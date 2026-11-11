@@ -2,8 +2,8 @@
 # P3 - Aislamiento. Se ejecuta en un cliente de la Comunidad que ya aceptó el
 # portal. Intenta llegar a lo clínico y a la administración en IPv4 e IPv6,
 # también a la gestión del AP y del switch; todo debe quedar bloqueado. Con la
-# IP de otro cliente del mismo SSID como argumento, revisa también el
-# aislamiento del AP.
+# IP de otro cliente del mismo SSID como argumento, informa si le responde. El
+# AP solo aísla a los clientes del SSID de la Clínica, así que no es una falla.
 #   ./P03-aislamiento.sh [IP de otro cliente de la Comunidad]
 source "$(dirname "$0")/comun.sh"
 iniciar P03 "Aislamiento"
@@ -45,8 +45,8 @@ if [ $TIENE6 = 1 ]; then
 fi
 
 if [ -n "$1" ]; then
-  seccion "Aislamiento entre clientes del AP"
-  if hace_ping 4 "$1"; then mal "El cliente $1 responde; revisar AP Isolation"; else bien "El cliente $1 no responde (AP Isolation)"; fi
+  seccion "Otro cliente de la Comunidad"
+  if hace_ping 4 "$1"; then nota "El cliente $1 responde. El AP solo aísla a los clientes del SSID de la Clínica"; else nota "El cliente $1 no responde"; fi
 fi
 
 nota "En kit01 los intentos quedan en /var/log/kitsalud/kit01/firewall.log con el prefijo fw-drop"

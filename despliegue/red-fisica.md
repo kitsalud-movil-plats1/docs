@@ -78,7 +78,7 @@ El AP no tiene línea de comandos, así que se configura en su interfaz web con 
 | Wireless → Wireless Settings | Región, modo y canal | Colombia, 11bgn mixed, 20 MHz, canal automático |
 | Wireless → Wireless Security | SSID1 | WPA2-PSK con AES y la clave del Wi-Fi de la clínica |
 | Wireless → Wireless Security | SSID2 | Sin seguridad (la protege el portal cautivo de kit01) |
-| Wireless → Wireless Advanced | AP Isolation y Short GI | Activados |
+| Wireless → Wireless Advanced | AP Isolation y Short GI | Activados (el aislamiento solo actúa en el SSID1) |
 | DHCP → DHCP Settings | Servidor DHCP | Desactivado (las direcciones las entrega kit01) |
 | WPS y System Tools → SNMP | WPS y SNMP | Desactivados |
 | Network → LAN | IP | Fija, `10.20.10.3/24`, gateway `10.20.10.1` |
