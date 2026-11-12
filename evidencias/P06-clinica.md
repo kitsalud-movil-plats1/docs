@@ -45,11 +45,11 @@ Resultado: 16 bien y 0 con falla.
 
 ### IPv4
 
-Por `10.20.20.11`, `ana.rojas` inició sesión con el rol "Personal clínico", registró al paciente `P6pDUUGhORl` y `carlos.perez` lo encontró con sus datos. En la consulta de prerregistros, `ana.rojas` entró con su contraseña del dominio y encontró los dos códigos.
+Por `10.20.20.11`, `ana.rojas` inició sesión con el rol "Personal clínico", registró al paciente `P6GevAUMI4c` y `carlos.perez` lo encontró con sus datos. En la consulta de prerregistros, `ana.rojas` entró con su contraseña del dominio y encontró los dos códigos.
 
 ### IPv6
 
-Por `fd5a:fc7e:d716:20::11` se repitió lo mismo con el paciente `P6QGujq9bq0`. sw01 abrió también el 443 por IPv6 y Caddy respondió.
+Por `fd5a:fc7e:d716:20::11` se repitió lo mismo con el paciente `P6uQtbaHfe1`. sw01 abrió también el 443 por IPv6 y Caddy respondió.
 
 ## Interpretación
 
