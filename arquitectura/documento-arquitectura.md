@@ -339,7 +339,7 @@ La misma `fe80::1` en varias interfaces es válida, porque una link-local solo t
 ### 8.4 Seguridad IPv6
 
 - Las reglas son **equivalentes en v4 y v6**. Cada política tiene su par en la misma tabla `inet` (sección 6.3).
-- Se permite el ICMPv6 imprescindible (NDP, RS/RA, Packet Too Big, Time Exceeded, Parameter Problem; RFC 4890) desde `fe80::/10` y desde la ULA. Solo kit01 emite RA (desde `fe80::1`); el AP aísla a los clientes inalámbricos entre sí y sw01 descarta los RA multicast que entran por los puertos de acceso (sección 5.2).
+- Se permite el ICMPv6 imprescindible (NDP, RS/RA, Packet Too Big, Time Exceeded, Parameter Problem; RFC 4890) desde `fe80::/10` y desde la ULA. Solo kit01 emite RA (desde `fe80::1`); el AP aísla entre sí a los clientes del SSID de la Clínica y sw01 descarta los RA multicast que entran por los puertos de acceso (sección 5.2).
 - DHCPv6 entra por `udp/547` desde `fe80::/10` hacia kit01, en las redes Interna y Comunidad.
 - El eco ICMP/ICMPv6 se permite desde la red Interna hacia kit01 y los servidores, y desde la Comunidad solo hacia su gateway. Así se puede demostrar la conectividad extremo a extremo y diagnosticar sin exponer los servidores a la comunidad.
 - El portal cautivo autoriza por MAC, así que aplica igual a IPv4 e IPv6.

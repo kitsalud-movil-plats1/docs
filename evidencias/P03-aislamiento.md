@@ -76,4 +76,4 @@ Un invitado que ya aceptó el portal no llega a nada clínico ni administrativo,
 
 ## Resultado
 
-Aprobada. 17 comprobaciones bien y ninguna falla, con los intentos registrados. En la sustentación se muestra además con dos celulares en el SSID de la Comunidad que un cliente no ve al otro, porque el punto de acceso aísla a sus clientes.
+Aprobada. 17 comprobaciones bien y ninguna falla, con los intentos registrados. Dos celulares del SSID de la Comunidad sí se alcanzan entre sí, porque el firmware del punto de acceso solo aísla a los clientes del SSID de la Clínica. Ese tráfico no sale del AP y es un riesgo aceptado, ya que todo lo que sale de la Comunidad hacia otra red pasa por el firewall de kit01.
