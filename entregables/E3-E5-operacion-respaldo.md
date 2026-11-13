@@ -6,164 +6,152 @@
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
-Este documento junta dos entregables del enunciado, la **guía de operación (E3)** y el **plan de respaldo y recuperación (E5)**. Se combinaron porque en la práctica los hace la misma persona y en el mismo momento. Cerrar una misión, por ejemplo, es sacar una copia y después apagar el kit en orden, y recuperar un archivo borrado es parte de la operación de cualquier día. Tenerlos juntos evita saltar entre documentos en medio de un problema.
+Este documento junta la **guía de operación (E3)** y el **plan de respaldo y recuperación (E5)**. Van juntos porque los hace la misma persona y casi siempre en el mismo momento. Cerrar una misión, por ejemplo, es sacar una copia y después apagar el kit.
 
-Está escrito como un manual para el personal técnico de la brigada, es decir, para quien tiene el usuario de administración del kit aunque no lo haya instalado. Cada procedimiento dice qué hacer, cómo comprobar que funcionó y qué pasó cuando se probó en el kit real. La instalación desde cero y las reglas del firewall están en el documento de arquitectura, despliegue y seguridad (E1, E2 y E4).
+Está pensado para el personal técnico de la brigada, es decir, para quien tiene el usuario de administración del kit aunque no lo haya instalado. Cada procedimiento dice qué hacer y cómo saber si funcionó. La instalación desde cero y las reglas del firewall están en el documento de arquitectura, despliegue y seguridad (E1, E2 y E4).
 
 <div class="salto"></div>
 
 # Parte 1. Guía de operación (E3)
 
-## 1. El kit en pocas palabras
+## 1. Antes de empezar
 
-| Equipo | Qué es | Dirección |
-|---|---|---|
-| kit01 | Mini PC que hace de router, firewall, DNS, DHCP, hora, portal cautivo, logs y monitoreo, y donde corren las dos máquinas virtuales | `10.20.10.1` desde la red Interna, `100.90.225.113` por NetBird |
-| clinica01 | Historia clínica (DHIS2), base de datos, dominio de usuarios, archivos compartidos y consulta de prerregistros | `10.20.20.11` y `fd5a:fc7e:d716:20::11` |
-| comunidad01 | Biblioteca, videos y formulario de prerregistro | `10.20.20.12` y `fd5a:fc7e:d716:20::12` |
-| sw01 | Switch MikroTik que separa la red Interna y la Comunidad | `10.20.10.2` |
-| ap01 | Punto de acceso con los Wi-Fi `SaludMovil-Clinica` y `SaludMovil-Comunidad` | `10.20.10.3` |
+El kit tiene tres equipos con sistema. **kit01** es el mini PC que hace de router, firewall, DNS, DHCP y hora, y donde corren las dos máquinas virtuales. **clinica01** tiene la historia clínica, el dominio de usuarios y los archivos del personal. **comunidad01** tiene la biblioteca, los videos y el formulario de prerregistro.
 
-| Servicio | Dirección | Quién lo usa |
-|---|---|---|
-| Historia clínica (DHIS2) | `https://pacientes.salud.movil` | Personal de salud |
-| Consulta de prerregistros | `https://consultas.salud.movil` | Grupo `clinicos` del dominio |
-| Archivos compartidos | `\\archivos.salud.movil\archivos` y `\contenido` | Grupos `clinicos` y `admins` |
-| Monitoreo (Grafana) | `https://monitoreo.salud.movil` | Grupo `admins`, desde administración |
-| Biblioteca | `http://biblioteca.salud.movil` | Todos |
-| Videos | `http://videos.salud.movil` | Todos |
-| Formulario de prerregistro | `https://registro.salud.movil` | Pacientes en la sala de espera |
-| Raíz de certificados del kit | `http://ca.salud.movil/raiz.crt` | Quien quiera evitar la advertencia del navegador |
+| Equipo | Dirección |
+|---|---|
+| kit01 | `10.20.10.1` desde la red Interna, `100.90.225.113` por NetBird |
+| clinica01 | `10.20.20.11` |
+| comunidad01 | `10.20.20.12` |
+| sw01 (switch) | `10.20.10.2` |
+| ap01 (Wi-Fi) | `10.20.10.3`, por su página web |
 
-### 1.1 Cómo se entra
+| Servicio | Dirección |
+|---|---|
+| Historia clínica (DHIS2) | `https://pacientes.salud.movil` |
+| Consulta de prerregistros | `https://consultas.salud.movil` |
+| Archivos compartidos | `\\archivos.salud.movil\archivos` y `\\archivos.salud.movil\contenido` |
+| Monitoreo (Grafana) | `https://monitoreo.salud.movil` |
+| Biblioteca y videos | `http://biblioteca.salud.movil` y `http://videos.salud.movil` |
+| Formulario de prerregistro | `https://registro.salud.movil` |
 
-La administración solo funciona desde un equipo conectado por cable al puerto `ether4` de sw01, que recibe una dirección entre `10.20.10.10` y `10.20.10.28`, o por NetBird cuando hay Internet. Desde otro puerto o desde el Wi-Fi, kit01 rechaza el SSH, y eso es intencional. Las VMs solo aceptan SSH desde kit01, así que a ellas se llega saltando.
+Para administrar, el equipo tiene que estar conectado por cable al puerto `ether4` del switch, donde recibe una dirección de administración, o entrar por NetBird cuando hay Internet. Desde otro puerto o desde el Wi-Fi, kit01 rechaza el SSH a propósito. Las VMs solo aceptan SSH desde kit01, así que a ellas se llega saltando.
 
 ```bash
-ssh kitsalud@10.20.10.1                              # kit01 desde la red Interna
+ssh kitsalud@10.20.10.1                              # kit01
 ssh -J kitsalud@10.20.10.1 kitsalud@10.20.20.11      # clinica01
 ssh -J kitsalud@10.20.10.1 kitsalud@10.20.20.12      # comunidad01
-ssh -J kitsalud@10.20.10.1 admin@10.20.10.2          # sw01
 ```
 
-Por NetBird es lo mismo, cambiando `10.20.10.1` por `100.90.225.113`. Las contraseñas no están en este documento. Están en el vault de Ansible y en la hoja privada del grupo.
+Las contraseñas no están en este documento. Están en el vault de Ansible y en la hoja privada del grupo.
 
-## 2. Encender el kit
+## 2. Inicio
 
 1. Conectar a la corriente el switch y el punto de acceso, y esperar a que se enciendan los indicadores de sus puertos.
-2. Encender kit01 con su botón. Tarda cerca de 2 min 15 s en tener todos sus servicios, casi todo esperando a que la red esté lista.
-3. No hacer nada más. kit01 levanta solo la red, el firewall, el DHCP, el DNS, la hora, los logs, el portal, el monitoreo y la UPS lógica, y después enciende las dos VMs a la vez. Cada aplicación espera con reintentos a la base de datos y al dominio, así que el orden entre ellas se resuelve solo.
+2. Encender kit01 con su botón.
+3. Esperar unos 3 minutos. kit01 levanta solo la red, el firewall, el DHCP, el DNS, la hora, los logs, el portal y el monitoreo, y después enciende las dos VMs. Cada aplicación espera a la base de datos y al dominio, así que no hay que arrancar nada a mano.
 
 <div class="diagrama"><img src="../diagramas/encendido-apagado.png" alt="Encendido y apagado del kit"></div>
 
-Para comprobar que arrancó bien se revisa en kit01.
+Para comprobar que arrancó bien, en kit01.
 
 ```bash
-systemctl --failed                                         # 0 loaded units listed
-virsh -c qemu:///system list --all                         # clinica01 y comunidad01 en running
-upsc kit@127.0.0.1 ups.status                              # OL
+systemctl --failed                          # 0 loaded units listed
+virsh -c qemu:///system list --all          # clinica01 y comunidad01 en running
 ```
 
-En el navegador, el tablero **Estado del kit** de `https://monitoreo.salud.movil` muestra **Problemas ahora** en 0. En el kit esto pasó 42 segundos después de que arrancaron las VMs. Si una VM sigue apagada después de 5 minutos, se enciende con `sudo virsh -c qemu:///system start <vm>`. `virsh` siempre necesita `-c qemu:///system`, porque sin eso consulta las máquinas del propio usuario y la lista sale vacía, y eso confunde bastante.
+En el navegador, el tablero **Estado del kit** de `https://monitoreo.salud.movil` muestra **Problemas ahora** en 0. Si una VM sigue apagada después de 5 minutos, se enciende con `sudo virsh -c qemu:///system start <vm>`. `virsh` siempre necesita `-c qemu:///system`, porque sin eso consulta las máquinas del propio usuario y la lista sale vacía.
 
-## 3. Revisión rápida (health check)
+## 3. Apagado
 
-Esta revisión sirve para saber en pocos minutos si el kit está bien y, si algo falla, encontrar qué es. Se hace al empezar cada jornada y cada vez que alguien reporta un problema.
+El apagado ordenado cierra primero lo que tiene datos, para que la base de datos y el dominio terminen limpios.
 
-**Paso 1. El tablero.** `https://monitoreo.salud.movil` abre en **Estado del kit**. Se entra con una cuenta del grupo `admins` del dominio, o con la cuenta local `admin` de Grafana si el dominio no responde.
+1. Si se cierra una misión, sacar antes una copia con el disco USB conectado (sección 12).
+2. En kit01, ejecutar el apagado ordenado.
 
-| Recuadro | Lo normal | Si no |
+   ```bash
+   sudo kit-apagado
+   ```
+
+   Apaga comunidad01, después clinica01 y al final kit01. Cada VM tiene hasta 180 segundos para cerrar y, si no termina, se fuerza para que kit01 alcance a apagarse.
+3. Cuando el indicador de kit01 se apaga, desconectar el switch y el punto de acceso.
+
+No se usa `shutdown` ni `poweroff`, porque apagan las dos VMs al mismo tiempo y sin orden. Si al encender otra vez se quiere ver cómo terminó el apagado anterior, `journalctl -t kit-apagado -b -1` muestra cada paso con su hora.
+
+### 3.1 Corte de energía
+
+El kit no tiene una UPS física. Su estado se simula con NUT, y cuando la batería queda baja la UPS lógica ejecuta el mismo `kit-apagado`. Estos comandos permiten probarlo.
+
+| Comando | Qué simula | Qué hace el kit |
 |---|---|---|
-| **Problemas ahora** | 0 | Hay alertas activas, que se leen en **Qué está fallando** |
-| **Equipos** | kit01, clinica01, comunidad01, el switch y el Wi-Fi encendidos | Un equipo no responde (síntoma 1 de la tabla de abajo) |
-| **Servicios** | Todos en verde | El servicio en rojo dice por dónde empezar |
-| **Qué está fallando** | Vacía | Cada fila dice qué falla, en qué equipo y si es en IPv4 o en IPv6 |
+| `sudo kit-ups` | Nada | Muestra el estado de la UPS |
+| `sudo kit-ups ob` | Se cortó la energía | Avisa en el journal y no apaga nada |
+| `sudo kit-ups lb` | La batería quedó baja | Ejecuta el apagado ordenado |
+| `sudo kit-ups ol` | Volvió la energía | Vuelve al estado normal |
 
-Prometheus prueba cada servicio cada 15 segundos en IPv4 y en IPv6, y lo pone en rojo cuando lleva 30 segundos fallando. Además mide CPU, memoria, disco y el estado de las unidades de systemd de los tres equipos, que están en el tablero **Recursos de los equipos**.
+Cuando se conecte una UPS real por USB, se espera que funcione igual cambiando solo el driver de NUT. En `platform/ansible/roles/nut/templates/ups.conf.j2` se cambia `driver = dummy-ups` por `driver = usbhid-ups` y se aplica `ansible-playbook playbooks/nut.yml`. El apagado ordenado no cambia. Esto no se ha probado con una UPS física, así que lo primero es simular un corte con la UPS conectada y medir cuánto dura la batería.
+
+## 4. Revisión rápida (health check)
+
+Esta revisión dice en pocos minutos si el kit está bien y, si algo falla, por dónde empezar. Se hace al comenzar cada jornada y cada vez que alguien reporta un problema.
+
+**Paso 1. El tablero.** `https://monitoreo.salud.movil` abre en **Estado del kit**. Se entra con una cuenta del grupo `admins` del dominio, o con la cuenta local `admin` de Grafana si el dominio no responde. Lo normal es **Problemas ahora** en 0, todos los equipos encendidos y todos los servicios en verde. Si algo está en rojo, la tabla **Qué está fallando** dice qué servicio, en qué equipo y si falla en IPv4 o en IPv6. Cada servicio se prueba cada 15 segundos y se pone en rojo cuando lleva 30 segundos fallando.
 
 **Paso 2. kit01 en un minuto.**
 
 ```bash
-systemctl --failed                         # servicios caídos
-virsh -c qemu:///system list --all         # las dos VMs en running, prueba01 apagada
-df -h / /var/lib/libvirt/images            # por debajo del 80 %, donde salta la alerta DiscoAlto
-chronyc tracking | grep -E "Stratum|Leap"  # Leap status : Normal
-sudo ss -ltnup | grep -E ':(53|67|80|123|443|514|547) '   # puertos de los servicios del kit
+systemctl --failed                          # servicios caídos
+virsh -c qemu:///system list --all          # las dos VMs en running
+df -h / /var/lib/libvirt/images             # por debajo del 80 %
+chronyc tracking | grep "Leap status"       # Normal
 ```
 
 **Paso 3. Buscar por síntoma.** Después de arreglar, se vuelve al tablero y se espera a que todo esté en verde.
 
 | Síntoma | Dónde | Revisar | Arreglar |
 |---|---|---|---|
-| Un equipo apagado, o nada de una VM responde | kit01 | `virsh -c qemu:///system list --all` | `virsh -c qemu:///system start <vm>`. Los servicios vuelven solos en 1 o 2 minutos |
-| **DNS** en rojo, o se abre `https://10.20.20.11` pero no `pacientes.salud.movil` | kit01 | `systemctl status named` y `dig @10.20.20.10 pacientes.salud.movil` | `sudo systemctl restart named`. Si no arranca, `sudo named-checkconf` dice qué archivo tiene el error |
-| **DHCP** en rojo, o los equipos nuevos no obtienen dirección | kit01 | `systemctl status kea-dhcp4-server kea-dhcp6-server radvd` y `ip link show enp171s0` | `sudo systemctl restart kea-dhcp4-server kea-dhcp6-server radvd`. Si `enp171s0` no tiene enlace, revisar el cable al puerto 1 del switch |
-| **DHIS2** o **Base de datos** en rojo | clinica01 | `cd /srv/dhis2 && sudo docker compose ps` (`db` y `core` en `healthy`) | `sudo docker compose up -d`. DHIS2 tarda cerca de un minuto en responder |
-| **Archivos** o **Inicio de sesión (AD)** en rojo | clinica01 | `systemctl status samba-ad-dc` | `sudo systemctl restart samba-ad-dc`. Una cuenta bloqueada se libera sola a los 15 minutos |
-| **Biblioteca**, **Videos** o **Registro** en rojo | comunidad01 | `sudo docker ps` (`kiwix`, `jellyfin`, `formularios` y `caddy`) | En la carpeta del que falta, dentro de `/srv`, `sudo docker compose up -d` |
-| El formulario dice que no pudo guardar | clinica01 | La base de datos | Cuando vuelve la base, la persona toca Enviar otra vez y no pierde lo escrito |
-| Los celulares de la Comunidad no ven el portal | kit01 | `systemctl status nginx kitsalud-portal` | `sudo systemctl restart nginx kitsalud-portal`. En el celular, abrir una dirección con `http://`, porque las de `https://` no muestran el portal |
-| **Hora (NTP)** en rojo, o un equipo tiene la hora mal | kit01 | `chronyc tracking` | `sudo systemctl restart chrony` |
-| Alguien no llega a un servicio que debería ver | kit01 | `sudo tail -20 /var/log/kitsalud/kit01/firewall.log` | Si el bloqueo es correcto, por ejemplo un celular de la Comunidad intentando abrir DHIS2, no hay nada que hacer |
-| Alerta **DiscoAlto** | El equipo de la alerta | `df -h` y `sudo du -xh / --max-depth=2 \| sort -h \| tail` | Avisar al responsable técnico antes de borrar nada |
-| La copia falló (`backup` en **Qué está fallando**) | kit01 | `journalctl -u backup -o cat \| tail -20` y `lsblk -f` | Conectar el disco USB y ejecutar `sudo systemctl start backup.service` |
+| Nada de una VM responde | kit01 | `virsh -c qemu:///system list --all` | `sudo virsh -c qemu:///system start <vm>` |
+| Los equipos no resuelven nombres | kit01 | `dig @10.20.20.10 pacientes.salud.movil` | `sudo systemctl restart named`. Si no arranca, `sudo named-checkconf` dice qué archivo tiene el error |
+| Los equipos nuevos no reciben dirección | kit01 | `systemctl status kea-dhcp4-server` y `ip link show enp171s0` | `sudo systemctl restart kea-dhcp4-server kea-dhcp6-server radvd`. Si `enp171s0` no tiene enlace, revisar el cable al puerto 1 del switch y reiniciar Kea cuando vuelva |
+| DHIS2 o la base de datos en rojo | clinica01 | `cd /srv/dhis2 && sudo docker compose ps` | `sudo docker compose up -d`. DHIS2 tarda cerca de un minuto en responder |
+| Nadie entra con su usuario, o los archivos en rojo | clinica01 | `systemctl status samba-ad-dc` | `sudo systemctl restart samba-ad-dc` |
+| Biblioteca, videos o registro en rojo | comunidad01 | `sudo docker ps -a` | En la carpeta del servicio caído, dentro de `/srv`, `sudo docker compose up -d` |
+| Los celulares de la Comunidad no ven el portal | kit01 | `systemctl status nginx kitsalud-portal` | `sudo systemctl restart nginx kitsalud-portal`, y en el celular abrir una dirección con `http://` |
+| Alguien no llega a un servicio que debería ver | kit01 | `sudo tail -20 /var/log/kitsalud/kit01/firewall.log` | Si el bloqueo es correcto, como un celular de la Comunidad que intenta abrir DHIS2, no hay nada que hacer |
+| La copia de la semana falló | kit01 | `journalctl -u backup -o cat \| tail -20` y `lsblk -f` | Conectar el disco USB y sacar la copia a mano (sección 12) |
 
-Si un problema se repite o no se arregla con esta tabla, se anota la hora, el síntoma y lo que mostraron los comandos, y se avisa al responsable técnico. Esa información es la que se necesita para buscarlo en los logs.
-
-## 4. Apagar el kit
-
-El apagado ordenado cierra primero lo que tiene datos, para que PostgreSQL y el dominio terminen limpios.
-
-1. Si se cierra una misión, sacar antes una copia con el disco USB conectado (`sudo systemctl start backup.service`, unos 15 segundos).
-2. Ejecutar el apagado ordenado.
-
-   ```bash
-   sudo kit-apagado
-   ```
-
-   Apaga comunidad01, después clinica01 y al final kit01. Cada VM tiene hasta 180 segundos para cerrar sus servicios y, si no termina, se fuerza para que kit01 alcance a apagarse. En el kit, comunidad01 cerró en 2 segundos y clinica01 en 4.
-3. Cuando el indicador de kit01 se apaga, desconectar el switch y el punto de acceso.
-
-`shutdown` y `poweroff` apagan las dos VMs al mismo tiempo y sin orden, así que para apagar el kit se usa siempre `kit-apagado`. Al encender de nuevo se puede ver cómo fue el apagado anterior con `journalctl -t kit-apagado -b -1 -o short-iso`. Si alguna línea dice `apagado forzado`, esa VM no cerró a tiempo y conviene revisar su log.
-
-### 4.1 Corte de energía
-
-El kit no tiene una UPS física, así que su estado se simula con NUT. La UPS lógica avisa cuando pasa a batería y, cuando la batería queda baja, ejecuta el mismo `kit-apagado`. Con una UPS real conectada por USB solo cambia el driver de NUT y el procedimiento queda igual.
-
-| Comando | Qué simula | Qué hace el kit |
-|---|---|---|
-| `sudo kit-ups` | Nada | Muestra el estado, la carga y la autonomía |
-| `sudo kit-ups ob` | Se cortó la energía | Avisa en el journal y no apaga nada |
-| `sudo kit-ups lb` | La batería quedó baja | Ejecuta el apagado ordenado completo |
-| `sudo kit-ups ol` | Volvió la energía | Vuelve a `OL` |
-
-Para practicar sin apagar kit01 existe un simulacro. Con el archivo `/etc/kitsalud/nut/simulacro` creado hace menos de una hora, la batería baja apaga las VMs en orden pero deja kit01 encendido. Como seguro adicional se enmascara el apagado de kit01 mientras dura la práctica.
-
-```bash
-sudo systemctl mask --runtime poweroff.target halt.target
-sudo touch /etc/kitsalud/nut/simulacro
-sudo kit-ups ob; sleep 10; sudo kit-ups lb
-journalctl -t kit-apagado --since -5min -o cat        # termina con "Simulacro terminado"
-sudo systemctl unmask --runtime poweroff.target halt.target
-sudo virsh -c qemu:///system start comunidad01 && sudo virsh -c qemu:///system start clinica01
-```
-
-En el kit, las dos VMs se apagaron 16 segundos después de la batería baja, kit01 siguió encendido y la UPS volvió sola a `OL`. Al encenderlas otra vez todo estaba en verde a los 42 segundos.
+Si un problema se repite, se anota la hora, el síntoma y lo que mostraron los comandos, porque con eso se busca en los logs (sección 6).
 
 ## 5. Gestión de usuarios
 
-El kit tiene dos tipos de cuentas personales. Las del dominio sirven para los archivos compartidos, la consulta de prerregistros y el monitoreo, y las de DHIS2 para la historia clínica. Son independientes, aunque cada persona tiene el mismo nombre en las dos (por ejemplo `ana.rojas`). Una persona nueva del personal clínico necesita las dos. DHIS2 usa sus propias cuentas a propósito, para que el registro de pacientes siga funcionando si el dominio falla.
+El kit tiene dos tipos de cuentas personales. Las **del dominio** sirven para los archivos compartidos, la consulta de prerregistros y el monitoreo, y las **de DHIS2** para la historia clínica. Son independientes, aunque cada persona usa el mismo nombre en las dos (por ejemplo `ana.rojas`). DHIS2 tiene sus propias cuentas para que el registro de pacientes siga funcionando si el dominio falla.
 
-| Cuenta | Para qué | Dónde se gestiona |
-|---|---|---|
-| Del dominio (`SALUD\<usuario>`) | `archivos` y consulta para `clinicos`, `contenido` para `clinicos` y `admins`, Grafana solo para `admins` | clinica01, con `samba-tool` o con Ansible |
-| De DHIS2 | Registro y consulta de pacientes, con el rol "Personal clínico" o "Administrador" | DHIS2, app **Users**, o con Ansible |
-| `comunidad` de Jellyfin | Ver los videos, sin contraseña | No se cambia |
-| Administración del kit | SSH y `sudo` en kit01 y las VMs | `passwd` en cada equipo y el vault de Ansible |
+| Grupo del dominio | A qué entra |
+|---|---|
+| `clinicos` (gid 10001) | Recurso `archivos`, recurso `contenido` y consulta de prerregistros |
+| `admins` (gid 10002) | Recurso `contenido` y monitoreo (Grafana) |
 
-### 5.1 Personas permanentes, con Ansible
+### 5.1 Usuarios del dominio, en clinica01
 
-Las personas que van a estar en todas las misiones se agregan al inventario. Así quedan con el mismo número de usuario si el dominio se reconstruye, y los archivos restaurados conservan su dueño. Se agrega la persona en `inventarios/kit/group_vars/all/samba.yml` con el siguiente `uid` libre (empiezan en 10101) y en `dhis2.yml` con su rol, y se aplica.
+Estos son los comandos para gestionar las cuentas directamente en clinica01, sin la máquina de control.
+
+| Qué | Comando |
+|---|---|
+| Ver las cuentas y un grupo | `sudo samba-tool user list` y `sudo samba-tool group listmembers clinicos` |
+| Crear una cuenta (pide la contraseña) | `sudo samba-tool user create maria.lopez --given-name=Maria --surname=Lopez` |
+| Darle su número de usuario y su grupo principal | `sudo samba-tool user addunixattrs maria.lopez 10104 --gid-number=10001` |
+| Agregarla a un grupo | `sudo samba-tool group addmembers clinicos maria.lopez && sudo net cache flush` |
+| Quitarla de un grupo | `sudo samba-tool group removemembers clinicos maria.lopez && sudo net cache flush` |
+| Cambiar la contraseña | `sudo samba-tool user setpassword maria.lopez` |
+| Deshabilitar o habilitar | `sudo samba-tool user disable maria.lopez` y `sudo samba-tool user enable maria.lopez` |
+| Desbloquear | `sudo samba-tool user unlock maria.lopez` |
+| Borrar | `sudo samba-tool user delete maria.lopez` |
+
+El número de usuario (`uid`) se toma libre desde 10101. Después de 5 contraseñas equivocadas la cuenta se bloquea 15 minutos. Después de cambiar una contraseña, la anterior sigue sirviendo hasta una hora en los recursos compartidos, así que para cortar el acceso de inmediato se deshabilita la cuenta.
+
+### 5.2 Personas permanentes, con Ansible
+
+Una persona que va a estar en todas las misiones se agrega también al inventario de Ansible, con el mismo `uid`. Así, si el dominio se reconstruye, la cuenta vuelve igual y sus archivos conservan el dueño. Desde la máquina de control, en `platform/ansible`, se agrega la persona en `inventarios/kit/group_vars/all/samba.yml` y en `dhis2.yml`, y se aplica.
 
 ```yaml
 - { nombre: maria.lopez, nombres: Maria, apellidos: Lopez, uid: 10104, grupos: [clinicos] }
@@ -174,216 +162,182 @@ ansible-playbook playbooks/samba.yml
 ansible-playbook playbooks/clinica01.yml
 ```
 
-Los playbooks solo crean lo que falta. No cambian la contraseña de una cuenta que ya existe ni borran las que se quitan del inventario, así que eso se hace a mano.
+Los playbooks solo crean lo que falta. No cambian contraseñas ni borran cuentas, y eso se hace con los comandos de la sección 5.1.
 
-### 5.2 En campo, con samba-tool
+### 5.3 Cuentas de DHIS2
 
-Sin la máquina de control, las cuentas del dominio se gestionan en clinica01. Una cuenta creada así se agrega después al inventario con el mismo `uid`.
+En `https://pacientes.salud.movil`, con una cuenta de rol "Administrador", se abre la app **Users**. Al crear una cuenta se le pone el rol "Personal clínico", la unidad del kit en las tres listas de **Organisation units** y el grupo "Personal clínico". Sin el grupo, la persona entra pero no ve los pacientes. Para quitar el acceso se usa **Disable** y no **Delete**, así queda claro quién hizo cada registro.
 
-| Qué | Comando en clinica01 |
-|---|---|
-| Ver cuentas y grupos | `sudo samba-tool user list` y `sudo samba-tool group listmembers clinicos` |
-| Crear una cuenta | `sudo samba-tool user create maria.lopez --given-name=Maria --surname=Lopez` |
-| Darle su número y grupo principal | `sudo samba-tool user addunixattrs maria.lopez 10104 --gid-number=10001` (10001 es `clinicos` y 10002 es `admins`) |
-| Agregarla a un grupo | `sudo samba-tool group addmembers clinicos maria.lopez` y `sudo net cache flush` |
-| Cambiar la contraseña | `sudo samba-tool user setpassword maria.lopez` |
-| Deshabilitar o habilitar | `sudo samba-tool user disable maria.lopez` y `enable` |
-| Desbloquear | `sudo samba-tool user unlock maria.lopez` |
-| Borrar | `sudo samba-tool user delete maria.lopez` |
+### 5.4 Administración del kit
 
-Después de 5 contraseñas equivocadas la cuenta se bloquea 15 minutos. Después de un cambio de contraseña, la anterior sigue sirviendo hasta una hora en los recursos compartidos, como en un dominio de Windows, así que para cortar el acceso de inmediato se deshabilita la cuenta.
-
-**Cuentas de DHIS2.** En `https://pacientes.salud.movil`, con una cuenta de rol "Administrador", se abre la app **Users**. Al crear una cuenta se le pone el rol "Personal clínico", la unidad del kit en las tres listas de **Organisation units** y el grupo "Personal clínico". Sin el grupo, la persona entra pero no ve los datos de pacientes. Para quitar el acceso es mejor **Disable** que **Delete**, porque así queda claro quién hizo cada registro.
-
-**Administración del kit.** Es un solo usuario con `sudo` en kit01 y las dos VMs. Para cambiar su contraseña se ejecuta `passwd` en los tres equipos y después se actualizan en el vault `vault_admin_password` y su hash (`mkpasswd -m sha-512`). Si no se actualiza el vault, Ansible deja de poder conectarse.
-
-En el kit se probó el ciclo completo con una cuenta temporal. Se creó, entró a `archivos` y a la consulta por IPv4 y por IPv6, recibió 401 en Grafana por no ser de `admins`, se deshabilitó (`NT_STATUS_ACCOUNT_DISABLED`), se bloqueó con 5 intentos (`NT_STATUS_ACCOUNT_LOCKED_OUT`), se desbloqueó y se borró. Con DHIS2 se hizo lo mismo por su API.
+Es un solo usuario con `sudo` en kit01 y en las dos VMs. Para cambiar su contraseña se ejecuta `passwd` en los tres equipos y después se actualizan en el vault `vault_admin_password` y su hash (`mkpasswd -m sha-512`) con `ansible-vault edit`. Si no se actualiza el vault, Ansible deja de poder conectarse.
 
 ## 6. Revisión de logs
 
-Todos los equipos envían sus logs a kit01, a una carpeta por equipo en `/var/log/kitsalud/`. El equipo se decide por la dirección de origen, así que uno no puede escribir en la carpeta de otro. Lo práctico de esto es que los logs de una VM se pueden leer aunque esa VM esté apagada.
+Todos los equipos envían sus logs a kit01, a una carpeta por equipo en `/var/log/kitsalud/`. Por eso los logs de una VM se pueden leer aunque esa VM esté apagada.
 
 | Archivo en kit01 | Qué tiene |
 |---|---|
-| `/var/log/kitsalud/<equipo>/auth.log` | Inicios de sesión SSH, `sudo` y accesos rechazados. En clinica01 también los del dominio, con la etiqueta `samba-auth` |
-| `/var/log/kitsalud/<equipo>/syslog.log` | Todo lo demás de cada equipo, incluido sw01 |
-| `/var/log/kitsalud/kit01/firewall.log` | Lo que bloqueó el firewall, con la etiqueta `fw-drop` |
-| `/var/log/kitsalud/kit01/dhcp.log` | Direcciones entregadas por el DHCP |
-| `/var/log/kitsalud/kit01/dns.log` | Mensajes del DNS (arranque, recargas, errores de zona) |
-| `/var/log/named/consultas.log` | Cada consulta al DNS con el equipo que preguntó |
-
-El AP no envía sus logs, así que su registro se ve en su página, en **System Tools**, **System Log**.
-
-Estos son los eventos que más se consultan.
+| `/var/log/kitsalud/<equipo>/auth.log` | Inicios de sesión SSH, `sudo` y, en clinica01, los inicios de sesión del dominio |
+| `/var/log/kitsalud/<equipo>/syslog.log` | Todo lo demás de cada equipo, incluido el switch |
+| `/var/log/kitsalud/kit01/firewall.log` | Lo que bloqueó el firewall |
+| `/var/log/kitsalud/kit01/dhcp.log` | Direcciones entregadas |
+| `/var/log/named/consultas.log` | Cada consulta al DNS del kit |
 
 ```bash
 # Inicios de sesión SSH fallidos
 sudo grep -h -E "Failed password|Invalid user" /var/log/kitsalud/*/auth.log | tail
 # Inicios de sesión del dominio con problemas
 sudo grep samba-auth /var/log/kitsalud/clinica01/auth.log | grep -E "WRONG_PASSWORD|LOCKED_OUT|NO_SUCH_USER" | tail
-# Bloqueos del firewall por tipo
+# Bloqueos del firewall, contados por tipo
 sudo grep -o "fw-drop [A-Za-z0-9-]*" /var/log/kitsalud/kit01/firewall.log | sort | uniq -c | sort -rn
-# Lo bloqueado dentro del kit, sin el ruido de la WAN
-sudo grep fw-drop /var/log/kitsalud/kit01/firewall.log | grep -v "IN=enp170s0" | tail
-# Direcciones entregadas
+# Direcciones entregadas por el DHCP
 sudo grep DHCP4_LEASE_ALLOC /var/log/kitsalud/kit01/dhcp.log | tail
-# Un servicio concreto, en su equipo
+# Un servicio o una aplicación concreta
 journalctl -u <servicio> --since -15min
 cd /srv/dhis2 && sudo docker compose logs --since 15m core
 ```
 
-| Etiqueta del firewall | Qué se bloqueó |
-|---|---|
-| `fw-drop F-20` | Un equipo de la Comunidad intentó llegar a la red Interna, a clinica01 o a la gestión de kit01 |
-| `fw-drop F-21` | Un SSH desde un equipo de la Interna sin dirección de administración, o por IPv6 |
-| `fw-drop F-18` | kit01 intentó salir a Internet por un puerto no permitido |
-| `fw-drop br-srv` | Una VM intentó llegar a un servicio de la otra que no está permitido |
-| `fw-drop IN=...` | Cualquier otra cosa sin regla |
+En el log del firewall, `fw-drop F-20` es algo de la Comunidad que intentó llegar a la red clínica o a la gestión, `fw-drop F-21` es un SSH desde un equipo que no es de administración y `fw-drop br-srv` es una VM que intentó llegar a la otra. En cada línea, `IN` es la red de origen (`br-com` la Comunidad, `lan0.10` la Interna, `br-srv` los servidores), `SRC` y `DST` las direcciones y `DPT` el puerto. Las líneas con `IN=enp170s0` son difusiones normales de la red del sitio y no son ataques.
 
-En una línea del firewall, `IN` es la red de donde vino el paquete (`br-com` es la Comunidad, `lan0.10` la Interna, `br-srv` los servidores y `enp170s0` la WAN), `SRC` y `DST` son las direcciones y `DPT` el puerto. Casi todas las líneas con `IN=enp170s0` son difusiones normales de la red del sitio y no son ataques.
-
-Los logs de `/var/log/kitsalud/` rotan cada semana (o antes si un archivo pasa de 100 MB) y se guardan cuatro copias comprimidas, que se leen con `zgrep`. Los logs no van en la copia semanal, porque son de diagnóstico.
+Los logs rotan cada semana y se guardan cuatro copias comprimidas, que se leen con `zgrep`.
 
 ## 7. Actualización
 
-Las actualizaciones se hacen solo en la base, con Internet y en una ventana de mantenimiento, nunca en campo. Lo ideal es hacerlas antes de cada misión, con tiempo para revisar el kit después. Antes de tocar nada se saca una copia al disco USB y una instantánea de cada VM, así que cualquier paso que salga mal en una VM se deshace volviendo a la instantánea.
+Las actualizaciones se hacen en la base, con Internet y en una ventana de mantenimiento, nunca en campo. Antes de tocar nada se saca una copia al disco USB y una instantánea de cada VM, así que si algo sale mal en una VM se vuelve atrás. Todo toma unos 7 minutos.
 
-| Qué | Cómo | Qué queda fijo |
-|---|---|---|
-| Paquetes de las VMs | `apt` con todo lo que no está retenido | Docker, Samba AD, Chrony y el exportador de métricas |
-| Paquetes de kit01 | `apt` con lo no retenido, sin reiniciar | BIND9, Kea, radvd, Chrony, nginx, NUT, Prometheus, Grafana, rsyslog, restic y NetBird |
-| Imágenes de las aplicaciones | Se bajan las versiones fijadas en cada `compose.yml` | La versión de cada imagen |
+Los servicios del kit cuya configuración depende de la versión (BIND9, Kea, Chrony, nginx, Samba, Docker y otros) están retenidos con `apt-mark hold` y no se actualizan con este procedimiento. Las imágenes de Docker tienen su versión escrita en cada `compose.yml`, así que tampoco cambian solas.
 
-Todo se hace desde la máquina de control, en `platform/ansible`, con el playbook `actualizacion.yml` y la variable `paso`.
+Todo se ejecuta desde la máquina de control, en `platform/ansible`, en este orden.
 
-| # | Comando | Qué hace | Comprobación |
-|---|---|---|---|
-| 1 | `docs/pruebas/scripts/P12-reinicio.sh estado` | Revisa que todo esté bien antes de empezar | Sin fallas. Si algo ya falla, se arregla primero para no mezclar problemas |
-| 2 | `ssh kitsalud@<kit01> sudo systemctl start backup.service` | Copia al disco USB | Cuatro `snapshot ... saved` y `no errors were found` |
-| 3 | `ansible-playbook playbooks/actualizacion.yml -e paso=instantanea` | Apaga cada VM por ACPI, le saca una instantánea `antes-<fecha>` y la enciende | `virsh snapshot-list <vm>` muestra la instantánea |
-| 4 | `... -e paso=paquetes` | Actualiza las VMs una por una y las reinicia si hace falta | `apt list --upgradable` solo con retenidos y todo en verde |
-| 5 | `... -e paso=paquetes-kit01` | Actualiza kit01 sin reiniciar y sin tocar la red ni NetBird | `netbird status` conectado y el mismo número de cadenas en `nft list ruleset` |
-| 6 | `... -e paso=imagenes` | Guarda las imágenes de Docker con `docker save` en el disco USB, con su sha256 | `sha256 bien` y el disco desmontado |
-| 7 | `... -e paso=borrar` | Borra las instantáneas cuando todo está verificado | - |
+```bash
+# 1. Copia al disco USB (debe terminar en success)
+ansible kit01 -b -m shell -a 'systemctl start backup.service; systemctl show -p Result --value backup.service'
+# 2. Instantánea de cada VM (las apaga, les saca la instantánea y las enciende)
+ansible-playbook playbooks/actualizacion.yml -e paso=instantanea
+# 3. Paquetes de las VMs, una por una, y reinicio si lo piden
+ansible-playbook playbooks/actualizacion.yml -e paso=paquetes
+# 4. Paquetes de kit01, sin reiniciar y sin tocar la red ni NetBird
+ansible-playbook playbooks/actualizacion.yml -e paso=paquetes-kit01
+# 5. Guardar las imágenes de Docker en el disco USB, para reinstalarlas sin Internet
+ansible-playbook playbooks/actualizacion.yml -e paso=imagenes
+# 6. Cuando todo está verificado, borrar las instantáneas
+ansible-playbook playbooks/actualizacion.yml -e paso=borrar
+```
 
-Si algo quedó mal en una VM, `ansible-playbook playbooks/actualizacion.yml -e paso=revertir -e vms=<vm>` la deja como estaba antes del paso 3. Si en campo se daña una imagen, se carga desde el disco USB sin Internet con `-e paso=cargar -e vms=<vm> -e imagen=<imagen>`. En el kit, la actualización completa tomó cerca de 7 minutos y reinstalar `kiwix-serve` sin Internet tomó 43 segundos.
+Después de los pasos 3 y 4 se revisa que el tablero siga en verde y que `ansible-playbook playbooks/verificar-flujos.yml` termine con todos los flujos como se esperaba.
 
-Los paquetes retenidos se actualizan uno por uno y a propósito, con `apt-mark unhold`, la actualización y `apt-mark hold` otra vez. En kit01, los de la red, el firewall y NetBird se actualizan solo con alguien en el sitio, porque un error ahí corta el acceso remoto. Una versión nueva de una aplicación se prueba primero en una rama del repositorio `apps`, leyendo sus notas de versión, porque DHIS2 y PostgreSQL migran sus datos al arrancar y no vuelven atrás solos.
+Si una VM quedó mal, se vuelve a su instantánea.
+
+```bash
+ansible-playbook playbooks/actualizacion.yml -e paso=revertir -e vms=clinica01
+```
+
+Si en campo se daña una imagen de Docker, se carga desde el disco USB sin Internet y se levanta el servicio.
+
+```bash
+ansible-playbook playbooks/actualizacion.yml -e paso=cargar -e vms=comunidad01 -e imagen=ghcr.io/kiwix/kiwix-serve:3.8.2
+ssh -J kitsalud@10.20.10.1 kitsalud@10.20.20.12 'cd /srv/kiwix && sudo docker compose up -d'
+```
+
+Un paquete retenido se actualiza solo a propósito y de a uno, con `sudo apt-mark unhold <paquete>`, `sudo apt-get install --only-upgrade <paquete>` y `sudo apt-mark hold <paquete>`. Los de la red, el firewall y NetBird en kit01 se actualizan solo con alguien en el sitio, porque un error corta el acceso remoto.
 
 ## 8. Operación sin Internet
 
-El kit está hecho para trabajar sin Internet. Todo lo que usa la brigada corre adentro, así que un sitio sin conexión, o una conexión que se cae a mitad de la jornada, no detiene la atención.
+El kit está hecho para trabajar sin Internet, así que un sitio sin conexión, o una conexión que se cae a mitad de la jornada, no detiene la atención.
 
 | Sigue funcionando | Deja de funcionar |
 |---|---|
-| DHCP en IPv4 y anuncios de IPv6 | Navegar por Internet desde la Interna y la Comunidad |
-| Los nombres de `salud.movil` y del dominio | Los nombres de Internet. A la Comunidad el DNS le responde la IP del portal y a la Interna `SERVFAIL` |
-| La hora, que kit01 sigue entregando | La sincronización de kit01 con servidores externos |
-| DHIS2, consulta de prerregistros y archivos compartidos | La administración remota por NetBird |
-| Biblioteca, videos y formulario de prerregistro | Las actualizaciones |
-| El portal cautivo, que el celular abre solo | Las páginas externas con `https://` |
+| DHCP, DNS de `salud.movil` y hora | Navegar por Internet |
+| Historia clínica, consulta de prerregistros y archivos | Los nombres de Internet |
+| Biblioteca, videos y formulario de prerregistro | La administración remota por NetBird |
+| Portal cautivo, que el celular abre solo | Las actualizaciones |
 | Inicio de sesión del dominio y de DHIS2, monitoreo, logs y copias | |
 
-Sobre la hora, kit01 conserva la última referencia que tenía y, si el corte se alarga, pasa a estrato 10 y sigue sirviendo la hora. Puede alejarse poco a poco de la hora real, pero todos los equipos siguen con la misma hora, que es lo que necesitan el dominio y los registros clínicos.
+Sin Internet, kit01 lo detecta en menos de un minuto y hace que a los celulares de la Comunidad cualquier nombre externo los lleve al portal. Así el celular abre el portal solo. Cuando vuelve Internet todo regresa solo, y no hay que hacer nada.
 
-Para saber si el kit tiene Internet se revisa en kit01.
-
-```bash
-ping -c 3 1.1.1.1                       # 0% packet loss con Internet
-cat /run/kit-internet/modo              # con o sin
-dig +short @10.20.20.10 pacientes.salud.movil     # 10.20.20.11 en los dos casos
-```
-
-`ip route show default` puede seguir mostrando la ruta por la WAN aunque no haya Internet, así que la prueba que vale es el `ping`. El tablero de monitoreo no se pone en rojo por falta de Internet, porque todo lo que vigila está dentro del kit.
-
-Sin NetBird, el kit se administra desde un equipo conectado al puerto `ether4` de sw01, con la red en automático. Si el DHCP falla, se le pone a mano la `10.20.10.29/24`, con gateway `10.20.10.1` y DNS `10.20.20.10`. Esa dirección está fuera del rango que entrega el DHCP, así que no choca con nadie.
-
-Cuando vuelve Internet no hay que hacer nada. La ruta, la hora y NetBird se recuperan solos, y en menos de un minuto el DNS deja de mandar a la Comunidad al portal. Las actualizaciones tampoco se hacen en campo aunque vuelva la conexión.
-
-En el kit se cortó la salida a Internet durante 5 minutos con una tabla temporal del firewall, sin desconectar el cable para no perder el acceso remoto. Se comprobaron 51 cosas en IPv4 y en IPv6 desde kit01, las dos VMs, el switch y un cliente de la Comunidad, y todo lo local siguió funcionando, incluido un prerregistro enviado sin Internet que quedó guardado en clinica01.
-
-## 9. Cambio de perfil por misión
-
-El mismo kit sirve para misiones distintas. Según la misión se enciende o no cada VM y se activa o no el SSID de la Comunidad. El direccionamiento, el DNS y el firewall no cambian, y el perfil queda guardado aunque kit01 se reinicie.
-
-<div class="diagrama"><img src="../diagramas/perfiles-mision.png" alt="Perfiles por misión"></div>
-
-**Pasar a "Solo clínica".** En kit01 se quita el arranque automático de comunidad01 y se apaga. En clinica01 se detiene la publicación de contenido, que copia cada 10 minutos a comunidad01 y fallaría con ella apagada. En la página del AP se desactiva el SSID2.
+Para saber si el kit tiene Internet, en kit01.
 
 ```bash
-sudo virsh -c qemu:///system autostart --disable comunidad01
-sudo virsh -c qemu:///system shutdown comunidad01
-# en clinica01
-sudo systemctl disable --now publicacion.timer && sudo systemctl reset-failed publicacion.service
+cat /run/kit-internet/modo        # con o sin
+ping -c 3 1.1.1.1                 # 0% packet loss con Internet
 ```
 
-**Pasar a "Jornada comunitaria".** Se hace lo mismo con clinica01 y se dejan los dos SSID, porque el de la Clínica queda para que el personal administre el kit. Sin clinica01 no hay historia clínica ni archivos, el formulario abre pero avisa que no puede guardar, y a Grafana se entra con la cuenta local.
+Sin NetBird, el kit se administra desde un equipo conectado al puerto `ether4` del switch, con la red en automático. Si no recibe dirección, se le pone a mano `10.20.10.29/24`, con puerta de enlace `10.20.10.1` y DNS `10.20.20.10`. Desde ahí el acceso es el de la sección 1.
 
-**Volver al perfil de referencia.** Se activa otra vez el arranque automático y se enciende la VM (`virsh autostart <vm>` y `virsh start <vm>`). Si se venía de "Solo clínica", se activa de nuevo `publicacion.timer` en clinica01 y el SSID2 en el AP.
+## 9. Perfiles por misión
 
-En un perfil con una VM apagada, el tablero la muestra en rojo con sus servicios, y es lo esperado. La copia del domingo también termina con error porque no puede extraer de la VM apagada, aunque guarda lo que sí pudo. Si se vuelve a aplicar `vms.yml`, el arranque automático vuelve al perfil de referencia.
+El mismo kit sirve para misiones distintas, y según la misión se enciende o no cada VM. kit01 siempre está encendido, y el direccionamiento, el DNS y el firewall no cambian entre perfiles.
+
+<div class="diagrama-fisico"><img src="../diagramas/perfiles-mision.png" alt="Perfiles por misión"></div>
+
+Para apagar una VM de forma que no vuelva a encender sola, en kit01.
+
+```bash
+sudo virsh -c qemu:///system autostart --disable <vm>
+sudo virsh -c qemu:///system shutdown <vm>
+```
+
+Para volver al perfil de referencia.
+
+```bash
+sudo virsh -c qemu:///system autostart <vm>
+sudo virsh -c qemu:///system start <vm>
+```
+
+Hay dos ajustes según el perfil. En **Solo clínica** se detiene en clinica01 la publicación de contenido, que copia material a comunidad01 cada 10 minutos y fallaría con ella apagada (`sudo systemctl disable --now publicacion.timer`, y `enable --now` al volver), y se desactiva el SSID de la Comunidad en la página del AP. En **Jornada comunitaria** no hay historia clínica ni prerregistro, y a Grafana se entra con la cuenta local `admin`, porque el dominio está en clinica01.
+
+Con una VM apagada, el tablero la muestra en rojo y la copia del domingo termina con error porque no puede extraer de ella, aunque guarda lo demás. En estos perfiles es lo esperado.
 
 <div class="salto"></div>
 
 # Parte 2. Plan de respaldo y recuperación (E5)
 
-## 10. Objetivos de recuperación
+## 10. Resumen del plan
 
-**Punto de recuperación (RPO).** Se pierde como máximo una semana de datos, porque la copia automática corre el domingo a las 4:00. La ventana se acorta con una copia manual antes de cada cambio de configuración y al cerrar cada misión.
-
-**Tiempo de recuperación (RTO).** Depende de qué se perdió. Los tiempos medidos salen de las pruebas en el kit real y los demás son estimados.
-
-| Qué se perdió | Tiempo | Base |
-|---|---|---|
-| Un archivo de `archivos` o `contenido` | Unos 70 s | Medido (68 s con un archivo y una tabla) |
-| Una tabla de `prerregistro` | Unos 70 s | Medido |
-| La base `dhis2` completa | Menos de 5 min | Medido. `pg_restore` tardó 7,7 s con 333 tablas y 45 893 filas, más reiniciar DHIS2 |
-| El dominio de Samba AD | De 15 a 30 min | Estimado. La restauración offline tarda 2,5 s y el resto es ponerlo en servicio |
-| Una VM completa | De 1 a 2 h | Estimado. Se reconstruye con Ansible y se restauran los datos. Necesita Internet |
-| kit01 completo | Medio día | Estimado. Instalar Ubuntu, aplicar Ansible y restaurar, en la base |
+| Elemento | Definición |
+|---|---|
+| Qué se respalda | Las bases de datos de DHIS2 y de prerregistros, el dominio de Samba AD, los recursos `archivos` y `contenido`, y la configuración de los tres equipos |
+| Método | restic en modo extracción. kit01 saca los datos de cada VM por SSH y los guarda cifrados en un disco USB. Las VMs no tienen la clave de las copias |
+| Frecuencia | Cada domingo a las 4:00, y una copia manual antes de cada cambio y al cerrar cada misión |
+| Retención | 4 copias semanales y 3 mensuales |
+| Destino | Disco USB de 500 GB conectado a kit01, montado solo durante la copia |
+| Pérdida máxima | Una semana de datos, o menos con la copia manual |
 
 ## 11. Qué se respalda
 
-kit01 junta todo en un área temporal y guarda un snapshot de restic por tipo, cada uno con su etiqueta.
+| Etiqueta | Qué tiene | De dónde |
+|---|---|---|
+| `bd` | Volcado (`pg_dump`) de las bases `dhis2` y `prerregistro` y los roles de PostgreSQL | clinica01 |
+| `dominio` | Respaldo del dominio con `samba-tool domain backup offline` | clinica01 |
+| `recursos` | Recursos `archivos` y `contenido`, con dueños, permisos y ACL | clinica01 |
+| `config` | `/etc` de kit01, con la raíz de la CA, y `/etc` y `/srv` de las VMs sin datos grandes | kit01 y las dos VMs |
+
+No se respaldan los discos de las VMs, porque se reconstruyen con Ansible y después se restauran los datos. Tampoco las imágenes de Docker, que tienen versión fija y se descargan otra vez, ni los videos de comunidad01, que son una copia de `contenido`, ni los logs, que son de diagnóstico.
+
+## 12. Cómo funciona la copia
+
+kit01 entra a cada VM con el usuario `backup`, cuya llave solo se acepta desde kit01 y solo puede ejecutar el comando de extracción. Junta todo en un área temporal, guarda un snapshot de restic por etiqueta, borra los que pasan de la retención y termina con `restic check`. El disco se monta por su UUID solo mientras dura la copia y se desmonta al terminar, aunque algo falle. El repositorio está cifrado con una clave que solo tiene kit01 (y el vault de Ansible), así que sin ella no se puede leer. Si kit01 estaba apagado el domingo, la copia corre al encenderlo.
 
 <div class="diagrama"><img src="../diagramas/flujo-respaldo.png" alt="Respaldo semanal en modo pull"></div>
 
-| Etiqueta | Qué tiene | Origen | Método |
-|---|---|---|---|
-| `config` | `/etc` de kit01, con la raíz de la CA, y `/etc` y `/srv` de las VMs sin datos grandes (Compose, `.env`, configuración de DHIS2, Caddy y Jellyfin) | kit01 y las VMs | Lectura directa en kit01 y `rsync` en las VMs |
-| `recursos` | Recursos `archivos` y `contenido` con dueños numéricos, ACL y atributos extendidos | clinica01 | `rsync` |
-| `bd` | `pg_dump -Fc` de `dhis2` y `prerregistro`, y los roles de PostgreSQL | clinica01 | Comando forzado |
-| `dominio` | `samba-tool domain backup offline` de `ad.salud.movil` | clinica01 | Comando forzado |
+Para sacar una copia a mano, con el disco USB conectado, en kit01. Tarda unos 15 segundos.
 
-Lo que no se respalda se dejó afuera a propósito. Los discos de las VMs no, porque se reconstruyen con Ansible y después se restauran los datos. Los datos crudos de PostgreSQL tampoco, porque un `pg_dump` se puede restaurar en otra versión y no depende del estado del motor. Los medios de comunidad01 son una copia de `contenido`, las imágenes Docker tienen versión fija y se descargan otra vez, y los logs y las métricas son de diagnóstico.
+```bash
+sudo systemctl start backup.service
+systemctl show -p Result --value backup.service               # success
+journalctl -u backup.service --since -5min -o cat | grep -E "saved|no errors"
+```
 
-## 12. Método, frecuencia, retención y destino
+Deben aparecer cuatro líneas `snapshot ... saved` y `no errors were found`. Si la copia falla, el tablero muestra **UnidadFallida** de kit01, y casi siempre es porque el disco no está conectado (`lsblk -f` debe mostrar `kitbackup`).
 
-kit01 extrae los datos de las VMs, que nunca los envían por su cuenta. Entra a cada VM con el usuario `backup`, cuya llave solo se acepta desde kit01 y solo ejecuta el comando `backup-extraer`. Ese comando acepta `rsync` en modo demonio con módulos de solo lectura, los volcados de PostgreSQL y el backup del dominio, y nada más. Las VMs no tienen la clave del repositorio ni llaves hacia kit01, así que una VM comprometida no puede leer ni borrar las copias.
+## 13. Restauración
 
-| Elemento | Valor |
-|---|---|
-| Frecuencia | `backup.timer`, cada domingo a las 4:00. Con `Persistent=true`, si kit01 estaba apagado la copia corre al arrancar |
-| Copia manual | `sudo systemctl start backup.service`, antes de cada cambio y al cerrar cada misión |
-| Duración | Unos 15 s, porque `rsync` solo transfiere lo que cambió |
-| Conexión | IPv6 y, si no responde, IPv4. El log dice cuál se usó |
-| Retención | 4 semanales y 3 mensuales por etiqueta (`restic forget --keep-weekly 4 --keep-monthly 3 --prune`) |
-| Destino | Disco USB 3.0 de 500 GB, ext4 con etiqueta `kitbackup`, montado por UUID en `/mnt/backup` solo durante la copia, con `noatime,nodev,nosuid,noexec` y fuera de `fstab` |
-| Cifrado | restic cifra el repositorio con AES-256. La clave está en `/etc/kitsalud/backup/restic.clave` (`400`, root) y sale del vault |
-| Verificación | `restic check` al final de cada copia |
-| Si falla | El servicio termina con error y aparece **UnidadFallida** en el tablero. Lo que se pudo extraer se guarda igual |
-
-El repositorio ocupa unos 850 MiB, casi todo por los archivos de la biblioteca, que no se comprimen. Cada copia sin cambios en los recursos agrega unos 5 MiB, así que el disco alcanza para años con esta retención.
-
-**Custodia.** El disco viaja con el kit. Hoy hay una sola copia en el mismo lugar que los datos, así que un robo o un incendio se llevan los dos. Es un riesgo aceptado del proyecto, y la copia en línea de la sección 15 es la forma de cerrarlo. La contraseña del vault, que es la que permite leer las copias, se guarda además fuera de los equipos del kit.
-
-## 13. Procedimientos de restauración
-
-Todo empieza en kit01, como root, con el disco montado y las variables de restic cargadas.
+Toda restauración empieza en kit01, como root, con el disco montado.
 
 ```bash
 sudo -i
-mount -o noatime,nodev,nosuid,noexec UUID=<backup_disco_uuid> /mnt/backup
+mount -o noatime,nodev,nosuid,noexec UUID=<uuid del disco kitbackup> /mnt/backup
 export RESTIC_REPOSITORY=/mnt/backup/restic RESTIC_PASSWORD_FILE=/etc/kitsalud/backup/restic.clave RESTIC_CACHE_DIR=/var/cache/restic
 S=/var/lib/kitsalud/backup
 restic snapshots                     # fechas y etiquetas de las copias
@@ -391,73 +345,68 @@ restic snapshots                     # fechas y etiquetas de las copias
 umount /mnt/backup                   # siempre al terminar
 ```
 
-Lo restaurado se pasa a la VM con `scp` desde kit01 (`kitsalud@10.20.20.11` es clinica01). Para recuperar una versión anterior se usa el ID de un snapshot de `restic snapshots` en lugar de `latest`.
+Lo restaurado se pasa a la VM desde kit01. Para recuperar una copia anterior se usa el ID de un snapshot en lugar de `latest`.
 
-**Un archivo o una carpeta.** Se restaura en una carpeta temporal y en clinica01 se copia a `/srv/samba/archivos/` con `sudo cp`, sin `-a`, y después `sudo chown` y `sudo chmod` con el dueño y los permisos que tenía. Así el archivo nuevo hereda la ACL por defecto del recurso y queda igual que antes. Con `cp -a` o con `install` la ACL no se hereda.
+| Qué se perdió | Tiempo aproximado |
+|---|---|
+| Un archivo o una tabla | Unos 70 segundos |
+| La base `dhis2` completa | Menos de 5 minutos |
+| El dominio | De 15 a 30 minutos |
+| Una VM completa | De 1 a 2 horas, en la base y con Internet |
+| kit01 completo | Medio día, en la base y con Internet |
+
+### 13.1 Un archivo de los recursos
 
 ```bash
-restic ls latest --tag recursos | grep <nombre>
 restic restore latest --tag recursos --include $S/clinica01/archivos/<ruta> --target /tmp/r
 ```
 
-**Una tabla o una base.** Se saca el volcado del disco y se restaura en clinica01. La base `dhis2` completa se restaura con DHIS2 detenido, para que no escriba mientras se carga.
+En clinica01 se copia a `/srv/samba/archivos/` con `sudo cp`, sin `-a`, y después `sudo chown` y `sudo chmod` con el dueño y los permisos que tenía. Así el archivo hereda la ACL del recurso y queda igual que antes. Con `cp -a` o con `install` la ACL no se hereda.
+
+### 13.2 Una tabla o una base de datos
 
 ```bash
 restic dump latest --tag bd $S/clinica01/postgres/<base>.dump > /tmp/<base>.dump
-# en clinica01, una tabla
-docker exec -i dhis2-db-1 pg_restore -U dhis -d <base> -t <tabla> < <base>.dump
-# en clinica01, la base dhis2 completa
-cd /srv/dhis2 && docker compose stop core
-docker exec -i dhis2-db-1 pg_restore -U dhis -d dhis2 --clean --if-exists < dhis2.dump
-docker compose start core
 ```
 
-**Una configuración.** `restic restore latest --tag config --include <ruta> --target /tmp/r`. Lo que gestiona Ansible se recupera mejor ejecutando otra vez su playbook, y la copia sirve para comparar o para lo que se cambió a mano.
+En clinica01, una tabla se restaura con `sudo docker exec -i dhis2-db-1 pg_restore -U dhis -d <base> -t <tabla> < <base>.dump`. La base `dhis2` completa se restaura con DHIS2 detenido, para que no escriba mientras se carga.
 
-**El dominio de Samba AD.** Hay dos caminos. El normal es aprovisionarlo otra vez con `playbooks/samba.yml`, que crea los mismos grupos y usuarios con los mismos `uid` y `gid`, así que los archivos restaurados conservan sus dueños. Se pierden las contraseñas que los usuarios hayan cambiado. El otro camino, para cuando hay cambios hechos fuera de Ansible, es restaurar el backup del dominio con `samba-tool domain backup restore`. `samba-tool` exige un nombre de controlador nuevo, así que el restaurado se llama `dc02`, y después se agregan otra vez los registros DNS de `dc01` y se ejecuta `samba.yml` para que el resto del kit siga usando el mismo nombre.
+```bash
+cd /srv/dhis2 && sudo docker compose stop core
+sudo docker exec -i dhis2-db-1 pg_restore -U dhis -d dhis2 --clean --if-exists < dhis2.dump
+sudo docker compose start core
+```
 
-**Una VM.** Se recrea con `playbooks/vms.yml`, se aplica su playbook (`clinica01.yml` o `comunidad01.yml`, con `samba.yml`, `publicacion.yml` y `backups.yml` según corresponda) y se restauran los datos. comunidad01 no tiene datos propios, porque los medios vuelven con la siguiente publicación. Necesita Internet, así que se hace en la base. comunidad01 se reconstruyó así en el kit real y quedó igual que antes, aunque Wikimedia limitó la descarga de los videos y hubo que esperar 10 minutos.
+### 13.3 Una configuración
 
-**kit01 completo.** Se instala Ubuntu Server 24.04 conservando los nombres de interfaz, se instala NetBird, se monta el disco de copias y se restaura primero la raíz de la CA (`/etc/kitsalud/ca`) desde el snapshot `config`, para que los certificados que ya tienen los equipos sigan valiendo. Después se aplican los playbooks en el orden del despliegue y se restauran las VMs. Si kit01 no está, el repositorio se puede leer desde cualquier Linux con restic 0.16 o superior, el disco y la clave del vault.
+`restic restore latest --tag config --include <ruta> --target /tmp/r`. Lo que instala Ansible se recupera mejor ejecutando otra vez su playbook, y la copia sirve para comparar o para lo que se cambió a mano.
 
-**El disco falla o se pierde.** Los datos vivos no se tocan, solo se pierden las copias. Se formatea otro disco igual, se cambia `backup_disco_uuid` en el inventario, se ejecuta `backups.yml` y la siguiente copia crea el repositorio. Si se pierde la clave, las copias no se pueden leer de ninguna forma, y por eso está guardada en dos lugares.
+### 13.4 El dominio
 
-## 14. Verificación periódica y pruebas hechas
+Lo normal es aprovisionarlo otra vez con `ansible-playbook playbooks/samba.yml`, que crea los mismos grupos y usuarios con los mismos números, así que los archivos restaurados conservan sus dueños. Se pierden las contraseñas que los usuarios hayan cambiado. Si hay cambios hechos a mano que se deben conservar, se restaura el respaldo del dominio con `samba-tool domain backup restore`, que exige un nombre de controlador nuevo (`dc02`). Después se agregan otra vez los registros DNS de `dc01` y se ejecuta `samba.yml` para que el resto del kit siga usando el mismo nombre.
 
-Una copia que nunca se restauró no sirve de mucho, así que el plan incluye restaurar de verdad cada cierto tiempo.
+### 13.5 Una VM o kit01 completo
+
+Una VM se recrea con `playbooks/vms.yml`, se le aplica su playbook (`clinica01.yml` y `samba.yml`, o `comunidad01.yml`), después `publicacion.yml` y `backups.yml`, y al final se restauran sus datos con las secciones anteriores. comunidad01 no tiene datos propios.
+
+Para kit01, se instala Ubuntu Server 24.04 y NetBird, se restaura primero la raíz de la CA (`/etc/kitsalud/ca`) desde el snapshot `config`, para que los certificados que ya tienen los equipos sigan valiendo, y después se aplican los playbooks en el orden del despliegue y se recuperan las VMs. Las dos cosas necesitan Internet, así que se hacen en la base.
+
+### 13.6 Si el disco falla o se pierde la clave
+
+Si el disco falla, los datos vivos no se tocan, solo se pierden las copias. Se formatea otro disco con la etiqueta `kitbackup`, se cambia `backup_disco_uuid` en el inventario y se ejecuta `backups.yml`. La siguiente copia crea el repositorio. Si se pierde la clave, las copias no se pueden leer de ninguna forma, y por eso se guarda en kit01 y en el vault de Ansible.
+
+## 14. Verificación periódica
+
+Una copia que nunca se restauró no da garantías, así que el plan incluye restaurar de verdad cada cierto tiempo.
 
 | Qué | Cuándo | Cómo |
 |---|---|---|
-| Integridad del repositorio | En cada copia | `restic check` en el log de `backup.service` |
 | Que la copia corrió | Cada semana | El tablero sin **UnidadFallida** y `systemctl list-timers backup.timer` |
-| Restaurar un archivo y una tabla | Cada mes y después de cambiar los roles de copias | `P11-restauracion.sh`, que borra un archivo y una tabla de prueba y los recupera |
-| Restaurar una base completa y el dominio | Antes de cada salida a campo | `dhis2` en una base temporal y el dominio en un directorio temporal, comparados con lo vivo y borrados después |
+| Restaurar un archivo y una tabla | Cada mes | Script `docs/pruebas/scripts/P11-restauracion.sh` desde la máquina de control |
+| Restaurar la base y el dominio completos | Antes de cada salida a campo | En una base y un directorio temporales, comparándolos con lo vivo |
 
-| Prueba en el kit real | Resultado |
-|---|---|
-| Copia programada con el disco real | Cuatro snapshots y `restic check` sin errores |
-| Archivo de `archivos` y tabla de `prerregistro` | 16 de 16 en 68 s. El archivo volvió con su dueño del dominio y su ACL, y `ana.rojas` lo abrió por SMB. La tabla volvió con las mismas 1000 filas y el mismo md5 |
-| Base `dhis2` completa en una base temporal | Las 333 tablas con el mismo número de filas (45 893) y PostGIS 3.5.2. `pg_restore` en 7,7 s |
-| Dominio en un directorio temporal | Mismos usuarios, grupos y miembros de `clinicos` que el DC vivo, en 2,5 s, sin tocar el DC en uso |
+## 15. Límites
 
-## 15. Copia en línea (diseñada, sin implementar)
-
-La copia del disco USB viaja con el kit. La copia en línea dejaría una tercera copia fuera del sitio y completaría la regla 3-2-1 (datos vivos, disco USB y servidor externo). Está diseñada pero no implementada, y no hay servidor ni credenciales.
-
-| Elemento | Diseño |
-|---|---|
-| Destino | `rest-server` en un servidor de la organización de salud, por HTTPS y en modo solo agregar |
-| Método | `restic copy` desde kit01 hacia un repositorio propio. Los datos salen cifrados y el servidor no los puede leer |
-| Cuándo | Un timer revisa cada hora y sube lo pendiente solo si hay Internet y la UPS está en línea, para no gastar batería |
-| Si se corta a la mitad | `restic copy` solo envía lo que falta, así que la siguiente pasada continúa |
-| Firewall | Sin cambios, porque kit01 ya puede salir por TCP 443 |
-| Tamaño | La primera subida son 850 MiB, unos 12 minutos a 10 Mb/s, y cada semana sin cambios son unos 5 MiB |
-
-Con el modo solo agregar, kit01 puede subir copias nuevas pero no borrar ni cambiar las que ya están, así que un atacante en kit01 no alcanza lo que ya se subió. Como el servidor guardaría copias cifradas de datos de pacientes, la organización de salud tendría que aprobar el destino antes de activarla.
-
-## 16. Límites conocidos
-
-- Hoy hay una sola copia, en el mismo lugar que el kit. La evolución es la copia en línea y un segundo disco que se rota y se queda en la base.
-- Lo que cambia entre dos copias se pierde si falla el SSD de kit01 antes de la siguiente. La copia manual al cerrar cada misión reduce esa ventana.
-- La reconstrucción de una VM o de kit01 necesita Internet, así que en campo solo se restauran datos sobre equipos que funcionan.
-- Un corte de energía durante la copia no deja un snapshot a medias, porque restic lo escribe al final, pero este caso no se probó con un corte real.
+- Hoy hay una sola copia y viaja con el kit, así que un robo o un incendio se llevan los datos y la copia a la vez. Lo que lo resolvería es un segundo disco que se queda en la base o una copia en línea a un servidor de la organización de salud.
+- Lo registrado entre dos copias se pierde si falla el disco de kit01 antes de la siguiente. La copia manual al cerrar cada misión reduce esa ventana.
+- Reconstruir una VM o kit01 necesita Internet, así que en campo solo se restauran datos sobre equipos que funcionan.
