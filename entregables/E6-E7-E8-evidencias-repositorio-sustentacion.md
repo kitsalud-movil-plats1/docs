@@ -25,6 +25,8 @@ Todas las pruebas se hicieron en el kit real, en remoto por NetBird, y en las do
 
 Cada prueba tiene un script en `docs/pruebas/scripts/` que imprime cada comprobación como `[ OK ]` o `[FALLA]` y termina con el conteo. La automatización no reemplaza la explicación, así que cada prueba trae su interpretación. Lo que solo se puede ver en el sitio (celulares en cada SSID, un PC de la red Interna, el cable de Internet desconectado y el reinicio de kit01) se demuestra en vivo en la sustentación con los mismos scripts.
 
+Las salidas de comandos de cada prueba son las de su corrida original en el kit. Las capturas se tomaron otra vez el 13 de noviembre de 2026, también en el kit real y por NetBird. Las de terminal muestran los comandos tal como se ejecutaron en cada equipo, con el equipo y la hora al pie, y cuando un comando largo se acortó para que se pudiera leer, un comentario al final de la línea dice qué se recortó. Las de navegador se tomaron con un Chrome que sale por un túnel SSH a través de prueba01, para ver lo mismo que un celular de la Comunidad, o a través de clinica01, para ver lo mismo que una estación de la Clínica. Así el tráfico nace en el cliente de cada red y los nombres los resuelve el DNS del kit. Ese día el cable entre kit01 y sw01 estaba sin enlace, por eso en Grafana sw01 y ap01 aparecen sin responder, y lo que se probó desde sw01 (el ping por nombre de P2, la conexión desde la Interna de P6 y P7 y la hora del switch en P8) queda solo con la salida original.
+
 | Prueba | Qué demuestra | Cómo se probó | Resultado |
 |---|---|---|---|
 | P1 | Un cliente de la Comunidad recibe IPv4, IPv6, DNS y gateway | `prueba01` | Aprobada, 9 de 9 |
@@ -62,7 +64,11 @@ Resultado: 9 bien y 0 con falla.
 
 **Interpretación.** En IPv4, Kea entregó `10.20.40.114`, dentro del rango de la Comunidad, con préstamo de una hora, el gateway `10.20.40.1` y el DNS del kit. En IPv6, el cliente armó su dirección por SLAAC con el prefijo que anuncia radvd, su ruta por defecto apunta a `fe80::1` y el DNS IPv6 llegó por DHCPv6 sin estado. Un equipo nuevo queda listo para usar el kit sin configurar nada, y como sus DNS son los del kit, los nombres de `salud.movil` resuelven desde el primer momento.
 
-*Captura pendiente.* Configuración de red de un celular conectado a `SaludMovil-Comunidad`, con su dirección IPv4, su dirección IPv6 y el DNS.
+<div class="captura"><img src="../evidencias/capturas/P01-cliente.png" alt="P01-cliente"></div>
+<p class="pie-captura">prueba01, en la red Comunidad, recibió 10.20.40.100 por DHCPv4, su IPv6 por SLAAC, la ruta por defecto IPv6 hacia fe80::1 y los dos DNS del kit, y responde el ping a su gateway en las dos familias.</p>
+
+<div class="captura"><img src="../evidencias/capturas/P01-cliente-kea.png" alt="P01-cliente-kea"></div>
+<p class="pie-captura">El mismo préstamo visto desde kit01, en el log de Kea y en su archivo de préstamos (una hora).</p>
 
 ## 3. P2. DNS
 
@@ -90,7 +96,8 @@ Resultado: 12 bien y 0 con falla.
 
 **Interpretación.** Los diez nombres del kit tienen registro A y AAAA, y el DNS responde como autoritativo por sus dos direcciones. Desde la red Interna hubo ping, resolución y HTTP por nombre en las dos familias, que es la conectividad extremo a extremo que pide el enunciado para IPv6. Nadie tiene que recordar una dirección, y si un servicio cambia de equipo solo cambia su registro.
 
-*Captura pendiente.* `dig AAAA pacientes.salud.movil` y el navegador abriendo `https://pacientes.salud.movil` desde un equipo de la red Interna.
+<div class="captura"><img src="../evidencias/capturas/P02-dns.png" alt="P02-dns"></div>
+<p class="pie-captura">Desde la Comunidad, cinco nombres del kit con su A y su AAAA, la respuesta autoritativa (bandera aa) por IPv6, el PTR de la dirección IPv6 de comunidad01 y la biblioteca abierta por nombre con HTTP 200 en IPv4 y en IPv6.</p>
 
 ## 4. P3. Aislamiento
 
@@ -116,7 +123,8 @@ fw-drop F-20 IN=br-com OUT=lan0.10 SRC=10.20.40.114 DST=10.20.10.3 PROTO=TCP DPT
 
 **Interpretación.** Un invitado no llega a nada clínico ni administrativo en ninguna de las dos familias, aunque haya aceptado el portal. El bloqueo está en kit01, que es el único router entre las redes, así que no depende de que los servicios pidan contraseña. Cada intento queda en el log con su origen, su destino y la etiqueta `fw-drop F-20`, lo que permite contar cuántas veces la Comunidad intentó llegar a la red clínica. Dos celulares del SSID de la Comunidad sí se alcanzan entre sí, porque el firmware del AP solo aísla el SSID de la Clínica. Ese tráfico no sale del AP y es un riesgo aceptado.
 
-*Captura pendiente.* El navegador de un celular de la Comunidad sin poder abrir `https://pacientes.salud.movil`, y el log de kit01 con el intento registrado.
+<div class="captura"><img src="../evidencias/capturas/P03-aislamiento.png" alt="P03-aislamiento"></div>
+<p class="pie-captura">Arriba, prueba01 con el portal aceptado no llega a DHIS2, a los archivos, a Grafana ni al SSH de kit01 en ninguna familia. Abajo, cada intento en el log de kit01 con la etiqueta fw-drop F-20 y el contador de esa cadena.</p>
 
 ## 5. P4. Acceso público local
 
@@ -141,7 +149,17 @@ $ docker exec dhis2-db-1 psql -U dhis -d prerregistro -c "select codigo, apellid
 
 **Interpretación.** Después del portal, un invitado usa todos los servicios públicos en las dos familias. El 302 de Jellyfin es la redirección a su página de inicio. El formulario está en comunidad01 pero los datos quedaron en la base de clinica01, porque quien se conecta a la base es comunidad01 con un usuario que solo puede insertar. El invitado nunca llega a clinica01. El certificado del formulario lo firmó el intermedio de comunidad01 y se verificó con la raíz del kit.
 
-*Captura pendiente.* Un celular de la Comunidad mostrando el menú del portal, un artículo de la biblioteca y el código que entrega el formulario.
+<div class="captura"><img src="../evidencias/capturas/P04-biblioteca-articulo.png" alt="P04-biblioteca-articulo"></div>
+<p class="pie-captura">El artículo «Fiebre» de la Wikipedia médica, abierto desde la Comunidad.</p>
+
+<div class="captura"><img src="../evidencias/capturas/P04-videos.png" alt="P04-videos"></div>
+<p class="pie-captura">Jellyfin con el usuario comunidad, sin contraseña, con las bibliotecas Comunidad y Salud.</p>
+
+<div class="captura"><img src="../evidencias/capturas/P04-formulario-codigo.png" alt="P04-formulario-codigo"></div>
+<p class="pie-captura">El formulario de prerregistro enviado desde la Comunidad entrega el código A44E.</p>
+
+<div class="captura"><img src="../evidencias/capturas/P04-base-clinica01.png" alt="P04-base-clinica01"></div>
+<p class="pie-captura">El prerregistro A44E quedó en la base de clinica01, y comunidad01 no tiene base propia, solo apunta a clinica01 con el usuario formularios.</p>
 
 ## 6. P5. Portal cautivo
 
@@ -163,7 +181,14 @@ $ sudo nft list set inet filtro portal_ok | grep elements
 
 **Interpretación.** Sin aceptar, cualquier página por HTTP termina en el portal, en IPv4 y en IPv6, y el HTTPS se rechaza al instante para que el navegador no se quede esperando. Al aceptar, kit01 agrega la MAC del equipo al set `portal_ok` por 8 horas. Como el set está en la tabla `inet`, la misma autorización vale para las dos familias. El portal vive en kit01, así que funciona aunque no haya Internet.
 
-*Captura pendiente.* La página de condiciones que se abre sola en un celular nuevo, y después el menú con el estado de los servicios.
+<div class="captura"><img src="../evidencias/capturas/P05-portal-condiciones.png" alt="P05-portal-condiciones"></div>
+<p class="pie-captura">prueba01 sin autorización pidió http://neverssl.com y terminó en las condiciones del portal.</p>
+
+<div class="captura"><img src="../evidencias/capturas/P05-portal-menu.png" alt="P05-portal-menu"></div>
+<p class="pie-captura">Después de tocar «Acepto y quiero entrar», el menú con los servicios y su estado.</p>
+
+<div class="captura"><img src="../evidencias/capturas/P05-portal-kit01.png" alt="P05-portal-kit01"></div>
+<p class="pie-captura">En kit01, la MAC de prueba01 entra al set portal_ok por 8 horas, y el log del portal muestra la redirección por IPv4 y la aceptación por IPv6.</p>
 
 ## 7. P6. Aplicación clínica
 
@@ -185,7 +210,14 @@ Resultado: 16 bien y 0 con falla.
 
 **Interpretación.** El personal clínico registra y consulta pacientes con su propia cuenta y su rol, en las dos familias, y lo que registra una persona lo encuentra otra del mismo grupo. La consulta de prerregistros entra con el dominio, y ahí aparecieron los dos códigos que se enviaron desde la Comunidad en P4, lo que muestra el flujo completo del formulario. Los pacientes de prueba se borraron al final.
 
-*Captura pendiente.* La app Capture de DHIS2 con el paciente registrado, y la lista **Por atender** de la consulta de prerregistros.
+<div class="captura"><img src="../evidencias/capturas/P06-dhis2-registro.png" alt="P06-dhis2-registro"></div>
+<p class="pie-captura">El paciente ficticio que registró ana.rojas, con su inscripción en el programa «Atención primaria».</p>
+
+<div class="captura"><img src="../evidencias/capturas/P06-dhis2-lista.png" alt="P06-dhis2-lista"></div>
+<p class="pie-captura">carlos.perez, otra cuenta del personal clínico, ve el mismo paciente en la lista del programa. La imagen se recortó en la primera fila para no mostrar otros registros.</p>
+
+<div class="captura"><img src="../evidencias/capturas/P06-consulta-prerregistros.png" alt="P06-consulta-prerregistros"></div>
+<p class="pie-captura">En la consulta de prerregistros, ana.rojas entra con su usuario del dominio y encuentra el código A44E que se envió en P4.</p>
 
 ## 8. P7. Identidad
 
@@ -206,7 +238,14 @@ Resultado: 10 bien y 0 con falla.
 
 **Interpretación.** Una cuenta del directorio sirve en varios recursos, y cada recurso deja entrar solo al grupo que corresponde. `ana.rojas` abre los archivos clínicos y no la consola de monitoreo, y con `laura.gomez` pasa lo contrario. El recurso exige SMB3 con cifrado, así que los archivos viajan cifrados aunque la red sea local. Se probó por las dos direcciones de clinica01.
 
-*Captura pendiente.* El explorador de archivos con `\\archivos.salud.movil\archivos` abierto como `SALUD\ana.rojas`, y Grafana con la sesión de `laura.gomez`.
+<div class="captura"><img src="../evidencias/capturas/P07-smb.png" alt="P07-smb"></div>
+<p class="pie-captura">ana.rojas (clinicos) lista el recurso archivos por IPv4 y por IPv6, laura.gomez (admins) recibe NT_STATUS_ACCESS_DENIED y el recurso exige cifrado.</p>
+
+<div class="captura"><img src="../evidencias/capturas/P07-grafana-laura.png" alt="P07-grafana-laura"></div>
+<p class="pie-captura">laura.gomez (admins) entra a Grafana con su usuario del dominio y ve el tablero Estado del kit.</p>
+
+<div class="captura"><img src="../evidencias/capturas/P07-grafana-ana.png" alt="P07-grafana-ana"></div>
+<p class="pie-captura">ana.rojas (clinicos) no puede entrar a Grafana.</p>
 
 ## 9. P8. Tiempo
 
@@ -233,7 +272,8 @@ Resultado: 9 bien y 0 con falla.
 
 **Interpretación.** Las dos VMs, el switch y un cliente de la Comunidad toman la hora de kit01, con diferencias de microsegundos en las VMs y de menos de un milisegundo en el switch. El `^*` indica la fuente que cada equipo está usando. kit01 respondió también por IPv6, y en su lista de clientes aparecen las direcciones IPv6 de las VMs. Esto importa por dos razones. Kerberos rechaza a un equipo con más de 5 minutos de diferencia con el dominio, y con una sola hora los logs de todos los equipos se pueden ordenar para seguir una falla.
 
-*Captura pendiente.* `chronyc -n clients` en kit01 y `chronyc sources` en una VM.
+<div class="captura"><img src="../evidencias/capturas/P08-tiempo.png" alt="P08-tiempo"></div>
+<p class="pie-captura">kit01 sirve la hora con estrato 3 y tiene como clientes a las VMs y a prueba01. clinica01 la toma por IPv4 y comunidad01 y prueba01 por IPv6, las tres con kit01 como fuente en uso.</p>
 
 ## 10. P9. Pérdida de Internet
 
@@ -259,7 +299,14 @@ Resultado: 51 bien y 0 con falla.
 
 **Interpretación.** kit01 notó el corte en menos de un minuto. Lo externo falló como debía, y desde la Comunidad cualquier nombre externo respondió con la dirección del portal, así que las pruebas de detección de Android e iOS terminaron en el portal. Todo lo local siguió funcionando en las dos familias. El DNS respondió sus nombres, la hora siguió llegando, DHIS2, la consulta y los archivos respondieron, y un cliente nuevo de la Comunidad aceptó el portal y envió un prerregistro. El monitoreo no puso nada en rojo, porque todo lo que vigila está dentro del kit. Al quitar la tabla, la salida volvió sola.
 
-*Captura pendiente.* Durante la sustentación, con el cable de la WAN desconectado, `cat /run/kit-internet/modo` mostrando `sin` y DHIS2 abierto en el navegador.
+<div class="captura"><img src="../evidencias/capturas/P09-sin-internet.png" alt="P09-sin-internet"></div>
+<p class="pie-captura">Se aplicó la tabla del corte con su borrado programado, kit01 pasó a modo sin Internet, los nombres externos dieron SERVFAIL y a la Comunidad la mandaron al portal, mientras DNS, hora, DHIS2, biblioteca y registro siguieron respondiendo. Al quitar la tabla todo volvió solo y NetBird nunca se cayó.</p>
+
+<div class="captura"><img src="../evidencias/capturas/P09-portal-sin-internet.png" alt="P09-portal-sin-internet"></div>
+<p class="pie-captura">Sin Internet, un cliente de la Comunidad que pide http://www.wikipedia.org llega al menú del portal.</p>
+
+<div class="captura"><img src="../evidencias/capturas/P09-dhis2-sin-internet.png" alt="P09-dhis2-sin-internet"></div>
+<p class="pie-captura">DHIS2 abierto desde la Clínica durante el corte.</p>
 
 ## 11. P10. Firewall IPv6
 
@@ -279,7 +326,8 @@ fw-drop F-20 IN=br-com OUT= SRC=fd5a:fc7e:d716:0040:5054:00ff:fe40:0050 DST=fd5a
 
 **Interpretación.** Los dos destinos (comunidad01 y clinica01) están en la misma red de servidores, y uno responde mientras el otro queda bloqueado, así que la regla es por equipo y por puerto, no por red. Las mismas cinco pruebas por IPv4 dieron el mismo resultado. Cada equipo del kit tiene dirección IPv6 y kit01 enruta en las dos familias, de modo que un firewall que solo filtrara IPv4 dejaría pasar a un invitado a clinica01 por IPv6. Esta prueba confirma que eso no pasa.
 
-*Captura pendiente.* `curl -6` desde un celular o laptop de la Comunidad, uno permitido y uno bloqueado, y la línea del log con la dirección IPv6.
+<div class="captura"><img src="../evidencias/capturas/P10-firewall-ipv6.png" alt="P10-firewall-ipv6"></div>
+<p class="pie-captura">Por IPv6, la biblioteca y el registro de comunidad01 responden y DHIS2 y el servidor web de clinica01 quedan bloqueados, aunque los dos equipos están en la misma red.</p>
 
 ## 12. P11. Restauración
 
@@ -309,7 +357,8 @@ Resultado: 16 bien y 0 con falla.
 
 **Interpretación.** El archivo volvió con el mismo contenido, el mismo dueño del dominio (`ana.rojas` y `clinicos`), los mismos permisos y la misma ACL, y `ana.rojas` lo volvió a abrir por SMB. La tabla volvió con las mismas 1000 filas y el mismo md5. La extracción salió por IPv6 hacia las VMs, que es la primera familia que prueba la copia. Casi todo el tiempo de la restauración se fue en las conexiones desde la máquina de control, porque restic recuperó el archivo en menos de un segundo.
 
-*Captura pendiente.* El recurso `archivos` abierto en un PC antes de borrar, después de borrar y después de restaurar.
+<div class="captura"><img src="../evidencias/capturas/P11-restauracion.png" alt="P11-restauracion"></div>
+<p class="pie-captura">La restauración completa, en el orden en que se hizo. El archivo vuelve con el mismo sha256, el mismo dueño, los mismos permisos y la misma ACL, y ana.rojas lo vuelve a ver por SMB.</p>
 
 ## 13. P12. Reinicio
 
@@ -336,7 +385,11 @@ LOG:  database system is ready to accept connections
 
 **Interpretación.** A los 44 segundos de la orden de reinicio todos los servicios respondían otra vez en las dos familias, sin que nadie arrancara nada a mano. PostgreSQL registró un cierre ordenado y al arrancar no tuvo que recuperar nada. Lo que hace esto posible es el arranque automático de libvirt, systemd y la política `restart: unless-stopped` de Docker, con healthchecks y reintentos que resuelven el orden entre aplicaciones. Después del arranque, `verificar-flujos.yml` dio `69 pruebas, todas como se esperaba`, así que las VMs volvieron también con su firewall.
 
-*Captura pendiente.* El tablero **Estado del kit** con las alertas durante el reinicio y otra vez en 0, y **Encendido desde hace** de las VMs.
+<div class="captura"><img src="../evidencias/capturas/P12-reinicio.png" alt="P12-reinicio"></div>
+<p class="pie-captura">Las dos VMs se reiniciaron a la vez a las 07:31. Arrancaron solas, PostgreSQL registró un cierre limpio y ninguna sonda de las VMs quedó en rojo.</p>
+
+<div class="captura"><img src="../evidencias/capturas/P12-grafana-recursos.png" alt="P12-grafana-recursos"></div>
+<p class="pie-captura">En Grafana, las dos VMs encendidas desde hace dos minutos y kit01 desde hace un mes.</p>
 
 ## 14. P13. Diagnóstico
 
@@ -368,7 +421,17 @@ Se provocaron tres fallas, una a la vez, y para cada una el script mostró lo qu
 - **Base de datos detenida.** Nadie puede iniciar sesión ni registrar pacientes en DHIS2, y el formulario avisa que no pudo guardar. La sonda de DHIS2 siguió en verde porque su página responde aunque no tenga base, y por eso el kit tiene una sonda aparte para PostgreSQL.
 - **comunidad01 apagada.** La comunidad pierde la biblioteca, los videos y el formulario, y la atención clínica sigue igual. Esto muestra que separar las VMs por público también separa las fallas.
 
-*Captura pendiente.* **Qué está fallando** en Grafana con la falla activa, y el portal de la Comunidad mostrando el servicio en rojo con el aviso al personal.
+<div class="captura"><img src="../evidencias/capturas/P13-diagnostico.png" alt="P13-diagnostico"></div>
+<p class="pie-captura">La falla completa, desde que se detiene la biblioteca hasta que vuelve. Prometheus marca la biblioteca en IPv4 y en IPv6, el log central registra la parada, docker ps muestra la causa y al arrancarla las alertas de la biblioteca se apagan.</p>
+
+<div class="captura"><img src="../evidencias/capturas/P13-grafana-falla.png" alt="P13-grafana-falla"></div>
+<p class="pie-captura">Lo que ve el personal, con la Biblioteca en rojo en el tablero.</p>
+
+<div class="captura"><img src="../evidencias/capturas/P13-grafana-que-falla.png" alt="P13-grafana-que-falla"></div>
+<p class="pie-captura">El panel «Qué está fallando», con el servicio, el equipo y la familia.</p>
+
+<div class="captura"><img src="../evidencias/capturas/P13-portal-falla.png" alt="P13-portal-falla"></div>
+<p class="pie-captura">Lo que ve la comunidad, con la biblioteca en rojo y el aviso al personal de la brigada.</p>
 
 <div class="salto"></div>
 
