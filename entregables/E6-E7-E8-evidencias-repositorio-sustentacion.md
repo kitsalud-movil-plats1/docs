@@ -6,7 +6,7 @@
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
-Este documento junta las **evidencias de las pruebas (E6)**, el **repositorio técnico (E7)** y la **sustentación y demostración (E8)**. Van juntos porque dependen uno del otro. Cada prueba se ejecuta con un script del repositorio, y la demostración en vivo repitió esas mismas pruebas.
+Este documento junta las **evidencias de las pruebas (E6)**, el **repositorio técnico (E7)** y la **sustentación y demostración (E8)**. Van juntos porque dependen uno del otro. Cada prueba se ejecuta con un script del repositorio, y en la demostración en vivo se revisaron con ese mismo enfoque.
 
 <div class="salto"></div>
 
@@ -233,6 +233,8 @@ Los roles de cada componente viven en su propio repositorio y `platform/ansible`
 
 # Parte 3. Sustentación y demostración (E8)
 
-La sustentación tuvo dos partes. Primero una presentación de las decisiones de diseño (el router en el host Ubuntu, las dos VMs separadas por público, la segmentación con dos VLAN y una red de servidores virtual, IPv4 e IPv6 con las mismas reglas y el respaldo en modo extracción), con su fuente en [Figma Slides](https://www.figma.com/slides/cOAeR1yge27oJDGAsPXdgd). Después la demostración en vivo de las trece pruebas, siguiendo el guion de `docs/sustentacion/guion-demostracion.pdf`, que tiene para cada prueba la red, los pasos, lo que se muestra y lo que se explica.
+La sustentación tuvo dos partes. Primero una presentación de las decisiones de diseño (el router en el host Ubuntu, las dos VMs separadas por público, la segmentación con dos VLAN y una red de servidores virtual, IPv4 e IPv6 con las mismas reglas y el respaldo en modo extracción), con su fuente en [Figma Slides](https://www.figma.com/slides/cOAeR1yge27oJDGAsPXdgd).
 
-En la demostración se usaron un celular en cada SSID, una laptop en la red de la Clínica y un equipo por cable en el puerto de administración del switch. P9 se mostró desconectando el cable de Internet, y P13 deteniendo la biblioteca para ver cómo la detectan Grafana y el portal.
+Después vino la demostración en vivo, en la que el profesor revisó las pruebas de aceptación. Seguimos el guion de `docs/sustentacion/guion-demostracion.pdf`, que tiene para cada prueba la red, los pasos, lo que se muestra y lo que se explica.
+
+En la demostración se usaron un celular en cada SSID, una laptop en la red de la Clínica y un equipo por cable en el puerto de administración del switch. La pérdida de Internet (P9) se mostró desconectando el cable de Internet. Para el reinicio apagamos las dos VMs, vimos en el monitoreo cómo se caían los servicios de cada una y después las encendimos para ver que volvían solos.
