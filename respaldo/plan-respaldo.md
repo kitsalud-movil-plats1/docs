@@ -97,7 +97,7 @@ restic ls latest --tag recursos | grep <nombre>
 restic restore latest --tag recursos --include $S/clinica01/archivos/<ruta> --target /tmp/r
 ```
 
-En clinica01 se copia a `/srv/samba/archivos/` con su dueño y permisos (`sudo cp -a` y, si hace falta, `chown`). El archivo nuevo hereda la ACL por defecto del recurso, así que queda igual que antes (comprobado en la prueba de restauración). Para una versión anterior se usa el ID de un snapshot de `restic snapshots --tag recursos` en lugar de `latest`.
+En clinica01 se copia a `/srv/samba/archivos/` con `sudo cp` (sin `-a`), `chown` y `chmod`. El archivo nuevo hereda la ACL por defecto del recurso, así que queda igual que antes (comprobado en la prueba de restauración). Con `cp -a` o `install` la ACL no se hereda. Para una versión anterior se usa el ID de un snapshot de `restic snapshots --tag recursos` en lugar de `latest`.
 
 ### 5.2 Una tabla o una base
 

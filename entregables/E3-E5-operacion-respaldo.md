@@ -393,7 +393,7 @@ umount /mnt/backup                   # siempre al terminar
 
 Lo restaurado se pasa a la VM con `scp` desde kit01 (`kitsalud@10.20.20.11` es clinica01). Para recuperar una versión anterior se usa el ID de un snapshot de `restic snapshots` en lugar de `latest`.
 
-**Un archivo o una carpeta.** Se restaura en una carpeta temporal y en clinica01 se copia a `/srv/samba/archivos/` con `sudo cp -a`. El archivo hereda la ACL por defecto del recurso, así que queda igual que antes.
+**Un archivo o una carpeta.** Se restaura en una carpeta temporal y en clinica01 se copia a `/srv/samba/archivos/` con `sudo cp`, sin `-a`, y después `sudo chown` y `sudo chmod` con el dueño y los permisos que tenía. Así el archivo nuevo hereda la ACL por defecto del recurso y queda igual que antes. Con `cp -a` o con `install` la ACL no se hereda.
 
 ```bash
 restic ls latest --tag recursos | grep <nombre>
