@@ -6,7 +6,7 @@
 
 **Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
 
-Este documento junta las **evidencias de las pruebas (E6)**, el **repositorio técnico (E7)** y la **sustentación y demostración (E8)**. Van juntos porque dependen uno del otro. Cada prueba se ejecuta con un script del repositorio, y en la demostración en vivo se revisaron con ese mismo enfoque.
+Este documento junta las **evidencias de las pruebas (E6)**, el **repositorio técnico (E7)** y la **sustentación y demostración (E8)**. Van juntos porque dependen uno del otro. Cada prueba tiene un script en el repositorio que la ejecuta y muestra su resultado. La sustentación en vivo tuvo un enfoque más visual, con celulares, el navegador y el tablero de monitoreo, y no con tantas pruebas por script como las que hay en el repositorio.
 
 <div class="salto"></div>
 
