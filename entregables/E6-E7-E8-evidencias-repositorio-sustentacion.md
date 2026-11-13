@@ -4,7 +4,7 @@
 
 ## Evidencias, repositorio técnico y sustentación
 
-**Proyecto final - Plataformas I - 2026-2** · Organización `kitsalud-movil-plats1`
+**Proyecto final - Plataformas I - 2026-2** · Organización [github.com/kitsalud-movil-plats1](https://github.com/kitsalud-movil-plats1/)
 
 Este documento junta las **evidencias de las pruebas (E6)**, el **repositorio técnico (E7)** y la **sustentación y demostración (E8)**. Van juntos porque dependen uno del otro. Cada prueba tiene un script en el repositorio que la ejecuta y muestra su resultado. La sustentación en vivo tuvo un enfoque más visual, con celulares, el navegador y el tablero de monitoreo, y no con tantas pruebas por script como las que hay en el repositorio.
 
@@ -199,7 +199,7 @@ Las trece pruebas de aceptación se cumplieron en el kit real, en IPv4 y en IPv6
 
 # Parte 2. Repositorio técnico (E7)
 
-Todo el kit está en la organización de GitHub `kitsalud-movil-plats1`, repartido en siete repositorios por responsabilidad. Así cada componente se puede cambiar y revisar sin tocar los demás.
+Todo el kit está en la organización de GitHub [kitsalud-movil-plats1](https://github.com/kitsalud-movil-plats1/) (<https://github.com/kitsalud-movil-plats1/>), repartido en siete repositorios por responsabilidad. Así cada componente se puede cambiar y revisar sin tocar los demás.
 
 <div class="diagrama"><img src="../diagramas/mapa-repositorios.png" alt="Mapa del repositorio técnico"></div>
 
