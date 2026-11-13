@@ -12,7 +12,7 @@ La fuente editable de todos los diagramas está en Figma, en el archivo [Kit mó
 | `encendido-apagado.png` | `encendido-apagado` | Guía de operación (E3) |
 | `perfiles-mision.png` | `perfiles-mision` | Guía de operación (E3) |
 | `flujo-respaldo.png` | `flujo-respaldo` | Plan de respaldo (E5) |
-| `montaje-pruebas.png` | `montaje-pruebas` | Evidencias (E6) |
+| `montaje-pruebas.png` | `montaje-pruebas` | Ya no se usa en los entregables |
 | `mapa-repositorios.png` | `mapa-repositorios` | Repositorio técnico (E7) |
 
 ## Exportar después de un cambio
