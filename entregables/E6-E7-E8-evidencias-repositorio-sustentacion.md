@@ -199,9 +199,9 @@ Las trece pruebas de aceptación se cumplieron en el kit real, en IPv4 y en IPv6
 
 # Parte 2. Repositorio técnico (E7)
 
-<div class="diagrama"><img src="../diagramas/mapa-repositorios.png" alt="Mapa del repositorio técnico"></div>
-
 Todo el kit está en la organización de GitHub `kitsalud-movil-plats1`, repartido en siete repositorios por responsabilidad. Así cada componente se puede cambiar y revisar sin tocar los demás.
+
+<div class="diagrama"><img src="../diagramas/mapa-repositorios.png" alt="Mapa del repositorio técnico"></div>
 
 | Repositorio | Qué contiene |
 |---|---|

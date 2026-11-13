@@ -116,3 +116,5 @@ div.salto { page-break-before: always; }
 div.captura { text-align: center; page-break-inside: avoid; margin: 2mm 0 1mm 0; }
 div.captura img { max-width: 100%; max-height: 240mm; width: auto; }
 p.pie-captura { font-size: 8.5pt; color: #555; text-align: center; margin: 0 0 5mm 0; }
+/* El título y el criterio de una prueba no se separan de su primera captura */
+h2:has(+ p + div.captura), h2 + p:has(+ div.captura) { break-after: avoid; page-break-after: avoid; }
