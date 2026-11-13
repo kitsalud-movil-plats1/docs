@@ -12,7 +12,7 @@ Este procedimiento explica cómo dar y quitar acceso a las personas de la brigad
 
 Las cuentas del dominio y las de DHIS2 tienen el mismo nombre para cada persona (por ejemplo `ana.rojas`) y son independientes. Una persona nueva del personal clínico necesita las dos.
 
-**Contraseñas.** El kit usa contraseñas académicas conocidas por el grupo. En el dominio la convención es `password`, porque la política pide 8 caracteres sin complejidad. DHIS2 exige mayúscula, número y símbolo y rechaza palabras genéricas, así que usa `Clave123!`. Antes de una misión real se cambian todas.
+**Contraseñas.** El kit usa contraseñas académicas conocidas por el grupo, guardadas en el vault de Ansible y nunca en los repositorios. En el dominio la política pide 8 caracteres sin complejidad. DHIS2 exige mayúscula, número y símbolo y rechaza palabras genéricas. Antes de una misión real se cambian todas.
 
 ## Personas permanentes, con Ansible
 
@@ -32,7 +32,7 @@ Las personas que van a estar en todas las misiones se agregan al inventario de A
    ansible-playbook playbooks/clinica01.yml
    ```
 
-Las dos cuentas nuevas quedan con la contraseña de la convención. Los playbooks solo crean lo que falta. No cambian la contraseña de una cuenta que ya existe ni borran las que se quitan del inventario, así que esas dos cosas se hacen a mano con los comandos de abajo.
+Las dos cuentas nuevas quedan con la contraseña inicial que está en el vault. Los playbooks solo crean lo que falta. No cambian la contraseña de una cuenta que ya existe ni borran las que se quitan del inventario, así que esas dos cosas se hacen a mano con los comandos de abajo.
 
 ## Usuarios del dominio, en clinica01
 

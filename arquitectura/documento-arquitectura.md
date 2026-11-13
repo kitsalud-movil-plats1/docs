@@ -183,7 +183,7 @@ El AP (firmware 3.16.9) trabaja en modo Multi-SSID con VLAN. El tráfico de cada
 | Posición | SSID | VLAN ID | Seguridad |
 |---|---|---|---|
 | SSID1 | `SaludMovil-Clinica` | 10 (Interna; también la gestión del AP) | WPA2-PSK con AES (el AP no soporta WPA3) |
-| SSID2 | `SaludMovil-Comunidad` | 40 (Comunidad) | Abierta + portal cautivo |
+| SSID2 | `SaludMovil-Comunidad` | 40 (Comunidad) | En el laboratorio, WPA2-PSK con AES. En una misión, abierta + portal cautivo |
 
 - **Dirección del AP.** Fija, `10.20.10.3/24` con gateway `10.20.10.1`. "Allow remote access" queda desactivado, así que la gestión solo responde desde la VLAN 10, que es donde están las IPs de administración. Por NetBird se llega a través de kit01.
 - **Servidor DHCP del AP desactivado.** De fábrica viene activo y repartiría direcciones en la VLAN 10; se apaga antes de conectarlo a sw01.
@@ -219,7 +219,7 @@ El kit usa los equipos disponibles para el proyecto. Para un despliegue real se 
 |---|---|---|
 | Clínica/administrativa | VLAN 10 **Interna**. Estaciones y SSID del personal | `lan0.10` |
 | Servidores | **`br-srv`**. Bridge virtual dentro de kit01, sin puerto físico, al que se conectan las VMs | `br-srv` |
-| Comunidad/invitados | VLAN 40 **Comunidad**. SSID abierto con portal cautivo | `br-com` (con `lan0.40` como puerto) |
+| Comunidad/invitados | VLAN 40 **Comunidad**. SSID de la comunidad con portal cautivo (con clave en el laboratorio y abierto en una misión) | `br-com` (con `lan0.40` como puerto) |
 | Administración | **Plano de gestión**. IPs de administración en la Interna (`10.20.10.10-29`, por DHCP en el puerto `ether4` de sw01 o fijas en el equipo) y el túnel NetBird, que se trata como una extensión de esta red (mismas reglas y mismos usuarios). Son los únicos orígenes con SSH y GUIs; a las VMs solo se llega a través de kit01 | `lan0.10` (filtrada por IP) y `wt0` |
 
 kit01 es el `.1` (y `fe80::1`) de las tres redes internas, así que **todo el tráfico entre ellas pasa por nftables**. La WAN (`wan0`) solo hace NAT de IPv4 hacia el uplink.
@@ -339,7 +339,7 @@ La misma `fe80::1` en varias interfaces es válida, porque una link-local solo t
 ### 8.4 Seguridad IPv6
 
 - Las reglas son **equivalentes en v4 y v6**. Cada política tiene su par en la misma tabla `inet` (sección 6.3).
-- Se permite el ICMPv6 imprescindible (NDP, RS/RA, Packet Too Big, Time Exceeded, Parameter Problem; RFC 4890) desde `fe80::/10` y desde la ULA. Solo kit01 emite RA (desde `fe80::1`); el AP aísla a los clientes inalámbricos entre sí y sw01 descarta los RA multicast que entran por los puertos de acceso (sección 5.2).
+- Se permite el ICMPv6 imprescindible (NDP, RS/RA, Packet Too Big, Time Exceeded, Parameter Problem; RFC 4890) desde `fe80::/10` y desde la ULA. Solo kit01 emite RA (desde `fe80::1`); el AP aísla entre sí a los clientes del SSID de la Clínica y sw01 descarta los RA multicast que entran por los puertos de acceso (sección 5.2).
 - DHCPv6 entra por `udp/547` desde `fe80::/10` hacia kit01, en las redes Interna y Comunidad.
 - El eco ICMP/ICMPv6 se permite desde la red Interna hacia kit01 y los servidores, y desde la Comunidad solo hacia su gateway. Así se puede demostrar la conectividad extremo a extremo y diagnosticar sin exponer los servidores a la comunidad.
 - El portal cautivo autoriza por MAC, así que aplica igual a IPv4 e IPv6.

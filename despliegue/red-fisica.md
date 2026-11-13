@@ -7,7 +7,7 @@ Esta parte conecta los equipos y deja configurados el switch (sw01) y el punto d
 | Desde | Hasta | Qué lleva |
 |---|---|---|
 | kit01 `enp170s0` | Red del sitio (uplink con Internet) | WAN. Por aquí entra también NetBird |
-| kit01 `enp171s0` | sw01 `ether1` | Trunk con las VLAN 10 (Interna), 20 (Servidores) y 40 (Comunidad), solo etiquetadas |
+| kit01 `enp171s0` | sw01 `ether1` | Trunk con las VLAN 10 (Interna) y 40 (Comunidad), solo etiquetadas. sw01 también tiene la VLAN 20 en este puerto, pero kit01 solo la usa en el perfil con un equipo más |
 | sw01 `ether2` | Puerto LAN del inyector PoE del AP | Wi-Fi de la Interna (VLAN 10) y de la Comunidad (VLAN 40) |
 | Inyector PoE, puerto PoE | ap01 | Alimentación y datos del AP |
 | sw01 `ether4` a `ether8` | Estaciones de la clínica | Interna (VLAN 10) sin etiqueta |
@@ -60,7 +60,7 @@ La configuración completa está en `network/switch/sw01.rsc`, exportada con `/e
 **Cómo comprobarlo en la consola**
 
 ```
-/interface bridge vlan print       # VLAN 10, 20 y 40 con los puertos de la tabla
+/interface bridge vlan print       # VLAN 10 y 40 con los puertos de la tabla, y la 20 en ether1 y ether3
 /ip address print                  # 10.20.10.2/24 en vlan10-Interna
 /ip service print                  # solo ssh y winbox habilitados
 ```
@@ -77,7 +77,7 @@ El AP no tiene línea de comandos, así que se configura en su interfaz web con 
 | Wireless → Wireless Settings | SSID3 y SSID4 | Desactivados |
 | Wireless → Wireless Settings | Región, modo y canal | Colombia, 11bgn mixed, 20 MHz, canal automático |
 | Wireless → Wireless Security | SSID1 | WPA2-PSK con AES y la clave del Wi-Fi de la clínica |
-| Wireless → Wireless Security | SSID2 | Sin seguridad (la protege el portal cautivo de kit01) |
+| Wireless → Wireless Security | SSID2 | En el laboratorio, WPA2-PSK con AES y su propia clave. En una misión, sin seguridad (la protege el portal cautivo de kit01) |
 | Wireless → Wireless Advanced | AP Isolation y Short GI | Activados (el aislamiento solo actúa en el SSID1) |
 | DHCP → DHCP Settings | Servidor DHCP | Desactivado (las direcciones las entrega kit01) |
 | WPS y System Tools → SNMP | WPS y SNMP | Desactivados |
