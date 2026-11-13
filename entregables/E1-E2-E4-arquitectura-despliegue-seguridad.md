@@ -18,7 +18,7 @@ Está escrito para el personal técnico que va a instalar, revisar o modificar e
 
 Una brigada de salud llega a una vereda, un centro comunitario o una sede temporal y necesita registrar pacientes, compartir documentos y darle a la comunidad un Wi-Fi con contenido útil, todo sin depender de Internet. El kit resuelve eso con tres equipos que caben en una maleta. Un mini PC (`kit01`) hace de router, firewall e hipervisor, un MikroTik CCR2004 (`sw01`) hace de switch y un TP-Link TL-WA801ND (`ap01`) emite un Wi-Fi para el personal y otro para la comunidad.
 
-Dentro de kit01 corren dos máquinas virtuales. `clinica01` guarda todo lo sensible (historia clínica, dominio de usuarios y archivos) y `comunidad01` sirve lo que ve la comunidad (biblioteca, videos y formulario de prerregistro). La separación por público es la idea central del diseño, porque si alguien compromete la biblioteca pública no llega a los datos de pacientes.
+Dentro de kit01 corren dos máquinas virtuales. `clinica01` guarda todo lo sensible (historia clínica, dominio de usuarios y archivos) y `comunidad01` sirve lo que ve la comunidad (biblioteca, videos y formulario de prerregistro). La separación por público es la idea central del diseño, porque si alguien toma el control de comunidad01 desde la red de invitados, no llega a la historia clínica ni a los prerregistros, que están en clinica01.
 
 El criterio que se siguió es el del enunciado, que pide una plataforma pequeña, segura, reproducible y útil con la menor cantidad de tecnologías. Por eso hay un solo sistema operativo (Ubuntu Server 24.04) en el host y en las VMs, dos VLAN físicas, dos VMs y, para cada requisito, la herramienta más simple que lo cumple. Todo se instala con Ansible desde repositorios versionados.
 
@@ -53,20 +53,6 @@ El criterio que se siguió es el del enunciado, que pide una plataforma pequeña
 | R11 Copias y restauración | restic cifrado en un disco USB, en modo pull. kit01 extrae los datos de las VMs cada semana y guarda 4 semanales y 3 mensuales | kit01 |
 | R12 Registros y monitoreo | Prometheus con sondas en IPv4 e IPv6, Grafana con el tablero "Estado del kit" y rsyslog que centraliza en kit01 los logs de todos los equipos | kit01 |
 
-### 1.3 Supuestos y restricciones
-
-El diseño parte de algunos supuestos. Si alguno falla, el impacto está acotado.
-
-| Supuesto o restricción | Qué pasa si cambia |
-|---|---|
-| El mini PC tiene 16 GB de RAM y dos NIC de 1 GbE | El mismo diseño corre en una laptop de 16 GB con un adaptador USB-Ethernet para la WAN |
-| El uplink del sitio entrega IPv4 con salida a Internet. Si anuncia IPv6, el kit no lo usa | Con DHCPv6-PD se podría agregar GUA más adelante sin cambiar las políticas |
-| Se esperan 5-10 equipos del personal y hasta 50 de la comunidad | Se amplía el pool de la Comunidad a /23 y se agrega un AP |
-| No hay UPS física | La alimentación segura se implementa con NUT y un driver simulado, y el apagado ordenado es el mismo que con una UPS real |
-| El equipo de red es prestado | Toda su configuración está versionada y se puede reinstalar en cualquier momento |
-| `salud.movil` no es un dominio público | No hay certificados públicos, así que el kit tiene su propia CA |
-| Todos los datos de pacientes son ficticios | Ninguno |
-
 <div class="diagrama"><img src="../diagramas/diagrama-fisico.png" alt="Diagrama físico del kit"></div>
 
 ## 2. Arquitectura física
@@ -82,7 +68,7 @@ El diseño parte de algunos supuestos. Si alguno falla, el impacto está acotado
 | UPS lógica | Apagado ordenado | NUT en kit01 con el driver `dummy-ups` |
 | Laptop (opcional) | Alojar comunidad01 si falta memoria | Solo en el perfil con un equipo más |
 
-El uplink del sitio queda fuera del kit. En el laboratorio es la red `192.168.160.0/24`, conectada directamente a `enp170s0`, sin pasar por el switch. Los puertos del mini PC no tienen rótulo, así que cada uno se identifica por su nombre de interfaz y su MAC (`…:07:0b` la WAN y `…:07:0a` el trunk).
+El uplink del sitio queda fuera del kit. En el laboratorio es la red `192.168.160.0/24`, conectada directamente a `enp170s0`, sin pasar por el switch. Los puertos del mini PC no están marcados, así que cada uno se identifica por su nombre de interfaz y su MAC (`…:07:0b` la WAN y `…:07:0a` el trunk).
 
 ### 2.2 Puertos de sw01
 
@@ -102,9 +88,13 @@ El CCR2004 es un router, pero aquí trabaja solo en capa 2. Los puertos en uso f
 | SSID | VLAN | Seguridad | Aislamiento de clientes |
 |---|---|---|---|
 | `SaludMovil-Clinica` (SSID1) | 10, Interna | WPA2-PSK con AES. El AP no soporta WPA3 | Sí |
-| `SaludMovil-Comunidad` (SSID2) | 40, Comunidad | Abierta, con portal cautivo en kit01 | No. El firmware solo aísla el SSID1 |
+| `SaludMovil-Comunidad` (SSID2) | 40, Comunidad | En el laboratorio, WPA2-PSK con AES. En una misión, abierta y protegida por el portal cautivo de kit01 | No |
 
-El AP tiene la dirección fija `10.20.10.3`, su servidor DHCP, WPS y SNMP apagados, y "Allow remote access" desactivado. Su gestión es solo por HTTP e IPv4. Que los clientes de la Comunidad se vean entre sí es una limitación del firmware y queda como riesgo aceptado (sección 14). Lo que importa es que nada de la Comunidad llega a otra red sin pasar por el firewall de kit01.
+En el laboratorio los dos SSID tienen clave, porque el AP queda al alcance de cualquier persona de la universidad y una red abierta dejaría entrar a quien pase cerca. En una misión el SSID de la Comunidad se deja sin clave, para que cualquier persona de la sala de espera se conecte, y el control de acceso lo hace el portal cautivo. Cambiarlo es solo quitar la seguridad del SSID2 en la página del AP. El direccionamiento, el portal y el firewall no cambian.
+
+**Limitación del AP.** El aislamiento de clientes (*AP Isolation*) está activado, pero con este firmware solo funciona en el SSID1. Los equipos del personal en `SaludMovil-Clinica` no se ven entre sí, mientras que los celulares de `SaludMovil-Comunidad` sí se pueden alcanzar unos a otros dentro del AP, sin pasar por sw01 ni por kit01. Es una limitación del equipo físico y no de la configuración, y queda como riesgo aceptado (sección 20). Lo que sí se cumple es que nada de la Comunidad llega a otra red sin pasar por el firewall de kit01. La solución es un AP que aísle a los clientes de cada SSID.
+
+El AP tiene la dirección fija `10.20.10.3`, su servidor DHCP, WPS y SNMP apagados, y "Allow remote access" desactivado. Su gestión es solo por HTTP e IPv4.
 
 <div class="diagrama"><img src="../diagramas/diagrama-logico.png" alt="Diagrama lógico del kit"></div>
 
@@ -118,7 +108,7 @@ El enunciado pide al menos cuatro redes. El kit las implementa con dos VLAN fís
 |---|---|---|
 | Clínica y administrativa | VLAN 10, **Interna**. Estaciones por cable y el SSID del personal | `lan0.10` |
 | Servidores | **`br-srv`**, un bridge dentro de kit01 sin puerto físico, donde se conectan las VMs | `br-srv` |
-| Comunidad e invitados | VLAN 40, **Comunidad**. El SSID abierto con portal | `br-com` (con `lan0.40` como puerto) |
+| Comunidad e invitados | VLAN 40, **Comunidad**. El SSID de la comunidad, con portal cautivo | `br-com` (con `lan0.40` como puerto) |
 | Administración | Las direcciones `10.20.10.10` a `10.20.10.29` dentro de la Interna y el túnel de NetBird. Son los únicos orígenes que pueden abrir SSH o las páginas de gestión | `lan0.10` filtrada por dirección y `wt0` |
 
 kit01 es el `.1` (y `fe80::1`) de las tres redes internas, así que todo el tráfico entre ellas pasa por nftables. Como `br-srv` vive dentro de kit01, el firewall también filtra el tráfico entre las dos VMs, cosa que no pasaría si estuvieran en un switch físico.
@@ -224,7 +214,7 @@ Al encender no hay que hacer nada a mano. nftables carga el firewall antes de qu
 
 <div class="diagrama"><img src="../diagramas/dependencias-arranque.png" alt="Orden de arranque y dependencias"></div>
 
-Hay dos dependencias que no se ven a simple vista. Samba AD necesita la hora de kit01, porque Kerberos rechaza a un equipo con más de 5 minutos de diferencia, y la consulta de prerregistros necesita el dominio por LDAPS para dejar entrar a alguien. En un simulacro de corte de energía, todo quedó en verde 42 segundos después de encender las VMs.
+Hay dos dependencias que no se ven a simple vista. Samba AD necesita la hora de kit01, porque Kerberos rechaza a un equipo con más de 5 minutos de diferencia, y la consulta de prerregistros necesita el dominio para dejar entrar a alguien, al que consulta con el protocolo LDAPS. En un simulacro de corte de energía, todo quedó en verde 42 segundos después de encender las VMs.
 
 ## 5. Dimensionamiento y energía
 
@@ -268,17 +258,16 @@ El enunciado no exige implementarla, pero sí documentarla. Los datos de DHIS2 s
 | El host Ubuntu es el router y el firewall, con los servicios de red en systemd | OPNsense o pfSense en una VM | El núcleo de red no depende de una VM, se ahorran 3 GB de RAM y las reglas son archivos de texto versionados. Una sola tabla `inet` cubre IPv4 e IPv6 |
 | El CCR2004 trabaja solo en capa 2 | Usarlo como router o firewall | Con un solo punto de enrutamiento, las reglas están en un solo lugar. Como router, además, separaría IPv4 de IPv6 y su portal (Hotspot) solo cubre IPv4 |
 | Un solo SO (Ubuntu 24.04), KVM/libvirt y Docker dentro de las VMs | Proxmox, Docker en el host | Un solo Ansible para todo. Docker en el host reescribiría las reglas del firewall del router |
-| Dos VMs separadas por público | Una VM por servicio, o todo en el host | Un compromiso de la parte pública no alcanza los datos de pacientes, y cada VM se puede apagar sin tocar la otra |
+| Dos VMs separadas por público | Una VM por servicio, o todo en el host | Si alguien toma el control de comunidad01, que es la VM que usa la comunidad, no llega a la historia clínica, a los prerregistros ni a los archivos del personal, porque todo eso está en clinica01. Además cada VM se puede apagar sin tocar la otra |
 | Dos VLAN físicas y una red de servidores virtual | Cuatro VLAN | Menos configuración en el switch y el AP. El enunciado acepta interfaces virtuales como mecanismo de separación |
 | Samba AD en clinica01, que también sirve los recursos SMB | FreeIPA, OpenLDAP o una VM de identidad | Cubre identidad y almacenamiento compartido con un solo servicio, sin otra VM |
 | DHIS2 con cuentas locales | DHIS2 con LDAP, OpenMRS | Si el dominio falla, el registro de pacientes sigue funcionando |
 | Formulario propio que guarda en clinica01 con un usuario de solo INSERT | LimeSurvey, formulario de DHIS2 | El paciente nunca deja datos en comunidad01, que es la VM expuesta a invitados |
 | Portal cautivo propio en kit01 con un set de MAC | Portal del AP o de un router | El mismo set autoriza IPv4 e IPv6 y funciona sin Internet |
 | restic en modo pull hacia un disco USB | Push por SFTP, rest-server local | Las VMs no tienen credenciales del repositorio y el disco es otro medio físico |
-| Administración por puerto (`ether4`) con DHCP y opción 82 | Reservas por MAC | Funciona con cualquier equipo sin registrarlo, y el permiso depende de dónde se conecta |
+| Administración por puerto. Cualquier equipo conectado al puerto `ether4` de sw01 recibe por DHCP una dirección de administración | Reservar una dirección por la MAC de cada equipo | Funciona con cualquier equipo sin registrarlo, y el permiso depende de dónde se conecta |
 | SLAAC con DHCPv6 sin estado, sin RDNSS, y `fe80::1` como gateway | DHCPv6 con estado, RDNSS | Una sola pareja de mecanismos en todo el kit y una ruta por defecto predecible |
 | NetBird solo en kit01, para administrar en remoto | Subnet router, WireGuard directo | Funciona detrás del NAT de la universidad sin abrir puertos y no hace falta en campo |
-| Un usuario de administración compartido, con acceso limitado por origen | Cuentas individuales con llave | El grupo es pequeño y administra el kit en conjunto. Se pierde la trazabilidad por persona, que queda como riesgo aceptado |
 
 <div class="salto"></div>
 
@@ -378,7 +367,7 @@ El switch y el AP se configuran conectando un portátil directamente a cada uno,
 
 La contraseña se pone a mano porque `/export` omite los datos sensibles, así que el archivo versionado nunca la tiene.
 
-**ap01.** No tiene línea de comandos, así que se configura en su página web (`http://192.168.0.254` de fábrica, con el portátil en `192.168.0.10/24`). El orden importa. Primero se apagan el servidor DHCP, WPS y SNMP, después se configura el modo Multi-SSID con VLAN (SSID1 `SaludMovil-Clinica` en la VLAN 10 con WPA2-PSK, SSID2 `SaludMovil-Comunidad` en la 40 sin clave), se activa AP Isolation y al final se cambia la IP a `10.20.10.3`. Si se cambia la IP primero, el AP deja de responder en el portátil antes de terminar. La copia de su configuración se guarda fuera del repositorio, porque incluye la clave del Wi-Fi.
+**ap01.** No tiene línea de comandos, así que se configura en su página web (`http://192.168.0.254` de fábrica, con el portátil en `192.168.0.10/24`). El orden importa. Primero se apagan el servidor DHCP, WPS y SNMP, después se configura el modo Multi-SSID con VLAN (SSID1 `SaludMovil-Clinica` en la VLAN 10 con WPA2-PSK, SSID2 `SaludMovil-Comunidad` en la 40, con WPA2-PSK en el laboratorio y sin clave en una misión), se activa AP Isolation y al final se cambia la IP a `10.20.10.3`. Si se cambia la IP primero, el AP deja de responder en el portátil antes de terminar. La copia de su configuración se guarda fuera del repositorio, porque incluye la clave del Wi-Fi.
 
 Después se conectan los cables. `enp170s0` va al uplink, `enp171s0` a `ether1` de sw01, `ether2` al inyector PoE del AP, `ether4` es el puerto de administración y `ether5` a `ether8` son las estaciones.
 
@@ -631,5 +620,3 @@ Se comprobó con un script que busca cada valor del vault en el historial comple
 | La red Interna mezcla personal y administración | Menos VLAN que configurar | SSH solo desde direcciones de administración, DHCP snooping y RA filtrados en sw01 |
 | Una sola copia, que viaja con el kit | Hay un solo disco | Copia cifrada y desmontada. La copia en línea y un segundo disco quedan como evolución |
 | PostgreSQL sin TLS entre las VMs | El tráfico no sale de kit01 | Tabla `bridge` y usuario de solo INSERT |
-| kit01 puede sacar cualquier UDP a Internet | NetBird usa puertos variables | Solo kit01. Las VMs solo salen por TCP 80 y 443 |
-| No hay UPS física y los consumos no se midieron | No se cuenta con el equipo | El apagado ordenado está probado con NUT y el cálculo usa el dato del fabricante |
